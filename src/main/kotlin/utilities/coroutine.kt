@@ -16,7 +16,6 @@ import kotlin.coroutines.CoroutineContext
  * @property scope The coroutine scope created with the provided `backgroundContext`.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  */
 internal interface RunsInBackground {
     val job: CompletableJob
@@ -30,7 +29,6 @@ internal interface RunsInBackground {
      * resources are properly released.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
      */
     @Suppress("unused")
     fun cancel() {
