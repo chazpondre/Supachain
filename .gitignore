@@ -1,0 +1,129 @@
+# ------------------------------------
+# System and IDE Files
+# ------------------------------------
+
+.DS_Store                                        # macOS system file
+.idea/shelf                                      # IntelliJ IDEA project shelf file
+
+# ------------------------------------
+# Project Output and Temporary Files
+# ------------------------------------
+
+/confluence/target
+/dependencies/repo
+/android.tests.dependencies
+/dependencies/android.tests.dependencies
+/dist                                           # Distribution files
+/local                                          # Local development files
+/gh-pages                                       # GitHub Pages files
+/ideaSDK                                        # IntelliJ IDEA SDK files
+/clionSDK                                       # CLion SDK files
+/android-studio/sdk                             # Android Studio SDK files
+out/                                            # General output directory
+/tmp                                            # Temporary files
+/intellij                                       # IntelliJ IDEA project files
+.kotlin/                                        # Kotlin project files
+workspace.xml
+*.versionsBackup
+
+# ------------------------------------
+# IntelliJ IDEA Project Files
+# ------------------------------------
+.idea/                                          # Default IntelliJ IDEA project directory
+*.iws                                           # IntelliJ IDEA workspace file
+*.ipr                                           # IntelliJ IDEA project file
+
+.idea/artifacts
+.idea/libraries
+*.iml                                           # IntelliJ IDEA module files
+.idea/modules
+.idea/runConfigurations
+.idea/modules.xml
+.idea/gradle.xml
+.idea/compiler.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/.name
+.idea/jarRepositories.xml
+.idea/csv-plugin.xml
+.idea/libraries-with-intellij-classes.xml
+.idea/misc.xml
+.idea/protoeditor.xml
+.idea/remote-targets.xml                      # IntelliJ IDEA remote targets file
+
+# ------------------------------------
+# Build and Test Output
+# ------------------------------------
+
+build/
+!**/src/**/build                               # Keep build output within source directories
+!**/test/**/build                              # Keep test build output within test directories
+
+# ------------------------------------
+# Gradle Files
+# ------------------------------------
+.gradle/
+buildSrcTmp/
+distTmp/
+outTmp/
+/test.output
+
+# ------------------------------------
+# Kotlin Files
+# ------------------------------------
+
+/kotlin-native/dist
+kotlin-ide/
+
+# ------------------------------------
+# TeamCity Build Server Files
+# ------------------------------------
+.teamcity/
+
+# ------------------------------------
+# Node.js Modules
+# ------------------------------------
+node_modules/
+
+# ------------------------------------
+# Miscellaneous Files
+# ------------------------------------
+.rpt2_cache/
+libraries/tools/kotlin-test-js-runner/lib/
+local.properties
+.gradle
+!gradle/wrapper/gradle-wrapper.jar
+
+# ------------------------------------
+# Eclipse Project Files
+# ------------------------------------
+
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/                          # Keep main binary output within source directories
+!**/src/test/**/bin/                          # Keep test binary output within test directories
+
+# ------------------------------------
+# NetBeans Project Files
+# ------------------------------------
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# ------------------------------------
+# VS Code Project Files
+# ------------------------------------
+.vscode/
+
+
+# ------------------------------------
+# Logging
+# ------------------------------------
+/logs
