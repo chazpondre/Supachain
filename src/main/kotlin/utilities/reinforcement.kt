@@ -20,7 +20,6 @@ package utilities
  * @throws IllegalArgumentException If `numExamples` is less than or equal to 0.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  */
 fun <T : Number, Result> reinforceRange(
     generate: () -> T,
@@ -58,7 +57,6 @@ fun <T : Number, Result> reinforceRange(
  * @throws IllegalArgumentException If `numExamples` is less than or equal to 0.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  */
 inline fun <T, Result> reinforceBinarySameType(generator: () -> T, numExamples: Int = 4, crossinline output: (T, T) -> Result): String {
     require(numExamples > 0) { "Number of examples must be positive." }

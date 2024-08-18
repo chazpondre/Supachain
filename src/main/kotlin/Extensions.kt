@@ -18,7 +18,6 @@
  *
  * @param Self The type of the implementing class or subtype of higher self.
  * @since 0.1.0-alpha
- * @author Che Andre
  *
  * @see Modifies
  */
@@ -63,7 +62,6 @@ interface Extension<Self> {
  * ```
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  * @see Extension
  */
 interface Modifies<Self> : Extension<Self> {
@@ -92,7 +90,6 @@ interface Modifies<Self> : Extension<Self> {
  * @see Modifies
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  */
 abstract class Modifiable<T>(override val self: () -> T) : Modifies<T>
 

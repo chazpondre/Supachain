@@ -74,7 +74,6 @@ fun <T : Any> KClass<T>.castFormat(value: String): T = when {
  * @return The receiver list, populated with functions from the class and its superinterfaces.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  */
 fun KClass<*>.getFunctions(result: MutableList<KFunction<*>> = mutableListOf()): MutableList<KFunction<*>> {
     result.addAll(declaredMemberFunctions)
@@ -177,7 +176,6 @@ fun KType.getShortName(): String {
  *
  * @since 0.1.0-alpha
  * @version 1.0.0
- * @author Che Andre
  */
 @Serializable
 data class Parameter(
@@ -215,7 +213,6 @@ object KTypeSerializer : KSerializer<KType> {
  * @return A list of annotation simple names (Strings) applied to the function, excluding the specified annotations.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  */
 fun KFunction<*>.getAnnotationsByNameExcluding(vararg excluding: String) =
     annotations.mapNotNull { it.annotationClass.simpleName }.filterNot { it in excluding.toSet() }

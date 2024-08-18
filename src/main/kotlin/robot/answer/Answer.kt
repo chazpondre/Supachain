@@ -33,7 +33,6 @@ import kotlin.reflect.jvm.jvmErasure
  * @param deferred The [Deferred] object representing the asynchronous result.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  */
 @Suppress("unused")
 class Answer<T>(answerType: KType, private val deferred: Deferred<String>) {
