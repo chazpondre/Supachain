@@ -1,4 +1,4 @@
-package utilities
+package dev.supachain.utilities
 
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope

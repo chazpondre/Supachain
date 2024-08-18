@@ -1,4 +1,4 @@
-package utilities
+package dev.supachain.utilities
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime

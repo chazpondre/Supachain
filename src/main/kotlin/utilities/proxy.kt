@@ -1,4 +1,4 @@
-package utilities
+package dev.supachain.utilities
 
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass

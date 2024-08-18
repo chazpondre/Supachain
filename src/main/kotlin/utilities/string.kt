@@ -1,4 +1,4 @@
-package utilities
+package dev.supachain.utilities
 
 /**
  * Represents a string with embedded template expressions.

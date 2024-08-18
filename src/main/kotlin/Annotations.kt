@@ -6,6 +6,7 @@
 ██████  ████  ██  ███   ██  ███   ███      ██████  █████  ████  █████  █████        ███      ███  ███   ███      ███████
  */
 @file:Suppress("unused")
+package dev.supachain
 /**
  * Indicates that an API is experimental and might change in future releases.
  *

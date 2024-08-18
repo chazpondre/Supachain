@@ -1,3 +1,4 @@
+package dev.supachain
 /**
  * An interface providing a self-referential type.
  * Gets rid of bad parents. Parents should know their children.

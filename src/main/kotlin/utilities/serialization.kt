@@ -1,4 +1,4 @@
-package utilities
+package dev.supachain.utilities
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException

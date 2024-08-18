@@ -1,4 +1,4 @@
-package utilities
+package dev.supachain.utilities
 
 /**
  * Generates example responses to reinforce a numeric range for AI models.
