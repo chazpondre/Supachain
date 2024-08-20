@@ -12,4 +12,4 @@ package dev.supachain.robot.provider
  * @since 0.1.0-alpha
  * @author Che Andre
  */
-abstract class Provider<T : Provider<T>>
+abstract class Provider<T : Provider<T>>: Actions
