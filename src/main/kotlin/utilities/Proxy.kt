@@ -81,7 +81,7 @@ fun <T : Any> KClass<T>.by(handler: (parent: String, method: String, args: Array
  * @throws IllegalArgumentException If the class does not have a no-argument constructor.
  * @throws RuntimeException If there's an error during instance creation.
  */
-internal inline fun <reified T : Any> createObjectFromNoArgClass(): T {
+inline fun <reified T : Any> createObjectFromNoArgClass(): T {
     val kClass = T::class
     return try {
         // Attempt to create an instance using the no-arg constructor

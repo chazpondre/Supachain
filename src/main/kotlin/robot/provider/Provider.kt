@@ -19,10 +19,10 @@ import dev.supachain.robot.tool.strategies.ToolUseStrategy
 
  */
 abstract class Provider<T : Provider<T>>: Actions{
-    internal abstract var maxRetries: Int
-    internal abstract var toolsAllowed: Boolean
-    internal var loopDetection: Boolean = true
-    internal abstract var toolStrategy: ToolUseStrategy
+    abstract var maxRetries: Int
+    abstract var toolsAllowed: Boolean
+    var loopDetection: Boolean = true
+    abstract var toolStrategy: ToolUseStrategy
     private val featureMap: Map<Feature, ProviderFeatureRequest> = getFeatureMap()
 
     /**
@@ -44,6 +44,6 @@ abstract class Provider<T : Provider<T>>: Actions{
         ?: throw IllegalStateException("Unsupported Feature: The $feature feature is not support by $name")
 
     @Suppress("UNCHECKED_CAST")
-    internal inline operator
+    inline operator
     fun invoke(modify: T.() -> Unit) = (this as T).modify()
 }
