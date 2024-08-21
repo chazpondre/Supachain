@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.supachain.robot
 
 import dev.supachain.robot.director.directive.FromSystem

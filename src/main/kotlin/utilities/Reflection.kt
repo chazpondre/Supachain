@@ -49,12 +49,10 @@ fun <T : Any> KClass<T>.castFormat(value: String): T = when {
             ULong::class -> numericValue.toULong()
             else -> throw IllegalArgumentException("Unsupported numeric type: $this")
         } as T
-            ?: throw NumberFormatException("Invalid numeric format: $value for type $this") // Explicitly throw NumberFormatException if conversion fails
     }
 
     // Boolean Type
     this == Boolean::class -> value.toBooleanStrictOrNull() as T// Use strict conversion to avoid parsing "true"/"false" variations
-        ?: throw IllegalArgumentException("Invalid Boolean format: $value")
 
     // Date/Time Types
     this == LocalDate::class -> LocalDate.parse(value) as T
@@ -94,7 +92,6 @@ fun KClass<*>.getFunctions(result: MutableList<KFunction<*>> = mutableListOf()):
  *
  * @throws IllegalArgumentException If the number or types of arguments do not match the function's parameters,
  *                                  or if any argument conversion fails.
- * @throws InvocationTargetException If the invoked function throws an exception.
  * @throws IllegalAccessException If the function is not accessible (e.g., private).
  */
 operator fun KFunction<*>.invoke(vararg args: Any?) = call(* args)
@@ -113,7 +110,7 @@ sealed interface ArgumentType {
 }
 
 /**
- * Determines the type of an argument represented as a string.
+ * Determines the type of argument represented as a string.
  *
  * This function analyzes the input string and categorizes it into one of the following `ArgumentType`s:
  * - `Number`: If the string represents a valid number (integer or floating-point).

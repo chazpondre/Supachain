@@ -54,15 +54,34 @@ interface SerializeWrite<T> : KSerializer<T> {
 }
 
 /**
- * Converts a Kotlin type representation (String) to its corresponding JSON Schema type.
+ * Determines the JSON Schema type corresponding to a given Kotlin type.
  *
- * This function takes a string representation of a Kotlin type and returns its equivalent type in JSON Schema. It handles
- * various primitive types, collections, and custom types, mapping them to appropriate JSON Schema types based on their characteristics.
+ * This function parses a Kotlin type string and maps it to its equivalent JSON Schema type. It handles primitive types, collections, and custom types.
  *
- * @param type The string representation of the Kotlin type (e.g., "String", "Int?", "List<MyClass>").
- * @return The corresponding JSON Schema type string (e.g., "string", "integer", "array").
+ * **Parameters:**
+ *  - `this`: The Kotlin type string to be converted.
  *
- * @throws IllegalStateException If the input type is not recognized or supported.
+ * **Returns:**
+ *  - A string representing the corresponding JSON Schema type.
+ *
+ * **Mapping:**
+ *  - `Int`, `Byte`, `Short`, `Long`: `integer`
+ *  - `Float`, `Double`: `number`
+ *  - `Boolean`: `boolean`
+ *  - `String`, `Char`: `string`
+ *  - `Unit`: `null`
+ *  - `Any`: `any`
+ *  - `Array`, `List`, `Set`, `Collection`: `array`
+ *  - `Map`: `object`
+ *  - Other types starting with `kotlin.collections.`: `array`
+ *  - Other types: `object`
+ *
+ * **Example:**
+ *  ```kotlin
+ *  val typeString = "kotlin.Int"
+ *  val jsonSchemaType = typeString.toJSONSchemaType() // "integer"
+ *  ```
+ *
  * @since 0.1.0-alpha
  */
 fun KType.toJSONSchemaType(): String = with(this.toString().substringAfterLast('.')) {

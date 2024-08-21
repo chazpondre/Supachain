@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.supachain.utilities
 
 import ch.qos.logback.classic.spi.ILoggingEvent

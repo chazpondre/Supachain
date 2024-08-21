@@ -7,45 +7,41 @@ import dev.supachain.robot.tool.ToolMap
 import dev.supachain.utilities.*
 import kotlin.reflect.KFunction
 
+@Suppress("EmptyMethod")
 internal interface FunctionHandling<T> : Extensions {
     val toolMap: ToolMap
     val messenger: Messenger
     val toolProxy: T
 
     /**
-     * Executes a function call, managing restrictions and call history.
+     * Executes a function call within a tool invocation process, preventing redundant calls.
      *
-     * This function handles the execution of a function call within a tool invocation process. It performs the following steps:
+     * This function ensures controlled execution of functions during tool usage. It performs the following checks and actions:
      *
-     * 1. **Information Extraction:** Retrieves the Kotlin `KFunction` object, the arguments array, and a string representation
-     *    of the call from the `FunctionCall` object.
-     * 2. **Restriction Check:** Iterates through the list of `DiscreteRestriction` objects to verify whether the
-     *    arguments violate any restrictions defined for the function. If a restriction is violated, a `BreaksRestriction`
-     *    result is returned, indicating the violated restriction and the problematic argument.
-     * 3. **Call History Check:** If the function call (identified by its unique string representation) has already been made,
-     *    it returns a `Recalled` result, preventing redundant executions.
-     * 4. **Function Execution:** If the call is valid and hasn't been made before, the function is executed using the provided
-     *    arguments and the `toolProxy`.
-     * 5. **Message Sending and Logging:** The result of the function call is wrapped in a `CommonFunctionMessage` and sent
-     *    to the `messenger`. The function call and its result are also recorded in the `callHistory` map.
-     * 6. **Success Indication:** A `Success` result is returned to signal the successful execution of the function call.
+     * 1. **Information Gathering:** Extracts the Kotlin `KFunction` object, argument array, and a unique string representation of the call from the provided `FunctionCall` object.
+     * 2. **Call History Check:** Checks if the function call (identified by its unique string representation) has already been made by looking it up in the `callHistory` map. If found, a `Recalled` result is returned to prevent unnecessary repetition.
+     * 3. **Function Execution:** If the call hasn't been made before, the function is invoked using the provided arguments and the `toolProxy` object.
+     * 4. **Messaging and Logging:** Wraps the function call result in a `CommonFunctionMessage` and sends it to the `messenger` for further processing. Additionally, the function call and its result are logged in the `callHistory` map for tracking purposes.
+     * 5. **Success Indication:** If the execution is successful, a `Success` result is returned.
+     * 6. **Error Handling:** If an exception occurs during execution, an `Error` result is returned, encapsulating the encountered exception.
      *
-     * @param call The `FunctionCall` object representing the function to be executed.
-     * @param callHistory A map to track the history of function calls and their results.
-     * @param restrictions A list of `DiscreteRestriction` objects defining the allowed values and constraints for function parameters.
-     * @return A `CallResult` indicating the outcome of the function call: `Success` if executed successfully,
-     *         `BreaksRestriction` if a restriction was violated, or `Recalled` if the call has already been made.
+     * **Parameters:**
+     *  - `callHistory`: A mutable map used to store the history of function calls and their results, preventing redundant executions.
+     *
+     * **Returns:**
+     *  A `CallResult` object indicating the outcome of the function call:
+     *    - `Success`: Function call executed successfully.
+     *    - `Recalled`: Function call already executed previously.
+     *    - `Error`: An exception occurred during function execution.
      *
      * @since 0.1.0-alpha
-
      */
-    // For recurrent function calling
     operator fun FunctionCall.invoke(callHistory: MutableMap<String, String>): CallResult {
         val (function, arguments, callString) = this.info()
 
-        if (callString in callHistory) return Recalled
+        return if (callString in callHistory) Recalled
         else try {
-            return function(toolProxy, * arguments).let {
+            function(toolProxy, * arguments).let {
                 // Add Function Call message to Messenger
                 this@FunctionHandling.messenger(it.asFunctionMessage(name))
                 // Register Call
@@ -53,7 +49,7 @@ internal interface FunctionHandling<T> : Extensions {
                 Success
             }
         } catch (e: Exception) {
-            return Error(e)
+            Error(e)
         }
     }
 
@@ -106,21 +102,28 @@ internal interface FunctionHandling<T> : Extensions {
     }
 
     /**
-     * Extracts information about a function call for tool execution.
+     * Extracts essential details about a function call for tool execution.
      *
-     * This function takes a `FunctionCall` object representing a tool invocation and retrieves the following:
+     * This function parses a `FunctionCall` object representing a tool invocation and retrieves the following information:
      *
-     * 1. The corresponding Kotlin `KFunction` object from the `toolMap`, ensuring it's a valid tool.
-     * 2. An array of `Any?` arguments prepared based on the function's parameters and the arguments specified in the `FunctionCall`.
-     * 3. A string representation of the function call, including the function name and its arguments.
+     * 1. **Tool Function:** Retrieves the corresponding Kotlin `KFunction` object from the `toolMap`, ensuring it represents a valid tool function.
+     * 2. **Function Arguments:** Constructs an array of `Any?` arguments based on the function's parameters and the values provided in the `FunctionCall` object.
+     * 3. **Call String:** Generates a human-readable string representation of the function call, including the function name and its arguments.
      *
-     * @param functionCall The `FunctionCall` object to extract information from.
-     * @return A `Triple` containing the `KFunction`, arguments array, and a string representation of the function call.
+     * **Parameters:**
+     *  - `FunctionCall`: The `FunctionCall` object containing information about the tool invocation.
+     *  - `argFormatter` (Optional): A custom function for formatting arguments based on a parameter map. Defaults to `formatArgumentsFromJson`, which formats arguments assuming JSON representation.
      *
-     * @throws IllegalStateException If the tool or its function definition is not found.
+     * **Returns:**
+     *  A `Triple` containing the following elements:
+     *    - `KFunction<*>`: The Kotlin function object representing the tool function.
+     *    - `Array<Any?>`: An array containing the argument values for the function call.
+     *    - `String`: A string representing the function call, including the function name and arguments.
+     *
+     * **Throws:**
+     *  - `IllegalStateException`: If the requested tool or its function definition is not found in the `toolMap`.
      *
      * @since 0.1.0-alpha
-
      */
     fun FunctionCall.info(argFormatter: String.(ParamMap) -> Array<Any?> = { formatArgumentsFromJson(it) }): Triple<KFunction<*>, Array<Any?>, String> {
         val tool = toolMap[name]?.function ?: throw IllegalStateException("Unknown tool call $name")

@@ -40,25 +40,21 @@ data class Directive(
     val feature: Feature,
 ) {
     /**
-     * Configures a list of chat messages for a conversational AI interaction.
+     * Retrieves all messages associated with a directive, combining existing messages with those extracted from function arguments.
      *
-     * This function takes existing messages associated with a `RobotDirective` and
-     * integrates them with additional messages derived from function arguments.  The key steps are:
+     * This function processes the messages related to a given directive, ensuring a logical order based on their roles (e.g., USER, ASSISTANT, SYSTEM). It also integrates messages derived from the function arguments, providing a comprehensive set of messages for the Robot's interaction.
      *
-     * 1. **Sorting:** Orders the existing messages based on their `Role` (e.g., USER, ASSISTANT, SYSTEM)
-     *    to ensure a logical flow in the conversation.
-     * 2. **Argument Integration:** Extracts messages from the function arguments using `getArgumentMessages`.
-     *    These messages typically contain information about the parameters of a function being called
-     *    by the Robot to use a tool.
-     * 3. **Adding to List:** The extracted argument messages are added to the end of the sorted list,
-     *    creating a comprehensive set of messages ready for the Robot interaction.
+     * **Steps:**
+     * 1. **Sorts Existing Messages:** Orders the existing messages by their `Role` to maintain a natural conversation flow.
+     * 2. **Extracts Argument Messages:** Retrieves messages from the function arguments using `getArgumentMessages`, capturing information about the parameters of the function being called.
+     * 3. **Combines Messages:** Adds the extracted argument messages to the end of the sorted list, creating a comprehensive set of messages for the Robot.
+     *
+     * **Returns:**
+     * A mutable list of messages, combining the original messages with the extracted argument messages.
      *
      * @param directiveArguments The arguments passed to the function that this directive is associated with.
-     * @param messenger The `Messenger` instance responsible for managing the chat conversation. This parameter is currently unused.
-     * @return A mutable list of messages, combining the original messages with the extracted argument messages.
      *
      * @since 0.1.0-alpha
-
      */
     fun getDirectiveMessages(directiveArguments: Array<Any?>): MutableList<Message> {
         return mutableListOf(formattingMessage()).apply {

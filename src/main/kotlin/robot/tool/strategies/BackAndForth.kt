@@ -1,4 +1,5 @@
-package dev.supachain.robot.tool.stategies
+package dev.supachain.robot.tool.strategies
+
 
 import dev.supachain.robot.director.*
 import dev.supachain.robot.director.directive.Directive
@@ -47,7 +48,7 @@ internal data object BackAndForth : ToolUseStrategy {
                 when (result) {
                     Success -> continue
                     Recalled -> {
-                        interveneWithoutTools(callHistory);
+                        interveneWithoutTools(callHistory)
                         break
                     }
 

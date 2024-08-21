@@ -5,6 +5,8 @@
 ██████████████████████████  ███  ███  ████████  ███   ██  ████  ██  ██████████████  █████  █████████████████████████████
 ██████████████████████████  ████  ██        ███      █ ██      ███        ███      ██████  █████████████████████████████
  */
+@file:Suppress( "unused")
+
 package dev.supachain.robot.messenger.messaging
 
 sealed interface CommonRequest

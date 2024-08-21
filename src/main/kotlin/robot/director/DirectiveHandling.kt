@@ -1,8 +1,8 @@
 package dev.supachain.robot.director
 
 import dev.supachain.robot.director.directive.Directive
-import dev.supachain.robot.tool.stategies.BackAndForth
-import dev.supachain.robot.tool.stategies.FillInTheBlank
+import dev.supachain.robot.tool.strategies.BackAndForth
+import dev.supachain.robot.tool.strategies.FillInTheBlank
 import dev.supachain.utilities.Debug
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -15,8 +15,6 @@ import org.slf4j.LoggerFactory
  */
 internal interface DirectiveHandling<T> : FunctionHandling<T> {
     override val toolProxy: T
-
-    @Suppress("unused")
     private val logger: Logger get() = LoggerFactory.getLogger(DirectiveHandling::class.java)
 
     /**
