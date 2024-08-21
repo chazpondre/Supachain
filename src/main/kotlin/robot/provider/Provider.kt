@@ -2,6 +2,7 @@ package dev.supachain.robot.provider
 
 import dev.supachain.robot.director.DirectorCore
 import dev.supachain.robot.messenger.messaging.CommonResponse
+import dev.supachain.robot.tool.stategies.ToolUseStrategy
 
 /**
  * Abstract base class for model providers.
@@ -19,6 +20,7 @@ abstract class Provider<T : Provider<T>>: Actions{
     internal abstract var maxRetries: Int
     internal abstract var toolsAllowed: Boolean
     internal var loopDetection: Boolean = true
+    internal abstract var toolStrategy: ToolUseStrategy
     private val featureMap: Map<Feature, ProviderFeatureRequest> = getFeatureMap()
 
     /**
