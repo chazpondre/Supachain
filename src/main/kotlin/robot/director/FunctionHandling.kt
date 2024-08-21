@@ -39,9 +39,9 @@ internal interface FunctionHandling<T> : Extensions {
     operator fun FunctionCall.invoke(callHistory: MutableMap<String, String>): CallResult {
         val (function, arguments, callString) = this.info()
 
-        if (callString in callHistory) return Recalled
+        return if (callString in callHistory) Recalled
         else try {
-            return function(toolProxy, * arguments).let {
+            function(toolProxy, * arguments).let {
                 // Add Function Call message to Messenger
                 this@FunctionHandling.messenger(it.asFunctionMessage(name))
                 // Register Call
@@ -49,7 +49,7 @@ internal interface FunctionHandling<T> : Extensions {
                 Success
             }
         } catch (e: Exception) {
-            return Error(e)
+            Error(e)
         }
     }
 
