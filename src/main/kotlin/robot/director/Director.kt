@@ -72,8 +72,9 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
     override val job: CompletableJob = SupervisorJob(),
     override val coroutineContext: CoroutineContext = Dispatchers.IO + job,
     override val messenger: Messenger = Messenger(),
-) : DirectorCore, RunsInBackground, Extensions{
+) : DirectiveHandling<ToolType>, DirectorCore, RunsInBackground, Extensions {
 
+    override val toolProxy by lazy { toolProxyObject() }
     lateinit var toolProxyObject: () -> ToolType
 
     @Suppress("unused")
@@ -96,7 +97,7 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
     internal inline fun <reified ToolInterface : ToolType> setToolset(): Director<P, API, *> = this.also {
         if (defaultProvider.toolsAllowed) {
             toolProxyObject = {
-                if(ToolInterface::class.visibility != KVisibility.PUBLIC)
+                if (ToolInterface::class.visibility != KVisibility.PUBLIC)
                     throw IllegalArgumentException("Your class must not have private visibility")
                 createObjectFromNoArgClass<ToolInterface>()
             }
