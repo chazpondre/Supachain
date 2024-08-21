@@ -1,4 +1,4 @@
-package dev.supachain.robot.tool.stategies
+package dev.supachain.robot.tool.strategies
 
 import dev.supachain.robot.tool.asKFunctionString
 import dev.supachain.robot.messenger.messaging.Message
