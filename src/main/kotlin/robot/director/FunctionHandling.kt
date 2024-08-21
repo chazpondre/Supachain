@@ -7,6 +7,7 @@ import dev.supachain.robot.tool.ToolMap
 import dev.supachain.utilities.*
 import kotlin.reflect.KFunction
 
+@Suppress("EmptyMethod")
 internal interface FunctionHandling<T> : Extensions {
     val toolMap: ToolMap
     val messenger: Messenger

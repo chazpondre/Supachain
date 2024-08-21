@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.supachain.robot.tool
 
 import dev.supachain.utilities.Parameter

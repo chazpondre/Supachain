@@ -38,6 +38,7 @@ import kotlinx.serialization.Serializable
  * @since 0.1.0-alpha
 
  */
+@Suppress("unused")
 @Serializable
 enum class Role {
     @SerialName("system")

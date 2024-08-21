@@ -58,7 +58,6 @@ package dev.supachain.robot.provider
  * @since 0.1.0-alpha
 
  */
-@Suppress("unused")
 enum class Feature {
     // Base
     Chat, Embedding, Moderation,

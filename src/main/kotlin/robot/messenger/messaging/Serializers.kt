@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.supachain.robot.messenger.messaging
 
 import dev.supachain.robot.tool.ToolConfig

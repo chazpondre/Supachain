@@ -1,3 +1,5 @@
+@file:Suppress("UNUSED_PARAMETER", "unused")
+
 package dev.supachain.robot.messenger.messaging
 
 import dev.supachain.robot.messenger.Role
@@ -90,6 +92,7 @@ data class Message(
             set(value) {
                 data.content
             }
+
         val role: Role get() = data.role
         val toolCalls: List<ToolCall>? get() = data.toolCalls
         val functionCall: FunctionCall? get() = data.functionCall
