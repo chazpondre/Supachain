@@ -76,12 +76,12 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
     override val job: CompletableJob = SupervisorJob(),
     override val coroutineContext: CoroutineContext = Dispatchers.IO + job,
     override val messenger: Messenger = Messenger(),
-) : DirectiveHandling<ToolType>, DirectorCore, RunsInBackground, Extensions {
+) : DirectiveHandling<ToolType>, DirectorCore, RunsInBackground {
 
     override val toolProxy by lazy { toolProxyObject() }
     lateinit var toolProxyObject: () -> ToolType
 
-    private val logger: Logger by lazy { LoggerFactory.getLogger(Director::class.java) }
+    val logger: Logger by lazy { LoggerFactory.getLogger(Director::class.java) }
 
     /**
      * Registers a tool interface within the director, enabling access to its functionalities.
@@ -112,7 +112,7 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
      *
      * @since 0.1.0-alpha
      */
-    internal inline fun <reified ToolInterface : ToolType> setToolset(): Director<P, API, *> = this.also {
+    inline fun <reified ToolInterface : ToolType> setToolset(): Director<P, API, *> = this.also {
         if (defaultProvider.toolsAllowed) {
             toolProxyObject = {
                 if (ToolInterface::class.visibility != KVisibility.PUBLIC)
@@ -144,9 +144,10 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
      * @since 0.1.0-alpha
 
      * */
-    internal inline fun <reified API : Any> setUpDirectives(): API {
+    inline fun <reified API : Any> setUpDirectives(): API {
         val directiveInterface = API::class
         directives.putAll(directiveInterface.getDirectives().associateBy { it.name })
+
         return directiveInterface by { parent, name, args, returnType ->
             Answer<Any>(returnType, scope.async { handleDirectiveRequest(parent, name, args) })
         }

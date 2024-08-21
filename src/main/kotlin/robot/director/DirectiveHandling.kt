@@ -8,12 +8,12 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * Interface extending [DirectorCore] and [Extensions] interfaces.
+ * The Director's interface for handling directives
  *
  * Provides the `handleDirectiveRequest` function to process method calls intercepted by the directive proxy.
  * Provides the `handleProviderMessaging` function which directs provider communication after a directive is received.
  */
-internal interface DirectiveHandling<T> : FunctionHandling<T> {
+interface DirectiveHandling<T> : FunctionHandling<T> {
     override val toolProxy: T
     private val logger: Logger get() = LoggerFactory.getLogger(DirectiveHandling::class.java)
 

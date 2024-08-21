@@ -26,7 +26,7 @@ object Robot {
      */
     @JvmStatic
     @CompileTime
-    internal inline operator
+    inline operator
     fun <reified RobotProvider : Provider<RobotProvider>, reified Interface : Any, reified Tools : Any>
             invoke(modify: Director<RobotProvider, Interface, Tools>.() -> Unit = {}): Interface {
         val provider = try {
@@ -34,8 +34,7 @@ object Robot {
         } catch (e: Exception) {
             throw RuntimeException("Error creating instance of ${RobotProvider::class.simpleName}: ${e.message}", e)
         }
-
-        return Director<RobotProvider, Interface, Tools>(provider) //{ createObjectFromInterfaceType<Tools>() }
+        return Director<RobotProvider, Interface, Tools>(provider)
             .apply(modify)
             .setToolset<Tools>()
             .setUpDirectives<Interface>()

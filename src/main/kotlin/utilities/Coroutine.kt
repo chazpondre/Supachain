@@ -17,7 +17,7 @@ import kotlin.coroutines.CoroutineContext
  *
  * @since 0.1.0-alpha
  */
-internal interface RunsInBackground {
+interface RunsInBackground {
     val job: CompletableJob
     val coroutineContext: CoroutineContext
     val scope get() = CoroutineScope(coroutineContext)

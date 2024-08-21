@@ -8,7 +8,7 @@ import dev.supachain.utilities.*
 import kotlin.reflect.KFunction
 
 @Suppress("EmptyMethod")
-internal interface FunctionHandling<T> : Extensions {
+interface FunctionHandling<T> {
     val toolMap: ToolMap
     val messenger: Messenger
     val toolProxy: T
@@ -148,7 +148,7 @@ private typealias ParamMap = Map<String, Pair<Int, Parameter>>
  *  - `Recalled`: The function call has already been made with the same arguments and was not re-executed.
  *  - `Error`: The function call failed due to an exception.
  */
-internal sealed interface CallResult
+sealed interface CallResult
 
 /**
  * Indicates that a function call was executed successfully.
