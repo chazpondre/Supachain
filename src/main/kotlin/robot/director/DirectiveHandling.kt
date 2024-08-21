@@ -15,8 +15,6 @@ import org.slf4j.LoggerFactory
  */
 internal interface DirectiveHandling<T> : FunctionHandling<T> {
     override val toolProxy: T
-
-    @Suppress("unused")
     private val logger: Logger get() = LoggerFactory.getLogger(DirectiveHandling::class.java)
 
     /**

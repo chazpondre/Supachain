@@ -49,12 +49,10 @@ fun <T : Any> KClass<T>.castFormat(value: String): T = when {
             ULong::class -> numericValue.toULong()
             else -> throw IllegalArgumentException("Unsupported numeric type: $this")
         } as T
-            ?: throw NumberFormatException("Invalid numeric format: $value for type $this") // Explicitly throw NumberFormatException if conversion fails
     }
 
     // Boolean Type
     this == Boolean::class -> value.toBooleanStrictOrNull() as T// Use strict conversion to avoid parsing "true"/"false" variations
-        ?: throw IllegalArgumentException("Invalid Boolean format: $value")
 
     // Date/Time Types
     this == LocalDate::class -> LocalDate.parse(value) as T
