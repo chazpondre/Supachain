@@ -134,7 +134,7 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
         val directiveInterface = API::class
         directives.putAll(directiveInterface.getDirectives().associateBy { it.name })
         return directiveInterface by { parent, name, args, returnType ->
-            Answer<Any>(returnType, scope.async { TODO() })
+            Answer<Any>(returnType, scope.async { handleDirectiveRequest(parent, name, args) })
         }
     }
 }

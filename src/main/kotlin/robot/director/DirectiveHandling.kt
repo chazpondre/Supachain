@@ -1,6 +1,8 @@
 package dev.supachain.robot.director
 
 import dev.supachain.robot.director.directive.Directive
+import dev.supachain.robot.tool.stategies.BackAndForth
+import dev.supachain.robot.tool.stategies.FillInTheBlank
 import dev.supachain.utilities.Debug
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -117,7 +119,8 @@ internal interface DirectiveHandling<T> : FunctionHandling<T> {
 
         // Handle Tool Strategy
         when (defaultProvider.toolStrategy) {
-           else -> TODO()
+            is BackAndForth -> BackAndForth(this, response, directive, name, args, callHistory)
+            is FillInTheBlank -> FillInTheBlank(this, response)
         }
     }
 }
