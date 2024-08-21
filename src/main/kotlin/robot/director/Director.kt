@@ -29,6 +29,10 @@ internal interface DirectorCore {
     val toolMap: ToolMap
     val messenger: Messenger
     var defaultSeed: Int?
+
+    val messages get() = messenger.messages()
+    val tools get() = defaultProvider.toolStrategy.getTools(this.toolMap)
+    val allTools get() = toolMap.values.toList()
 }
 
 /**
