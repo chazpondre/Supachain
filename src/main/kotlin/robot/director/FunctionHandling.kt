@@ -37,7 +37,7 @@ internal interface FunctionHandling<T> : Extensions {
      *         `BreaksRestriction` if a restriction was violated, or `Recalled` if the call has already been made.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     // For recurrent function calling
     operator fun FunctionCall.invoke(callHistory: MutableMap<String, String>): CallResult {
@@ -83,7 +83,7 @@ internal interface FunctionHandling<T> : Extensions {
      * @throws IllegalArgumentException If any argument conversion fails or an unsupported argument type is encountered.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     operator fun FunctionCall.invoke(): Any? {
         val (function, arguments, _) = info { paramMap ->
@@ -120,7 +120,7 @@ internal interface FunctionHandling<T> : Extensions {
      * @throws IllegalStateException If the tool or its function definition is not found.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     fun FunctionCall.info(argFormatter: String.(ParamMap) -> Array<Any?> = { formatArgumentsFromJson(it) }): Triple<KFunction<*>, Array<Any?>, String> {
         val tool = toolMap[name]?.function ?: throw IllegalStateException("Unknown tool call $name")

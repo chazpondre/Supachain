@@ -66,7 +66,7 @@ internal interface DirectorCore {
  *                           containing the tool functions.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 data class Director<P : Provider<*>, API : Any, ToolType : Any>(
     override var defaultProvider: P,
@@ -96,7 +96,7 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
      * @return An instance of `ExtendedClient<CLIENT, API>`, allowing for method chaining.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     internal inline fun <reified ToolInterface : ToolType> setToolset(): Director<P, API, *> = this.also {
         if (defaultProvider.toolsAllowed) {
@@ -128,7 +128,7 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
      * @return A proxy instance implementing the specified API interface.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      * */
     internal inline fun <reified API : Any> setUpDirectives(): API {
         val directiveInterface = API::class

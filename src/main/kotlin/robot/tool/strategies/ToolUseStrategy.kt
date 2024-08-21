@@ -13,7 +13,7 @@ import dev.supachain.robot.tool.ToolMap
  * when and how to call external tools or functions to enhance its responses or capabilities.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 sealed interface ToolUseStrategy {
     fun message(director: Director<*, *, *>): Message?

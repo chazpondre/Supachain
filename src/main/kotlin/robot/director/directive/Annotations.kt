@@ -10,7 +10,7 @@ import dev.supachain.robot.provider.Feature
  *
  * @property message The template for the user message.
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE)
 @Retention(AnnotationRetention.RUNTIME)
@@ -25,7 +25,7 @@ annotation class FromUser(val message: String)
  *
  * @property feature The feature to be used for this function.
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
@@ -40,7 +40,7 @@ annotation class Use(val feature: Feature)
  *
  * @property message The content of the system message.
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE)
 @Retention(AnnotationRetention.RUNTIME)

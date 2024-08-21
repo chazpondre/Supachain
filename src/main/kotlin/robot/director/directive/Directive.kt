@@ -28,7 +28,7 @@ import kotlin.reflect.jvm.jvmErasure
  * @property feature The [Feature] associated with this directive, providing context for its execution.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Serializable
 data class Directive(
@@ -58,7 +58,7 @@ data class Directive(
      * @return A mutable list of messages, combining the original messages with the extracted argument messages.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     fun getDirectiveMessages(directiveArguments: Array<Any?>): MutableList<Message> {
         return mutableListOf(formattingMessage()).apply {
@@ -94,7 +94,7 @@ data class Directive(
      * @throws IllegalArgumentException If the return type is `Unit` or unsupported.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     private fun formattingMessage(): Message {
         // Extract the KClass representing the return type (handling Deferred)

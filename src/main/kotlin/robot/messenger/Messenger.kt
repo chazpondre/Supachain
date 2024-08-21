@@ -26,7 +26,7 @@ typealias ConversationKey = Int
  * @property conversations A list of conversation histories, each being a list of `Message` objects.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 class Messenger(private val conversations: ConversationHistory = mutableListOf(mutableListOf())) {
     private var currentConversationIndex: ConversationKey = 0

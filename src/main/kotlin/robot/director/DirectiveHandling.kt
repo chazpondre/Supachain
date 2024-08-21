@@ -48,7 +48,7 @@ internal interface DirectiveHandling<T> : FunctionHandling<T> {
      * @throws Exception If any other error occurs during the processing of the directive.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     suspend
     fun Director<*, *, *>.handleDirectiveRequest(parent: String, name: String, args: Array<Any?>): String {
@@ -103,7 +103,7 @@ internal interface DirectiveHandling<T> : FunctionHandling<T> {
      * @param callHistory A mutable map to track the history of function calls and their results (used by the `BackAndForth` strategy).
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     suspend
     fun Director<*, *, *>.handleProviderMessaging(

@@ -24,7 +24,7 @@ import kotlin.reflect.KFunction
  * @constructor Creates a new `RobotTool` instance.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Serializable
 data class RobotTool(
@@ -43,7 +43,7 @@ data class RobotTool(
  * that can be used by the AI model to perform actions or access external information.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 typealias ToolMap = MutableMap<String, ToolConfig>
 
@@ -58,7 +58,7 @@ typealias ToolMap = MutableMap<String, ToolConfig>
  * parameters, and other metadata.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Serializable
 data class ToolConfig(val type: ToolType, val function: RobotTool) {
@@ -89,7 +89,7 @@ data class ToolConfig(val type: ToolType, val function: RobotTool) {
  * @return A comma-separated string containing Kotlin-like function signatures for each tool in the list.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 fun List<ToolConfig>.asKFunctionString() = joinToString(", ") { it.asKFunctionString() }
 
@@ -100,7 +100,7 @@ fun List<ToolConfig>.asKFunctionString() = joinToString(", ") { it.asKFunctionSt
  * This indicates a tool that executes a specific function based on its configuration.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Serializable
 enum class ToolType {
@@ -116,7 +116,7 @@ enum class ToolType {
  * - `REQUIRED`: The model is required to use at least one tool.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 enum class ToolChoice {
     @SerialName("auto")

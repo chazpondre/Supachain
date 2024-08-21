@@ -19,7 +19,7 @@ import dev.supachain.robot.messenger.messaging.CommonResponse
  * suspend function that returns a type of `CommonResponse`.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 internal interface Actions {
     val name: String

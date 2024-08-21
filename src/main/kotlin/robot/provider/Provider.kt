@@ -14,7 +14,7 @@ import dev.supachain.robot.tool.stategies.ToolUseStrategy
  * @param T The specific type of the `Provider` subclass, enabling fluent configuration using the `invoke` operator.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 abstract class Provider<T : Provider<T>>: Actions{
     internal abstract var maxRetries: Int
@@ -35,7 +35,7 @@ abstract class Provider<T : Provider<T>>: Actions{
      * @throws IllegalStateException If the requested feature is not supported by this AI provider.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     internal suspend inline
     fun request(feature: Feature, director: DirectorCore): CommonResponse = this.featureMap[feature]?.invoke(director)

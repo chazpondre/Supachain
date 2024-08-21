@@ -36,7 +36,7 @@ internal interface Extensions {
      * @return A list of [Directive] objects representing the Robot methods.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      * @see Directive
      */
     fun <T : Any> KClass<T>.getDirectives(): List<Directive> =
@@ -74,7 +74,7 @@ internal interface Extensions {
      * @return A list of `MethodConfig` objects representing the configuration of the annotated functions.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     fun KClass<*>.getToolMethods(): List<RobotTool> {
         val exclusions = listOf("equals", "hashCode", "toString")
@@ -101,7 +101,7 @@ internal interface Extensions {
      * @return A mutable list of [Message] objects derived from the found annotations. If no relevant annotations are present, an empty list is returned.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     private fun KFunction<*>.messages(): MutableList<Message> {
         val messages = mutableListOf<Message>().apply {
@@ -121,7 +121,7 @@ internal interface Extensions {
      * @return The `Feature` associated with this function via the `@Use` annotation, or `Feature.Chat` if no annotation is found.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     private fun KFunction<*>.feature(): Feature =
         findAnnotation<Use>()?.feature ?: Feature.Chat
@@ -146,7 +146,7 @@ internal interface Extensions {
      * @return A list of `Parameter` objects representing the function's parameters, or `null` if the `@Parameters` annotation is missing.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     private fun KFunction<*>.parameters(): List<Parameter> {
         val parametersAnnotation = findAnnotation<Parameters>()?.description ?: emptyArray()
@@ -255,7 +255,7 @@ fun String.asVarargType(parameter: Parameter): Any {
  * @return A list of strings representing the individual arguments.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 fun String.splitArguments(): List<String> {
     val args = mutableListOf<String>()
