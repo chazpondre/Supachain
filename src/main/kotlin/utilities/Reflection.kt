@@ -92,7 +92,6 @@ fun KClass<*>.getFunctions(result: MutableList<KFunction<*>> = mutableListOf()):
  *
  * @throws IllegalArgumentException If the number or types of arguments do not match the function's parameters,
  *                                  or if any argument conversion fails.
- * @throws InvocationTargetException If the invoked function throws an exception.
  * @throws IllegalAccessException If the function is not accessible (e.g., private).
  */
 operator fun KFunction<*>.invoke(vararg args: Any?) = call(* args)
@@ -111,7 +110,7 @@ sealed interface ArgumentType {
 }
 
 /**
- * Determines the type of an argument represented as a string.
+ * Determines the type of argument represented as a string.
  *
  * This function analyzes the input string and categorizes it into one of the following `ArgumentType`s:
  * - `Number`: If the string represents a valid number (integer or floating-point).

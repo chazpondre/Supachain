@@ -1,23 +1,26 @@
 package dev.supachain.robot.director
 
-import dev.supachain.robot.*
-import dev.supachain.robot.director.directive.*
-import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.director.directive.Directive
+import dev.supachain.robot.director.directive.FromSystem
+import dev.supachain.robot.director.directive.FromUser
+import dev.supachain.robot.director.directive.Use
 import dev.supachain.robot.messenger.asSystemMessage
 import dev.supachain.robot.messenger.asUserMessage
 import dev.supachain.robot.messenger.messaging.FunctionCall
+import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.Feature
 import dev.supachain.robot.tool.Parameters
+import dev.supachain.robot.tool.RobotTool
 import dev.supachain.robot.tool.Tool
 import dev.supachain.robot.tool.ToolSet
-import dev.supachain.robot.tool.*
 import dev.supachain.utilities.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
-import kotlin.reflect.full.*
+import kotlin.reflect.full.declaredFunctions
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.valueParameters
 
 /**
  * Utility interface providing helper functions for message and method processing.
@@ -52,29 +55,32 @@ internal interface Extensions {
         }
 
     /**
-     * Generates a list of `MethodConfig` objects describing the configuration of annotated Kotlin functions.
+     * Extracts a list of `RobotTool` objects representing the configuration of tool-annotated functions within the provided Kotlin class.
      *
-     * This function processes a list of Kotlin functions, extracts configuration information from relevant annotations,
-     * and constructs `MethodConfig` objects to represent them. Specifically, it looks for:
+     * These `RobotTool` objects provide information about functions designated as tools for the Director to utilize when processing directives.
      *
-     * - `@Tool` annotations: Provides the description for the method's functionality.
-     * - `@Parameters` annotations: Associates parameter names with the function's parameters.
-     * - Other annotations:  Collects the names of any other annotations present on the function (excluding `@Tool` and `@Parameters`).
+     * **Parameters:**
+     *  - **`this`**: The Kotlin class to be analyzed for tool-annotated functions.
      *
-     * For each function where the required annotations are found, a `MethodConfig` object is created, encapsulating:
-     * - The function's name.
-     * - The description from the `@Tool` annotation.
-     * - A list of parameters with their names and types, derived from the function's signature and `@Parameters` annotation.
-     * - A list of other annotation names found on the function.
+     * **Returns:**
+     *  - A list of `RobotTool` objects, each encapsulating details about a tool function, or an empty list if no tool functions are found.
      *
-     * If a function lacks the `@Tool` or `@Parameters` annotations, or if there's an issue obtaining parameter information,
-     * it is skipped, and no `MethodConfig` is generated for it.
+     * **Process:**
+     * 1. **Exclusion Handling:** Defines a list of excluded function names (`equals`, `hashCode`, `toString`).
+     * 2. **`ToolSet` Annotation Check:** Verifies if the class itself is annotated with `@ToolSet`.
+     * 3. **Function Iteration:** Iterates through all functions declared within the class.
+     * 4. **`@Tool` Annotation Check:** For each function, searches for the presence of the `@Tool` annotation.
+    - If `@Tool` is not found and the class has `@ToolSet`, the function is skipped.
+    - If `@Tool` is not found and the class does not have `@ToolSet`, the function is excluded.
+     * 5. **Excluded Function Check:** Skips functions whose names are present in the exclusion list.
+     * 6. **Parameter Extraction:** Extracts a list of `Parameter` objects representing the function's parameters.
+     * 7. **Other Annotations Gathering:** Retrieves a list of annotation names excluding `@Tool` and `@Parameters`.
+     * 8. **`RobotTool` Creation:** Creates a `RobotTool` object encapsulating the function's name, tool description (if provided), parameters, other annotations, and a reference to the function itself.
+     * 9. **Result Collection:** Adds the created `RobotTool` object to the result list.
      *
-     * @param functions A mutable list of Kotlin functions (`KFunction`) to process.
-     * @return A list of `MethodConfig` objects representing the configuration of the annotated functions.
+     * **By using this function, you can discover and extract tool functionalities declared within a Kotlin class for integration with the Director.**
      *
      * @since 0.1.0-alpha
-
      */
     fun KClass<*>.getToolMethods(): List<RobotTool> {
         val exclusions = listOf("equals", "hashCode", "toString")

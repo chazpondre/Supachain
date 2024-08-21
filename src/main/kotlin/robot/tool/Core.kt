@@ -113,7 +113,7 @@ enum class ToolType {
 /**
  * Enum representing the choices for how the AI model should use tools.
  *
- * - `AUTO`: The model can automatically decide whether or not to use a tool.
+ * - `AUTO`: The model can automatically decide whether to use a tool.
  * - `NONE`: The model will not use any tools.
  * - `REQUIRED`: The model is required to use at least one tool.
  *

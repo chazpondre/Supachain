@@ -79,7 +79,7 @@ internal data class OpenAIFunctionParams(
 /**
  * Describes the type and description of a parameter in JSON Schema format.
  *
- * This data class provides information about the type of a parameter expected by an OpenAI function,
+ * This data class provides information about the type of parameter expected by an OpenAI function,
  * as well as a description for better understanding of the parameter's purpose.
  *
  * @property type The JSON Schema type of the parameter (e.g., "string", "integer").

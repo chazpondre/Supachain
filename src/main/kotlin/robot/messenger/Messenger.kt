@@ -5,6 +5,7 @@
 ████████████████  █  █  ██  ██████████████  ████████  ██  ████████  ██    ██  ████  ██  ████████  ███  █████████████████
 ████████████████  ████  ██        ███      ████      ███        ██  ███   ███      ███        ██  ████  ████████████████
 */
+@file:Suppress("unused")
 package dev.supachain.robot.messenger
 
 import dev.supachain.robot.messenger.messaging.Message

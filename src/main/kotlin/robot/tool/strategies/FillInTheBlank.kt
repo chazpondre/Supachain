@@ -52,7 +52,7 @@ data object FillInTheBlank : ToolUseStrategy {
                     "For instance if the question was [can you add b + c?], you would say something like " +
                     "[The answer is \u200B{add(b, c)}]. If the function you want is !in Declared Functions, " +
                     "then just answer to your best ability what you know and show the results. " +
-                    "Remember to add \u200B infront of `{` like \u200B{...} instead of \${...}. " +
+                    "Remember to add \u200B in front of `{` like \u200B{...} instead of \${...}. " +
                     "Sometimes you need nested function calls. " +
                     "For instance if the question was [can you add a * b + c?], " +
                     "you can write something like [The answer is \u200B{add(multiple(a, b), c)}]. " +

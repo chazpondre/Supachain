@@ -81,22 +81,36 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
     override val toolProxy by lazy { toolProxyObject() }
     lateinit var toolProxyObject: () -> ToolType
 
-    @Suppress("unused")
     private val logger: Logger by lazy { LoggerFactory.getLogger(Director::class.java) }
 
     /**
-     * Registers a tool interface by extracting its configuration from each method and corresponding annotations.
+     * Registers a tool interface within the director, enabling access to its functionalities.
      *
-     * This function utilizes reflection to identify methods annotated with @[Tool] and @[Parameters],
-     * subsequently creating [RobotTool] objects from these methods and adding them to the toolset.
-     * The function also supports the inclusion of methods from superinterfaces.
+     * This function integrates a tool interface into the director instance by analyzing its methods and their annotations.
      *
-     * @param ToolInterface The type of the tool to be registered. This should be an interface containing
-     *                 methods annotated with `@Tool` and `@Parameters`.
-     * @return An instance of `ExtendedClient<CLIENT, API>`, allowing for method chaining.
+     * **Parameters:**
+     *  - `ToolInterface`: The type of the tool interface to be registered. This interface should be public and contain
+     *  methods annotated with `@Tool` and `@Parameters` or class labelled `@Toolset`.
+     *
+     * **Returns:**
+     *  An instance of `ExtendedClient<CLIENT, API>`, allowing for method chaining for further configuration.
+     *
+     * **Throws:**
+     *  - `IllegalArgumentException` if the provided `ToolInterface` is not publicly accessible.
+     *
+     * **Process:**
+     * 1. **Visibility Check:** Ensures the provided tool interface is public (not private).
+     * 2. **Tool Instance Creation:** Attempts to create an instance of the tool interface using a no-argument constructor.
+     * 3. **Tool Configuration Extraction:** Analyzes methods within the interface decorated with `@Tool` annotations and extracts their corresponding configurations.
+     * 4. **Logging:** Logs information about the registered toolset and its configurations for debugging purposes.
+     * 5. **Configuration Storage:** Stores the extracted tool configurations for later use by the director.
+     *
+     * **Preconditions:**
+     *  - The `defaultProvider.toolsAllowed` flag must be enabled to allow tool registration.
+     *
+     * **By registering a tool interface, you provide the director with access to its functionalities for use within your application.**
      *
      * @since 0.1.0-alpha
-
      */
     internal inline fun <reified ToolInterface : ToolType> setToolset(): Director<P, API, *> = this.also {
         if (defaultProvider.toolsAllowed) {

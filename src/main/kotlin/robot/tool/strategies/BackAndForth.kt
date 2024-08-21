@@ -48,7 +48,7 @@ internal data object BackAndForth : ToolUseStrategy {
                 when (result) {
                     Success -> continue
                     Recalled -> {
-                        interveneWithoutTools(callHistory);
+                        interveneWithoutTools(callHistory)
                         break
                     }
 
