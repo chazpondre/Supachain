@@ -17,7 +17,7 @@ import kotlinx.serialization.encoding.Encoder
  * OpenAI API, which expects function descriptions in a specific format.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 internal class OpenAIFunctionListSerializer : SerializeWrite<List<ToolConfig>> {
     override val descriptor: SerialDescriptor = ListSerializer(OpenAIFunctionSchema.serializer()).descriptor

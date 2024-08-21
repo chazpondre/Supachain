@@ -13,7 +13,7 @@ import kotlin.reflect.KSuspendFunction1
  * of tool executions.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 internal typealias ProviderFeatureRequest =
         KSuspendFunction1<DirectorCore, CommonResponse>
@@ -31,7 +31,7 @@ internal typealias ProviderFeatureRequest =
  * @return A mutable map of `Feature` to its corresponding function (`KFunction`).
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 internal fun Provider<*>.getFeatureMap(): MutableMap<Feature, ProviderFeatureRequest> = mutableMapOf(
     Chat to ::chat,

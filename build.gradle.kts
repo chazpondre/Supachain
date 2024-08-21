@@ -10,7 +10,7 @@ plugins {
     kotlin("plugin.serialization") version "2.0.0"
 }
 
-group = "ai.anything"
+group = "dev.supachain"
 version = "0.1.0-alpha"
 
 repositories {

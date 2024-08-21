@@ -20,7 +20,7 @@ object Robot {
      * @return An instance of the specified `Interface` type, acting as a proxy for interacting with the [Robot].
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     @JvmStatic
     @CompileTime

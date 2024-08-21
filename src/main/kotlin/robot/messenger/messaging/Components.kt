@@ -18,7 +18,7 @@ import kotlinx.serialization.Serializable
  * interactions with the AI provider.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Serializable
 data class Usage(

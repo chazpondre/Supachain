@@ -36,7 +36,7 @@ import kotlinx.serialization.Serializable
  * these standard roles to cover common use cases.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Serializable
 enum class Role {

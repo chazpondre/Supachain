@@ -31,7 +31,7 @@ import kotlinx.serialization.Transient
  *
  * @since 0.1.0-alpha
  * @version 1.0.0
- * @author Che Andre
+
  */
 @Serializable
 data class Message(
@@ -65,7 +65,7 @@ data class Message(
      *                actions beyond the AI model's direct capabilities.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     enum class Type {
         Image, Text, Audio, Document, Function
@@ -80,7 +80,7 @@ data class Message(
      * @property data The underlying `Message` object containing the assistant message details.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     @JvmInline
     @Serializable

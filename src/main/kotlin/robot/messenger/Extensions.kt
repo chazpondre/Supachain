@@ -14,7 +14,7 @@ import dev.supachain.robot.messenger.messaging.Message
  * @return A `Message` object representing the function message.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 fun Any?.asFunctionMessage(name: String? = null): Message = Message(Role.FUNCTION, toString(), name)
 
@@ -30,7 +30,7 @@ fun Any?.asFunctionMessage(name: String? = null): Message = Message(Role.FUNCTIO
  * @return A `Message` object representing the system message.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 fun Any.asSystemMessage(name: String? = null): Message = Message(Role.SYSTEM, toString(), name)
 
@@ -46,6 +46,6 @@ fun Any.asSystemMessage(name: String? = null): Message = Message(Role.SYSTEM, to
  * @return A `Message` object representing the user message.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 fun Any.asUserMessage(name: String? = null): Message = Message(Role.USER, toString(), name)

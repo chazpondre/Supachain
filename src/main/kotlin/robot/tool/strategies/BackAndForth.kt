@@ -16,7 +16,7 @@ import dev.supachain.robot.tool.ToolMap
  * manages call history, and intervenes when potential loops are detected.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 internal data object BackAndForth : ToolUseStrategy {
     /**
@@ -80,7 +80,7 @@ internal data object BackAndForth : ToolUseStrategy {
      * @param callMap A map containing the history of function calls and their results.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
+
      */
     private fun Director<*, *, *>.interveneWithoutTools(callMap: MutableMap<String, String>) {
         val userMessage = messenger.lastUserMessage().copy()

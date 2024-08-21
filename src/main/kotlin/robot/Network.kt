@@ -42,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
  * and the underlying HTTP client used for making requests.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 interface NetworkClient {
     /**
@@ -223,7 +223,7 @@ typealias ProxyConfig = java.net.Proxy
  * @property trustManager Custom trust manager to validate server certificates.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 class TLSConfiguration(
     val serverName: String? = null,
@@ -270,7 +270,7 @@ class TLSConfiguration(
  * @param httpsConfig Optional configuration for HTTPS connections.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 data class NetworkConfig(
     var isLogged: Boolean = false,
@@ -324,7 +324,7 @@ data class NetworkConfig(
  *   - Prints log message to output of the Json request
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 private inline fun <reified T> jsonRequest(request: T): HttpRequestBuilder.() -> Unit = {
     contentType(ContentType.Application.Json)
@@ -350,7 +350,7 @@ internal interface NetworkOwner {
  * @return An `HttpResponse` object representing the server's response.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 internal suspend inline fun<reified T: CommonRequest, reified R> NetworkOwner.post(url: String, request: T): R =
     networkClient.http

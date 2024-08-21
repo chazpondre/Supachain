@@ -26,7 +26,7 @@ import kotlinx.serialization.Serializable
  * of different AI providers.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 sealed interface CommonResponse {
     val message: Message.FromAssistant
@@ -50,7 +50,7 @@ sealed interface CommonResponse {
  *                             useful for debugging and reproducibility.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Serializable
 data class CommonChatResponse(
@@ -88,7 +88,7 @@ data class CommonChatResponse(
  *                          in the generated response. This can be useful for analyzing the model's decision-making process.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 @Serializable
 data class CommonChatChoice(

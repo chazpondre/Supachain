@@ -19,7 +19,7 @@ import dev.supachain.utilities.templates
  * functions and inserting their results into the response template.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
+
  */
 data object FillInTheBlank : ToolUseStrategy {
     /**
