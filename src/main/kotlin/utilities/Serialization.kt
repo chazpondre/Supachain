@@ -5,6 +5,9 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 /**
@@ -80,4 +83,60 @@ fun KType.toJSONSchemaType(): String = with(this.toString().substringAfterLast('
             }
         }
     }
+}
+
+/**
+ * Formats a JSON string containing function arguments into a list of typed values based on parameter metadata.
+ *
+ * This function parses the input JSON string, extracts argument values based on the provided parameter map,
+ * and converts them into the appropriate Kotlin types. It also validates that all required parameters are present
+ * and throws an exception if any are missing or if the input is not valid JSON.
+ *
+ * @param keyRankParameterMap A map containing the parameter names as keys and their corresponding indices and
+ *                           [Parameter] objects as values.
+ * @return A list of formatted argument values, where each element corresponds to the parameter at the same index in
+ *         the `keyRankParameterMap`.
+ * @throws IllegalStateException If the input string is not a valid JSON object.
+ * @throws IllegalArgumentException If an unknown parameter is provided, a parameter has an illegal type,
+ *                                  a required parameter is missing, or the JSON value type is not a primitive.
+ *
+ * @since 0.1.0-alpha
+ */
+fun String.formatArgumentsFromJson(keyRankParameterMap: Map<String, Pair<Int, Parameter>>): Array<Any?> {
+    // 1. Parse JSON: parse the arguments string into a JsonElement.
+    val json = Json.parseToJsonElement(this) as? JsonObject
+        ?: throw IllegalStateException("The provided parameters are not an JSON object. Given parameter: $this")
+
+    // Prepare result
+    val result = MutableList<Any?>(keyRankParameterMap.size) { null }
+
+    // 2. Extract Parameters: Iterates through the JSON object.
+    json.entries.forEach { (name, value) ->
+        // a. Get parameter index and parameter from keyRankParameterMap
+        val (index, parameter) = keyRankParameterMap[name]
+            ?: throw IllegalArgumentException(
+                "Provider gave an illegal parameter: $name. Available parameters: ${keyRankParameterMap.toJson()}"
+            )
+
+        // b. Get the format of the parameter
+        val kClass = parameter.type.classifier as? KClass<*>
+            ?: throw IllegalArgumentException("Parameter $name has an illegal type in: ${keyRankParameterMap.toJson()}")
+
+        // c. Get JSON value in the entry and cast as the specific to specific type
+        if (value is JsonPrimitive) {
+            result[index] = kClass.castFormat(value.content)
+        } else {
+            throw IllegalArgumentException("Invalid value type for parameter '$name': Expected primitive, but got ${value::class}")
+        }
+    }
+
+    // Verify Result
+    keyRankParameterMap.forEach { (_, rankParameter) ->  // Iterate and check each parameter
+        val (index, parameter) = rankParameter
+        if (parameter.required && result[index] == null) {
+            throw IllegalArgumentException("Missing required parameter: ${parameter.name}")
+        }
+    }
+
+    return result.toTypedArray()
 }
