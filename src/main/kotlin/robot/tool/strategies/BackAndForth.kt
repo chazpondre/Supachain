@@ -4,7 +4,7 @@ package dev.supachain.robot.tool.strategies
 import dev.supachain.robot.director.*
 import dev.supachain.robot.director.directive.Directive
 import dev.supachain.robot.messenger.asSystemMessage
-import dev.supachain.robot.messenger.messaging.CommonResponse
+import dev.supachain.robot.provider.responses.CommonResponse
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.ToolMap

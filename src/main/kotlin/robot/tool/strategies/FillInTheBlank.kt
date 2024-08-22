@@ -4,7 +4,7 @@ import dev.supachain.robot.tool.asKFunctionString
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.director.Director
 import dev.supachain.robot.director.asFunctionCall
-import dev.supachain.robot.messenger.messaging.CommonResponse
+import dev.supachain.robot.provider.responses.CommonResponse
 import dev.supachain.robot.messenger.asSystemMessage
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.ToolMap
@@ -97,7 +97,7 @@ data object FillInTheBlank : ToolUseStrategy {
      * @param response The `CommonResponse` received from the AI provider.
      */
     operator fun invoke(director: Director<*, *, *>, response: CommonResponse) = with(director) {
-        val template = response.message.content.templates()
+        val template = response.rankMessages.first().content.templates()
         val results = template.expressions.map { it.asFunctionCall()().toString() }
 
         messenger.lastMessage().content = template.fill(results)

@@ -9,13 +9,14 @@ import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.*
 import dev.supachain.robot.director.DirectorCore
 import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.messenger.messaging.*
 import dev.supachain.robot.messenger.messaging.CommonAudioRequest
 import dev.supachain.robot.messenger.messaging.CommonChatRequest
 import dev.supachain.robot.messenger.messaging.CommonEmbedRequest
 import dev.supachain.robot.messenger.messaging.CommonImageRequest
 import dev.supachain.robot.messenger.messaging.CommonModRequest
 import dev.supachain.robot.post
+import dev.supachain.robot.provider.responses.CommonResponse
+import dev.supachain.robot.provider.responses.OpenAIChatResponse
 import dev.supachain.robot.tool.ToolChoice
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
@@ -345,7 +346,7 @@ object ModerationModels {
 private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI> {
     // private extension OpenAi.Actions : NetworkOwner, Transactions
     override suspend
-    fun chat(director: DirectorCore): CommonChatResponse =
+    fun chat(director: DirectorCore): OpenAIChatResponse =
         with(self()) {
             return post(
                 "$url/v1/chat/completions", OpenAIAPI.ChatRequest(

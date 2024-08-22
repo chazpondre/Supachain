@@ -3,7 +3,7 @@
 package dev.supachain.robot.provider
 
 import dev.supachain.robot.director.DirectorCore
-import dev.supachain.robot.messenger.messaging.CommonResponse
+import dev.supachain.robot.provider.responses.CommonResponse
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
 
 /**

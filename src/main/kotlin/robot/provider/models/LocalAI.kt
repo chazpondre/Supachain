@@ -8,7 +8,7 @@ import dev.supachain.Extension
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.messenger.messaging.CommonChatRequest
-import dev.supachain.robot.messenger.messaging.CommonChatResponse
+import dev.supachain.robot.provider.responses.OpenAIChatResponse
 import dev.supachain.robot.messenger.messaging.OpenAIFunctionListSerializer
 import dev.supachain.robot.*
 import dev.supachain.robot.NetworkOwner
@@ -61,7 +61,7 @@ class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
     var topP: Double = 0.0
     var topK: Int = 0
     var maxTokens: Int = 0
-    var chatModel: String = "LocalAI-llama3-8b"
+    var chatModel: String = "meta-llama-3.1-8b-instruct"
 
     override var maxRetries: Int = 3
     override var toolsAllowed: Boolean = true
@@ -118,12 +118,9 @@ private interface LocalAIAPI : Extension<LocalAI> {
 
 // private extension LocalAI.Actions : NetworkOwner, Transactions
 private sealed interface LocalAIActions : NetworkOwner, Actions, Extension<LocalAI> {
-    override suspend fun chat(director: DirectorCore):
-            CommonChatResponse = with(self()) {
-
+    override suspend fun chat(director: DirectorCore): OpenAIChatResponse = with(self()) {
         return post(
-            "$url/v1/chat/completions",
-            LocalAIAPI.ChatRequest(
+            "$url/v1/chat/completions", LocalAIAPI.ChatRequest(
                 chatModel, director.messages,
                 temperature, topP, topK, maxTokens, director.tools
             )
