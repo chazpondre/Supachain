@@ -11,7 +11,7 @@ package dev.supachain.robot
 
 import dev.supachain.Modifiable
 import dev.supachain.Modifies
-import dev.supachain.robot.messenger.messaging.CommonRequest
+import dev.supachain.robot.provider.CommonRequest
 import dev.supachain.robot.messenger.messaging.ErrorResponse
 import dev.supachain.utilities.Debug
 import dev.supachain.utilities.toJson

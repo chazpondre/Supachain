@@ -7,7 +7,7 @@ import dev.supachain.Extension
 
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.messenger.messaging.CommonChatRequest
+import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.responses.OpenAIChatResponse
 import dev.supachain.robot.messenger.messaging.OpenAIFunctionListSerializer
 import dev.supachain.robot.*

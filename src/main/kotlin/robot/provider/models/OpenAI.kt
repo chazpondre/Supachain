@@ -9,11 +9,11 @@ import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.*
 import dev.supachain.robot.director.DirectorCore
 import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.messenger.messaging.CommonAudioRequest
-import dev.supachain.robot.messenger.messaging.CommonChatRequest
-import dev.supachain.robot.messenger.messaging.CommonEmbedRequest
-import dev.supachain.robot.messenger.messaging.CommonImageRequest
-import dev.supachain.robot.messenger.messaging.CommonModRequest
+import dev.supachain.robot.provider.CommonAudioRequest
+import dev.supachain.robot.provider.CommonChatRequest
+import dev.supachain.robot.provider.CommonEmbedRequest
+import dev.supachain.robot.provider.CommonImageRequest
+import dev.supachain.robot.provider.CommonModRequest
 import dev.supachain.robot.post
 import dev.supachain.robot.provider.responses.CommonResponse
 import dev.supachain.robot.provider.responses.OpenAIChatResponse
