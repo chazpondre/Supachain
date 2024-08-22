@@ -87,13 +87,14 @@ data class Message(
     @JvmInline
     @Serializable
     value class FromAssistant(val data: Message) {
+        val role: Role get() = data.role
         var content: String
             get() = data.content
             set(value) {
                 data.content
             }
 
-        val role: Role get() = data.role
+        // Optional
         val toolCalls: List<ToolCall>? get() = data.toolCalls
         val functionCall: FunctionCall? get() = data.functionCall
     }
