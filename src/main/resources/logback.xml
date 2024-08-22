@@ -1,6 +1,6 @@
 <configuration>
 <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-    <filter class="ai.anything.utilities.VisibilityFilter"/>
+    <filter class="dev.supachain.utilities.VisibilityFilter"/>
     <encoder>
         <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36}:%n   %replace(%msg){'(\r?\n)', '$1\   '}%n%n</pattern>
     </encoder>

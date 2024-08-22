@@ -6,6 +6,8 @@
 █████████████████████  ████  ██        ███      ███  █████████      ███  ███   ███      ███        █████████████████████
  */
 
+@file:Suppress("unused")
+
 package dev.supachain.robot.provider.responses
 
 import dev.supachain.robot.messenger.messaging.FunctionCall
