@@ -112,7 +112,7 @@ interface DirectiveHandling<T> : FunctionHandling<T> {
     ) {
         // Todo Should featureProvider
         val response = defaultProvider.request(directive.feature, this)
-        messenger(response.message.data)
+        messenger(response.rankMessages.first().data)
         logger.debug(Debug("Director"), "[Response/Provider]\n Response: {}", this)
 
         // Handle Tool Strategy

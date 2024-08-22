@@ -1,37 +1,12 @@
-/*
-░░░░░░░░░░░░░░░░░░░░░       ░░░        ░░░      ░░░       ░░░░      ░░░   ░░░  ░░░      ░░░        ░░░░░░░░░░░░░░░░░░░░░
-▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒    ▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓       ▓▓▓      ▓▓▓▓▓      ▓▓▓       ▓▓▓  ▓▓▓▓  ▓▓  ▓  ▓  ▓▓▓      ▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-█████████████████████  ███  ███  ██████████████  ██  ████████  ████  ██  ██    ████████  ██  ███████████████████████████
-█████████████████████  ████  ██        ███      ███  █████████      ███  ███   ███      ███        █████████████████████
- */
+package dev.supachain.robot.provider.responses
 
-package dev.supachain.robot.messenger.messaging
-
+import dev.supachain.robot.messenger.messaging.CommonLogProbContainer
+import dev.supachain.robot.messenger.messaging.FunctionCall
+import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.messenger.messaging.Usage
 import dev.supachain.utilities.toJson
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-
-/**
- * Sealed interface representing a common response from an AI provider.
- *
- * This interface serves as a base for different types of responses that different AI providers
- * might provide. It encapsulates the core elements of a response, including:
- *
- * - `message`: The primary message returned by the provider, typically representing the models response or output.
- * - `requestedFunctions`: A list of `FunctionCall` objects, indicating any functions or tools that the
- *    provider is requesting to be executed to fulfill the user's request.
- *
- * Specific implementations of this interface can provide additional details or structure tailored to the capabilities
- * of different AI providers.
- *
- * @since 0.1.0-alpha
-
- */
-sealed interface CommonResponse {
-    val message: Message.FromAssistant
-    val requestedFunctions: List<FunctionCall>
-}
 
 /**
  * Represents a response from an AI provider in a chat-based interaction.
@@ -53,23 +28,25 @@ sealed interface CommonResponse {
 
  */
 @Serializable
-data class CommonChatResponse(
+data class OpenAIChatResponse(
     val id: String,
     @SerialName("object") val type: String,
     val created: Int,
     val model: String,
-    val choices: List<CommonChatChoice>,
+    val choices: List<OpenAIChatChoice>,
     val usage: Usage,
     @SerialName("service_tier")
     val serviceTier: String? = null,
     val systemFingerprint: String? = null
 ) : CommonResponse {
-    override fun toString(): String = this.toJson()
     private var currentChatChoice = 0
-    override val message: Message.FromAssistant get() = choices[currentChatChoice].message
+
+    override val rankMessages: List<Message.FromAssistant> get() = choices.map { it.message }
     override val requestedFunctions: List<FunctionCall>
-        get() = (message.toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList()) +
-                listOfNotNull(message.functionCall)
+        get() = (rankMessages[0].toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList()) +
+                // This is for backwards compatibility of the deprecated OpenAI function call
+                listOfNotNull(rankMessages[0].functionCall)
+    override fun toString(): String = this.toJson()
 }
 
 /**
@@ -91,7 +68,7 @@ data class CommonChatResponse(
 
  */
 @Serializable
-data class CommonChatChoice(
+data class OpenAIChatChoice(
     val index: Int,
     val message: Message.FromAssistant,
     @SerialName("finish_reason")
@@ -101,4 +78,3 @@ data class CommonChatChoice(
 ) {
     override fun toString(): String = this.toJson()
 }
-
