@@ -360,8 +360,9 @@ internal suspend inline fun<reified T: CommonRequest, reified R> NetworkOwner.po
 // Error handling function
 internal suspend inline
 fun <reified T> HttpResponse.formatAndCheckResponse(): T {
+    val json = Json { ignoreUnknownKeys = true }
     return try {
-        body() // Parse the response
+        json.decodeFromString(bodyAsText())
     } catch (e: RedirectResponseException) {
         // Handle redirect (3xx status codes)
         throw Exception("Unexpected redirect: ${e.response.status.description}", e)
