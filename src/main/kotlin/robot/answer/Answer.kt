@@ -124,7 +124,7 @@ class Answer<T>(answerType: KType, private val deferred: Deferred<String>) {
             // Groups
             returnClass.isSubclassOf(Enum::class) -> {
                 val enumClass = returnClass as KClass<out Enum<*>>
-                enumClass.java.enumConstants.first { it.name == this } as T
+                enumClass.java.enumConstants.first { it.name == this.trim().trimEnd() } as T
             }
 
             returnClass.isSubclassOf(List::class) -> {
