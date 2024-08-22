@@ -8,8 +8,7 @@
 package dev.supachain.robot.provider
 
 import dev.supachain.robot.director.DirectorCore
-import dev.supachain.robot.messenger.messaging.CommonChatResponse
-import dev.supachain.robot.messenger.messaging.CommonResponse
+import dev.supachain.robot.provider.responses.CommonResponse
 
 /**
  * Interface defining the actions that a robot can perform.
@@ -25,7 +24,7 @@ internal interface Actions {
     val name: String
 
     suspend
-    fun chat(director: DirectorCore): CommonChatResponse =
+    fun chat(director: DirectorCore): CommonResponse =
         throw NotImplementedError(
             "$name does not currently support chat, try updating the project if $name supports this feature"
         )
