@@ -33,6 +33,7 @@ dependencies {
     implementation("org.slf4j:slf4j-api:$slf4jApi")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
 
+    // Tests
     testImplementation(kotlin("test"))
 }
 
@@ -44,3 +45,15 @@ kotlin {
     jvmToolchain(21)
 }
 
+
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        // Common dependencies for all subprojects can be declared here if needed
+    }
+}
