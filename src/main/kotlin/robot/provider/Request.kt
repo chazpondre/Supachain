@@ -7,7 +7,7 @@
  */
 @file:Suppress( "unused")
 
-package dev.supachain.robot.messenger.messaging
+package dev.supachain.robot.provider
 
 sealed interface CommonRequest
 

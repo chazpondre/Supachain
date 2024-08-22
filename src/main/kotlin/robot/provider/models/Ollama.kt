@@ -4,7 +4,7 @@ import dev.supachain.Extension
 import dev.supachain.robot.*
 import dev.supachain.robot.NetworkOwner
 import dev.supachain.robot.director.DirectorCore
-import dev.supachain.robot.messenger.messaging.CommonChatRequest
+import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.messenger.messaging.OpenAIFunctionListSerializer
 import dev.supachain.robot.post
