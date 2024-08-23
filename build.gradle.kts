@@ -6,8 +6,9 @@ val slf4jApi: String = "1.7.32"
 val kotlinxDatetime: String = "0.6.0"
 
 plugins {
-    kotlin("jvm") version "2.0.0"
-    kotlin("plugin.serialization") version "2.0.0"
+    val kotlinVersion = "2.0.20"
+    kotlin("jvm") version kotlinVersion
+    kotlin("plugin.serialization") version kotlinVersion
 }
 
 group = "dev.supachain"
