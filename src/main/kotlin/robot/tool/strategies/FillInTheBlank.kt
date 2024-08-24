@@ -84,7 +84,8 @@ data object FillInTheBlank : ToolUseStrategy {
                     "there isn't some kind of sum/add function. Just guess the answer" +
                     "I.e `whats 2 - 1` you would say `The answer is 1` be guessing and not templating. " +
                     "In all Kotlin code, strictly adhere to using positional arguments when calling functions. " +
-                    "Do not use named arguments (e.g., `myFunction(arg2 = \"value\")`)."
+                    "Do not use named arguments e.g., You cannot write `myFunction(arg2 = \"value\")`. " +
+                    "You must not write named arguments, i.e Do not write `taxRate(amount = 90000.5)`."
                     ).asSystemMessage()
 
     /**
