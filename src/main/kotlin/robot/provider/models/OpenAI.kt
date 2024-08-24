@@ -62,7 +62,6 @@ import kotlinx.serialization.Serializable
  * @property toolsAllowed Indicates whether the use of tools is permitted.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  */
 @Suppress("unused")
 class OpenAI : Provider<OpenAI>(), OpenAIActions {
@@ -138,7 +137,6 @@ private interface OpenAIAPI {
      * @property user A unique identifier representing your end-user
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
      */
     @Serializable
     data class ChatRequest(
@@ -181,7 +179,6 @@ private interface OpenAIAPI {
      *
      * @since 0.1.0-alpha
      * @version 1.0.0
-     * @author Che Andre
      */
     @Serializable
     data class EmbedRequest(
@@ -200,7 +197,6 @@ private interface OpenAIAPI {
      * @param model The model to use for moderation. Defaults to "text-moderation-latest"
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
      */
     @Serializable
     data class ModerationRequest(
@@ -219,7 +215,6 @@ private interface OpenAIAPI {
      * @param prompt An optional text to guide the model's style or continue a previous audio segment. The prompt should match the audio language.
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
      */
     @Serializable
     data class WriteAudioRequest(
@@ -242,7 +237,6 @@ private interface OpenAIAPI {
      * @param user A unique identifier representing your end-user, which can help to monitor and detect abuse
      *
      * @since 0.1.0-alpha
-     * @author Che Andre
      */
     @Serializable
     data class WriteImageRequest(
@@ -269,7 +263,6 @@ private interface OpenAIAPI {
  * categorized by their primary functions (chat, embedding, moderation).
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  */
 object OpenAIModels {
     /** Models suitable for chat completions. */
@@ -341,7 +334,6 @@ object ModerationModels {
  * typically by making HTTP requests to the OpenAI API endpoints.
  *
  * @since 0.1.0-alpha
- * @author Che Andre
  */
 private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI> {
     // private extension OpenAi.Actions : NetworkOwner, Transactions
