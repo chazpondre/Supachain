@@ -102,7 +102,7 @@ data class Directive(
         } ?: throw IllegalArgumentException("Unexpected return type: $returnType. Expecting Answer<SomeType>")
 
         // Handle Single and Multiple
-        return ("[Required Format] You must format your answer as follows: \n\n# Format:  " +
+        return ("[Required Format] You must format your answer as follows:  " +
                 (if (returnClass.isSubclassOf(Collection::class))
                     collectionFormatRules() else returnClass.formatRules())
                 )

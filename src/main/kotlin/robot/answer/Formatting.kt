@@ -35,7 +35,7 @@ private const val ChoiceRules = "You cannot say any thing more than that. Choose
 
 // Enum
 private const val EnumRulesHeader = " Answer strictly in the following format: one of"
-private const val BooleanRulesHeader = "$EnumRulesHeader [true, false]. $ChoiceRules"
+private const val BooleanRulesHeader = "$EnumRulesHeader [true, false]. Do not include any symbols or spaces, you answer is a Boolean. Either `true` or `false`. $ChoiceRules"
 
 // Date Time
 private const val LocalDateRules = "Answer strictly in the following format `yyyy-MM-dd`. Write formatted answer only."
@@ -95,6 +95,7 @@ fun KClass<*>.formatRules(): String = when {
         append("\n $EnumRulesHeader [")
         this@formatRules.java.enumConstants.joinTo(this, ", ") { it.toString() }
         append("]. $ChoiceRules")
+        append(". Do not include any symbols or spaces, you answer is an Enum.")
     }
 
     // Handle date/time types
