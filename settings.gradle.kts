@@ -2,9 +2,10 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.5.0"
 }
 
+file("examples").listFiles()?.forEach { dir ->
+    if (dir.isDirectory) include(":examples:${dir.name}")
+}
 
-include(":examples:1Simple")
-include(":examples:2StructuredOutputDaysOfTheWeek")
 include(":")
 rootProject.name = "Supachain"
 
