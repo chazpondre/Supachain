@@ -7,21 +7,59 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Dosis:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dosis:wght@500&family=Montserrat:wght@100..900&display=swap" rel="stylesheet">
 
     <style>
-
-        .header {
-            font-family: "Dosis", sans-serif;
-            font-optical-sizing: auto;
-            font-weight: 500;
-            font-style: normal;
-            font-size: 9em;
-            line-height: 1.1em;
-            color: #dedede;
+        p {
+            margin: 20px 0;
+            display: block;
         }
 
+        h2 {
+            font-size: 2em;
+            display: block;
+            padding: 0.25em 0;
+            line-height: 1.7em;
+            font-family: Montserrat, sans-serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        a, a:visited, a:hover, a:active {
+            color: white;
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            margin: 3em 0;
+            background-image: linear-gradient(270deg, rgb(145 56 255) 4.25%, rgb(255 56 169) 51.61%, rgb(245 119 102) 80.43%, rgb(255 250 229) 93.03%);
+        }
+
+        blockquote {
+            background: #191919;
+            padding: 25px;
+            border-radius: 20px;
+            box-sizing: border-box;
+            margin: 40px;
+        }
+
+        #hero {
+            background-image: url(1.png);
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position-x: 85%;
+            background-blend-mode: darken;
+            animation: hue-rotation 40s linear infinite;
+        }
+
+        code {
+            background-color: #121212;
+            border-radius: 5px;
+            padding: 1em;
+            font-size: 1em;
+
+        }
 
         html, body {
             width: 100%;
@@ -29,9 +67,9 @@
             margin: 0;
             padding: 0;
             font-size: 8px;
-            background-color: black;
-            overflow: hidden;
-            color: darkgray;
+            background-color: #0a0a0e;
+            overflow-x: hidden;
+            color: #e8e8e8;
         }
 
         input {
@@ -60,6 +98,15 @@
         ul {
             margin-top: 0;
             margin-bottom: 15px;
+        }
+
+        @keyframes hue-rotation {
+            0% {
+                filter: hue-rotate(360deg);
+            }
+            100% {
+                filter: hue-rotate(0deg);
+            }
         }
     </style>
 </head>

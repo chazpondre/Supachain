@@ -6,6 +6,7 @@ file("examples").listFiles()?.forEach { dir ->
     if (dir.isDirectory) include(":examples:${dir.name}")
 }
 
+include(":docBuilder")
 include(":")
 rootProject.name = "Supachain"
 
