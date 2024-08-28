@@ -22,12 +22,12 @@ fun Element.docs() {
                 val parsedTree = MarkdownParser(flavour).buildMarkdownTreeFromString(src)
                 val html = HtmlGenerator(src, parsedTree, flavour).generateHtml()
 
-                "div" {
-                    this as HTMLDivElement
+                div {
                     docsStyle()
                     className = "Docs"
                     innerHTML = html
-                }
+                }.applyHighlighting()
+
                 null
             }
         } else {
@@ -39,4 +39,45 @@ fun Element.docs() {
             println("Fetch error: $error")
             null
         }
+}
+
+fun Element.applyHighlighting() {
+    val codeBlocks = getElementsByClassName("language-kotlin")
+    for (i in 0 until codeBlocks.length) {
+        val element = codeBlocks.item(i) as? HTMLElement ?: throw Error("Element not found")
+        element.innerHTML = tokenizeKotlinCode(element.textContent ?: "")
+    }
+}
+
+fun tokenizeKotlinCode(code: String): String {
+    val keywordPattern = Regex("\\b(val|var|fun|if|else|for|while|return|import|package|interface|private|enum|class)\\b")
+    val typePattern = Regex("\\b(String|Int|Boolean|List|Map|Set|Any|Unit)\\b")
+    val stringPattern = Regex("\".*?\"")
+    val commentPattern = Regex("\\w+:?//.*?$|/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL)
+
+    val singleLineCommentPattern = Regex("""(\w+:)?(//[^\n]+)""")
+
+    var highlightedCode = code
+
+    highlightedCode = stringPattern.replace(highlightedCode) {
+        """<span class="string">${it.value}</span>"""
+    }
+
+    highlightedCode = keywordPattern.replace(highlightedCode) {
+        """<span class="keyword">${it.value}</span>"""
+    }
+
+    highlightedCode = typePattern.replace(highlightedCode) {
+        """<span class="type">${it.value}</span>"""
+    }
+
+    highlightedCode = singleLineCommentPattern.replace(highlightedCode) { matchResult ->
+        if (matchResult.groups.mapNotNull { it }.any {
+                it.value.contains("(\\w+:)".toRegex())
+            }
+        ) matchResult.value
+        else """<span class="comment">${matchResult.value}</span>"""
+    }
+
+    return highlightedCode
 }
