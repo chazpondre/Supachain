@@ -31,6 +31,8 @@ dependencies {
 
     // Serializer
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationJson")
+
+    // Log
     implementation("org.slf4j:slf4j-api:$slf4jApi")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
 
@@ -48,13 +50,15 @@ kotlin {
 
 
 subprojects {
-    apply(plugin = "org.jetbrains.kotlin.jvm")
+    if (project.parent?.name == "examples") {
+        apply(plugin = "org.jetbrains.kotlin.jvm")
+    }
 
     repositories {
         mavenCentral()
     }
 
     dependencies {
-        // Common dependencies for all subprojects can be declared here if needed
+
     }
 }
