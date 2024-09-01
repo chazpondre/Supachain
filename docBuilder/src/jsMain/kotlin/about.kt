@@ -37,9 +37,9 @@ fun Element.aboutSupachain() {
         aboutStyle()
         h2 { +"The Library" }
         p {
-            +"""Supachain is foundational open-source framework for building AI applications written in Kotlin. 
+            +"""Supachain is foundational open-source framework for building AI applications with Kotlin. 
             | The library intends to make it easier for individuals and businesses to use Large Language Models (LLMs) 
-            | to make there businesses autonomous. Supachain trys create a new class of businesses, we call
+            | and to make their businesses autonomous. Supachain trys create a new class of businesses, we call
             | mostly autonomous businesses (MABs) and aims to provide tools that help reduce workloads, while keeping
             | a human in the loop for certain workflows. 
          """.trimMargin()

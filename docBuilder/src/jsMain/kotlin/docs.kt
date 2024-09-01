@@ -14,14 +14,14 @@ fun HTMLDivElement.docsStyle() = style.apply {
 }
 
 fun Element.docs() {
-    window.fetch("0.md").then { response ->
+    window.fetch("1.getting-started.md").then { response ->
         if (response.ok) {
             response.text().then { markdownText ->
-                val src = markdownText.toString()
                 val flavour = CommonMarkFlavourDescriptor()
-                val parsedTree = MarkdownParser(flavour).buildMarkdownTreeFromString(src)
-                val html = HtmlGenerator(src, parsedTree, flavour).generateHtml()
+                val parsedTree = MarkdownParser(flavour).buildMarkdownTreeFromString(markdownText)
+                val html = HtmlGenerator(markdownText, parsedTree, flavour).generateHtml()
 
+                println("HTML: $html")
                 div {
                     docsStyle()
                     className = "Docs"
@@ -49,8 +49,10 @@ fun Element.applyHighlighting() {
     }
 }
 
-fun tokenizeKotlinCode(code: String): String {
-    val keywordPattern = Regex("\\b(val|var|fun|if|else|for|while|return|import|package|interface|private|enum|class)\\b")
+fun tokenizeKotlinCode(codeInput: String): String {
+    val code = codeInput.replace("<", "&lt;").replace(">", "&gt;")
+    val keywordPattern =
+        Regex("(?<!<[^>]*\\b)(val|var|fun|if|else|for|while|return|import|package|interface|private|enum|class)\\b(?![^<]*>)")
     val typePattern = Regex("\\b(String|Int|Boolean|List|Map|Set|Any|Unit)\\b")
     val stringPattern = Regex("\".*?\"")
     val commentPattern = Regex("\\w+:?//.*?$|/\\*.*?\\*/", RegexOption.MULTILINE)
@@ -64,6 +66,7 @@ fun tokenizeKotlinCode(code: String): String {
     }
 
     highlightedCode = keywordPattern.replace(highlightedCode) {
+        if (it.value.contains("<")) it.value
         """<span class="keyword">${it.value}</span>"""
     }
 
@@ -78,6 +81,8 @@ fun tokenizeKotlinCode(code: String): String {
         ) matchResult.value
         else """<span class="comment">${matchResult.value}</span>"""
     }
+
+    println(highlightedCode)
 
     return highlightedCode
 }
