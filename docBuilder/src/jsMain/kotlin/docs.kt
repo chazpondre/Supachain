@@ -53,7 +53,7 @@ fun tokenizeKotlinCode(code: String): String {
     val keywordPattern = Regex("\\b(val|var|fun|if|else|for|while|return|import|package|interface|private|enum|class)\\b")
     val typePattern = Regex("\\b(String|Int|Boolean|List|Map|Set|Any|Unit)\\b")
     val stringPattern = Regex("\".*?\"")
-    val commentPattern = Regex("\\w+:?//.*?$|/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL)
+    val commentPattern = Regex("\\w+:?//.*?$|/\\*.*?\\*/", RegexOption.MULTILINE)
 
     val singleLineCommentPattern = Regex("""(\w+:)?(//[^\n]+)""")
 

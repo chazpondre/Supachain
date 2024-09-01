@@ -1,4 +1,3 @@
-import kotlinx.browser.document
 import kotlinx.dom.appendElement
 import kotlinx.dom.appendText
 import org.w3c.dom.*
