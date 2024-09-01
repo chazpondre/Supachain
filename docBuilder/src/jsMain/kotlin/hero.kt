@@ -1,8 +1,6 @@
-import kotlinx.dom.appendElement
 import kotlinx.dom.appendText
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLDivElement
-import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLSpanElement
 
 fun HTMLDivElement.heroRoundedBox() = style.apply {

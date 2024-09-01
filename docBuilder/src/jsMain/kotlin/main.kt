@@ -6,7 +6,6 @@ fun main() {
     body.build()
 }
 
-
 fun Element.build() {
     hero()
     aboutSupachain()
