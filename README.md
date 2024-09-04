@@ -346,3 +346,53 @@ graph TD
         User -->|activates| Directive
     end
 ```
+
+## 3.0 Mixture of Concepts
+
+In Supachain, a "Mixture of Concepts" (MoC) allows you to combine different AI-driven tasks into a single cohesive process. This approach is similar to the "Mixture of Experts" (MoE) model but simplifies the setup by requiring only one agent to handle various tasks. This single-agent model leverages Supachain’s modular design to perform complex workflows efficiently.
+
+### 3.1 Building a Pro's and Con's System
+
+You can create a system to evaluate the pros and cons of a specific issue using Supachain’s concept chaining capabilities. This system allows you to combine different AI models to generate a comprehensive answer. Here's an example of how to implement such a system:
+
+```kotlin
+fun main() {
+    Debug show "Messenger"
+    val robot = Robot<Ollama, Chat, NoTools>()
+
+    val pros = concept { "Show me all the pros for this issue: $inputted" }
+    val cons = concept { "Show me all the cons for this issue: $inputted" }
+
+    val summary = mix {
+        "Show the pros and cons and weigh out the answers. " +
+                "If you had a third holistic perspective share it. Pros/Cons: $inputted"
+    }
+
+    val answer = pros + cons to summary
+
+    val question = "Should I own a macbook?"
+
+    val generatedAnswer = (answer using { robot.chat(it).await() }).produce(question)
+
+    println(generatedAnswer)
+}
+```
+
+#### Explanation
+
+1. **Define Concepts:**
+   - `pros` and `cons` are concepts that gather the pros and cons for a given issue, respectively. They format the prompt accordingly.
+
+2. **Create Summary:**
+   - `summary` combines the results from the `pros` and `cons` concepts and adds a holistic perspective.
+
+3. **Generate Answer:**
+   - Combine `pros` and `cons` to form the final answer using the `summary` concept.
+
+4. **Ask a Question:**
+   - The `question` variable specifies the issue at hand.
+
+5. **Produce Answer:**
+   - Use the `answer` combined with `robot.chat()` to generate a response based on the question.
+
+This example demonstrates how to integrate multiple AI-driven concepts into a single workflow to analyze and respond to complex questions.
