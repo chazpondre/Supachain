@@ -6,36 +6,23 @@ package dev.supachain.mixer
 █████████████  █  █  █████  ██████  ██  ████████████  █████  ████  ██  ████████  ████  ██  ███  ██████  ████████████████
 █████████████  ████  ██        ██  ████  ███████████  █████  ████  ██        ███      ███  ████  █████  ████████████████
 
- Mix Theory (based on GraphIQ Paper)
- Rules:
- 0. It is a theory of mixing functions
- 1. All values exists in space and time
- 2. Values can be sampled with samplers.
- 3. When a value is sampled matters, because a value changes.
- 4. Changes to values occur at some event in time
- 5. Every value exists in some type of space
- 6. Values in a certain spaces can be grouped
- 7. Grouped spaces can be mixed into one space
- 8. Samples can be timed, this timing is known as SampleTime.
- 9. Sample Times are organized in the TimeGraph
- 10. We can run disjoint samplers together.
- 11. Changing type spaces for functions are possible with cross-functions
- 12. Sampling can be limited with limiters
-
-The following is an implementation of a small subset of Mix Theory
  */
 
 /**
- * A Space stores relationship of a type of space and the value.
- * This class is decorative and does not introduce boxing. It gives the compiler
- * semantic understand so that type inference can work when paired with the f
- * function
+ * Represents a space in which a value exists and can be transformed. The Sample
+ * class is used to encapsulate a value within a specific context or "space," enabling
+ * transformations and operations within that context.
  *
- * @param T the type of the value contained within the `Space`
- * @property value the actual value encapsulated within the `Space`
+ * Note:
+ * This class is decorative and does not introduce boxing. It gives the compiler
+ * semantic understand so that type inference can work when paired with the mix and concept
+ * functions
+ *
+ * @param T the type of the value contained within the `Sample`
+ * @property value the actual value encapsulated within the `Ssmple`
  */
 @JvmInline
-value class SampleSpace<T>(val value: T)
+value class Sample<T>(val value: T)
 
 /**
  * A `Transformation` is a function that garauntees that its input in some space of T and outputs.
@@ -49,21 +36,31 @@ typealias MixConcept<T> = Input<T>.() -> T
 typealias MixConcepts<T> = InputAndResults<T>.() -> T
 //List<SampleSpace<T>>.() -> T
 
+/**
+ * Encapsulates an input value within a Space. This class provides type safety and
+ * ensures that transformations are applied within the correct context.
+ */
 @JvmInline
-value class Input<T>(private val sampleSpace: SampleSpace<T>){
-    val inputted get() = sampleSpace.value
-}
-
-@JvmInline
-value class InputAndResults<T>(private val value: Pair<T, List<SampleSpace<T>>>) {
-    constructor(input: T, results: List<SampleSpace<T>>) : this(Pair(input, results))
-    val inputted: T get() = value.first
-    val results: List<SampleSpace<T>> get() = value.second
+value class Input<T>(private val sample: Sample<T>){
+    val inputted get() = sample.value
 }
 
 /**
- * A `Mixer` is responsible for combining multiple `Space` inputs into a single output of type [T].
- * The `Mixer` can be applied multiple times to manage the flow and aggregation of data within a single type space.
+ * Represents both an input value and a list of results from previous transformations.
+ * This class is used when a series of transformations are applied, and the intermediate
+ * results need to be tracked.
+ */
+@JvmInline
+value class InputAndResults<T>(private val value: Pair<T, List<Sample<T>>>) {
+    constructor(input: T, results: List<Sample<T>>) : this(Pair(input, results))
+    val inputted: T get() = value.first
+    val results: List<Sample<T>> get() = value.second
+}
+
+/**
+ * A `Mixer` is responsible for combining multiple `Sample` inputs into a single output of type [T].
+ * It applies a transformation function (`MixConcept`) and manages how many times the function should be
+ * applied (`remixCount`).
  *
  * @param T the type of value being mixed
  * @property conceptualize the mixing function that combines inputs into a single output
@@ -77,19 +74,21 @@ value class Mixer<T>(val data: Pair<MixConcepts<T>, Int>) {
     fun copyIncreased(): Mixer<T> = Mixer(Pair(conceptualize, remixCount + 1))
     fun copyTo(value: Int): Mixer<T> = Mixer(Pair(conceptualize, value))
 
-    internal fun downMix(input: T, samples: List<SampleSpace<T>>, producer: (T) -> T): List<SampleSpace<T>> {
+    internal fun downMix(input: T, samples: List<Sample<T>>, producer: (T) -> T): List<Sample<T>> {
         val mainMix = producer(InputAndResults(input, samples).conceptualize())
 
         // Reapplications of mixer
-        var subInput = listOf(SampleSpace(mainMix))
-        repeat(remixCount) { subInput = listOf(SampleSpace(producer(InputAndResults(input, subInput).conceptualize()))) }
+        var subInput = listOf(Sample(mainMix))
+        repeat(remixCount) { subInput = listOf(Sample(producer(InputAndResults(input, subInput).conceptualize()))) }
 
         return subInput
     }
 }
 
 /**
- * A `TransformEvent` is a type of `Sample` occurs when an output value from a transformation has been produce
+ * A SingleTrack represents a single transformation applied to a Sample. It
+ * ensures that the transformation is type-safe and correctly aligned within the
+ * context of the Mix.
  *
  * @param T the type of space the transform occurs
  * @property alignment the transformation function applied to get the new transformed sample
@@ -97,11 +96,12 @@ value class Mixer<T>(val data: Pair<MixConcepts<T>, Int>) {
 @JvmInline
 value class SingleTrack<T>(private val alignment: MixConcept<T>) : Mix<T> {
     override fun invoke(input: T, producer: (T) -> T): T =
-        producer(alignment(Input(SampleSpace(input))))
+        producer(alignment(Input(Sample(input))))
 }
 
 /**
- * A `MixEvent` is a type of `Sample` that occurs when multiple `Sample` are ready to be mixed into one `Sample`.
+ * A MultiTrack is a type of Mix that combines multiple Sample instances into one,
+ * applying a series of transformations defined by a list of mixers.
  *
  * @param T the type of space the mix occurs
  * @property samples a list of `Sample` instances to be mixed
@@ -128,14 +128,16 @@ value class MultiTrack<T>(val data: Triple<List<Mix<T>>, MutableList<Mixer<T>>, 
     internal fun add(mixer: Mixer<T>) = mixers.add(mixer)
 
     override fun invoke(input: T, producer: (T) -> T): T {
-        val initialInput: List<SampleSpace<T>> = alignments.map { SampleSpace(it(input, producer)) }
+        val initialInput: List<Sample<T>> = alignments.map { Sample(it(input, producer)) }
         return mixers.fold(initialInput) { acc, mixer -> mixer.downMix(input, acc, producer) }.last().value
     }
 }
 
 
 /**
- * All `SampleEvent` operate within the same type space to maintain consistency in data flow.
+ * The Mix interface defines a contract for any type of transformation or mixing operation
+ * within Mix Theory. Implementations of Mix must provide a way to apply the transformation
+ * to an input value and produce an output.
  *
  * @param T the type of value contained within the `Sample`
  */
@@ -171,9 +173,9 @@ sealed interface Mix<T> {
 operator fun <T> Mix<T>.plus(other: Mix<T>): Group<T> = Group(this, other)
 
 /**
- * Represents a collection of `Samples`.
- * These `Samples` are considered disjoint, meaning they are independent of each other but
- * still operate within the same type space.
+ * Represents a collection of Mix instances that are considered disjoint but operate
+ * within the same type space. A Group allows you to combine multiple independent
+ * mixes into one, maintaining the flow of data.
  *
  * @param T the type of the values within the samples
  * @property list a list of grouped samples
@@ -232,6 +234,9 @@ fun <S> mix(fn: MixConcepts<S>) = Mixer(Pair(fn, 0))
 infix fun <T> Mix<T>.using(producer: (T) -> T) =
     Producer(this, producer)
 
+/**
+ * The Producer class is used to execute a Mix operation with a specific producer function.
+ */
 @JvmInline
 value class Producer<T>(val data: Pair<Mix<T>, (T) -> T>) {
     constructor(mix: Mix<T>, producer: (T) -> T) : this(Pair(mix, producer))
