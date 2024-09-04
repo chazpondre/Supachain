@@ -1,3 +1,4 @@
+package dev.supachain.mixer
 /*
 ░░░░░░░░░░░░░  ░░░░  ░░        ░░  ░░░░  ░░░░░░░░        ░░  ░░░░  ░░        ░░░      ░░░       ░░░  ░░░░  ░░░░░░░░░░░░░
 ▒▒▒▒▒▒▒▒▒▒▒▒▒   ▒▒   ▒▒▒▒▒  ▒▒▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒
@@ -34,7 +35,7 @@ The following is an implementation of a small subset of Mix Theory
  * @property value the actual value encapsulated within the `Space`
  */
 @JvmInline
-value class Space<T>(val value: T)
+value class SampleSpace<T>(val value: T)
 
 /**
  * A `Transformation` is a function that garauntees that its input in some space of T and outputs.
@@ -43,42 +44,61 @@ value class Space<T>(val value: T)
  *
  * @param T the type of the value produced by the transformation
  */
-typealias Transformation<T> = (Space<T>) -> T
+typealias MixConcept<T> = Input<T>.() -> T
 
-typealias Mix<T> = (List<Space<T>>) -> T
+typealias MixConcepts<T> = InputAndResults<T>.() -> T
+//List<SampleSpace<T>>.() -> T
+
+@JvmInline
+value class Input<T>(private val sampleSpace: SampleSpace<T>){
+    val inputted get() = sampleSpace.value
+}
+
+@JvmInline
+value class InputAndResults<T>(private val value: Pair<T, List<SampleSpace<T>>>) {
+    constructor(input: T, results: List<SampleSpace<T>>) : this(Pair(input, results))
+    val inputted: T get() = value.first
+    val results: List<SampleSpace<T>> get() = value.second
+}
 
 /**
  * A `Mixer` is responsible for combining multiple `Space` inputs into a single output of type [T].
  * The `Mixer` can be applied multiple times to manage the flow and aggregation of data within a single type space.
  *
  * @param T the type of value being mixed
- * @property mix the mixing function that combines inputs into a single output
- * @property count the number of times the mixing operation should be applied
+ * @property conceptualize the mixing function that combines inputs into a single output
+ * @property remixCount the number of times the mixing operation should be applied
  */
 @JvmInline
-value class Mixer<T>(val data: Pair<Mix<T>, Int>) {
-    val mix: (List<Space<T>>) -> T get() = data.first
-    val count: Int get() = data.second
+value class Mixer<T>(val data: Pair<MixConcepts<T>, Int>) {
+    val conceptualize: MixConcepts<T> get() = data.first
+    internal val remixCount: Int get() = data.second
 
-    fun copyIncreased(): Mixer<T> = Mixer(Pair(mix, count + 1))
-    fun copyTo(value: Int): Mixer<T> = Mixer(Pair(mix, value))
+    fun copyIncreased(): Mixer<T> = Mixer(Pair(conceptualize, remixCount + 1))
+    fun copyTo(value: Int): Mixer<T> = Mixer(Pair(conceptualize, value))
+
+    internal fun downMix(input: T, samples: List<SampleSpace<T>>, producer: (T) -> T): List<SampleSpace<T>> {
+        val mainMix = producer(InputAndResults(input, samples).conceptualize())
+
+        // Reapplications of mixer
+        var subInput = listOf(SampleSpace(mainMix))
+        repeat(remixCount) { subInput = listOf(SampleSpace(producer(InputAndResults(input, subInput).conceptualize()))) }
+
+        return subInput
+    }
 }
-
-/**
- * All `SampleEvent` operate within the same type space to maintain consistency in data flow.
- *
- * @param T the type of value contained within the `Sample`
- */
-sealed interface Sampler<T>
 
 /**
  * A `TransformEvent` is a type of `Sample` occurs when an output value from a transformation has been produce
  *
  * @param T the type of space the transform occurs
- * @property sampler the transformation function applied to get the new transformed sample
+ * @property alignment the transformation function applied to get the new transformed sample
  */
 @JvmInline
-value class TransformEvent<T>(val sampler: Transformation<T>) : Sampler<T>
+value class SingleTrack<T>(private val alignment: MixConcept<T>) : Mix<T> {
+    override fun invoke(input: T, producer: (T) -> T): T =
+        producer(alignment(Input(SampleSpace(input))))
+}
 
 /**
  * A `MixEvent` is a type of `Sample` that occurs when multiple `Sample` are ready to be mixed into one `Sample`.
@@ -88,18 +108,67 @@ value class TransformEvent<T>(val sampler: Transformation<T>) : Sampler<T>
  * @property mixers a mutable list of `Mixer` instances that will be applied sequentially to the samples
  */
 @JvmInline
-value class MixEvent<T>(val data: Pair<List<Sampler<T>>, MutableList<Mixer<T>>>) : Sampler<T> {
-    constructor(samplers: List<Sampler<T>>, mixer: Mixer<T>) : this(Pair(samplers, mutableListOf(mixer)))
+value class MultiTrack<T>(val data: Triple<List<Mix<T>>, MutableList<Mixer<T>>, Int>) : Mix<T> {
+    constructor(mixes: List<Mix<T>>, mixer: Mixer<T>, memLimit: Int = 10) : this(
+        Triple(
+            mixes,
+            mutableListOf(mixer),
+            memLimit
+        )
+    )
 
-    val samplers: List<Sampler<T>> get() = data.first
+    val alignments: List<Mix<T>> get() = data.first
     val mixers: MutableList<Mixer<T>> get() = data.second
+    val memoryLimit: Int get() = data.third
 
     internal fun expandLast() = mixers.apply {
         this[lastIndex] = last().copyIncreased()
     }
 
     internal fun add(mixer: Mixer<T>) = mixers.add(mixer)
+
+    override fun invoke(input: T, producer: (T) -> T): T {
+        val initialInput: List<SampleSpace<T>> = alignments.map { SampleSpace(it(input, producer)) }
+        return mixers.fold(initialInput) { acc, mixer -> mixer.downMix(input, acc, producer) }.last().value
+    }
 }
+
+
+/**
+ * All `SampleEvent` operate within the same type space to maintain consistency in data flow.
+ *
+ * @param T the type of value contained within the `Sample`
+ */
+sealed interface Mix<T> {
+    operator fun invoke(input: T, producer: (T) -> T): T
+
+    /**
+     * Sequentially mixes a `Sample` using a `Mix` function, allowing for the application of multiple `Mixers`.
+     * If the same `Mix` function is applied consecutively, the count of applications is incremented,
+     * ensuring the correct flow of data.
+     *
+     * @param S the type of the values within the samples
+     * @param mix the mixing function to apply
+     * @return a `SampleMix` representing the mixed result of the sample
+     */
+    infix fun to(mixer: Mixer<T>): Mix<T> = when (this) {
+        is MultiTrack ->
+            if (mixers.last().conceptualize == mixer.conceptualize) apply { expandLast() }
+            else apply { add(mixer) }
+
+        is SingleTrack -> MultiTrack(listOf(this), mixer)
+    }
+}
+
+/**
+ * Combines two `Mixtures` into an `Group`. This operation creates a disjoint list of independent mixes
+ * that operate within the same type.
+ *
+ * @param S the type of the values within the samples
+ * @param other the sample to combine with
+ * @return an `Unmixed` collection containing both samples
+ */
+operator fun <T> Mix<T>.plus(other: Mix<T>): Group<T> = Group(this, other)
 
 /**
  * Represents a collection of `Samples`.
@@ -110,46 +179,22 @@ value class MixEvent<T>(val data: Pair<List<Sampler<T>>, MutableList<Mixer<T>>>)
  * @property list a list of grouped samples
  */
 @JvmInline
-value class Group<T>(val list: List<Sampler<T>>) {
-    constructor(vararg samplers: Sampler<T>) : this(listOf(*samplers))
-}
+value class Group<T>(val list: List<Mix<T>>) {
+    constructor(vararg mixes: Mix<T>) : this(listOf(*mixes))
 
-// DSL
-// Grouping
-/**
- * Combines two `Samples` into an `Group`. This operation creates a disjoint list of independent samplers
- * that operate within the same type.
- *
- * @param S the type of the values within the samples
- * @param other the sample to combine with
- * @return an `Unmixed` collection containing both samples
- */
-operator fun <S> Sampler<S>.plus(other: Sampler<S>): Group<S> = Group(this, other)
+    operator fun plus(other: Mix<T>): Group<T> = Group(* list.toTypedArray(), other)
 
-// Mixing
-/**
- * States intent to mix a `Group` of `Sampler's` using a `Mix` function.
- * This operation aggregates the outputs of the independent `Sampler` into a single output,
- * maintaining the flow of data from multiple inputs to a unified output.
- *
- * @param S the type of the values within the samples
- * @param mix the mixing function to apply
- * @return a `SampleMix` representing the mixed result of the samples
- */
-infix fun <S> Group<S>.to(mix: Mixer<S>): Sampler<S> = MixEvent(this.list, mix)
-
-/**
- * Sequentially mixes a `Sample` using a `Mix` function, allowing for the application of multiple `Mixers`.
- * If the same `Mix` function is applied consecutively, the count of applications is incremented,
- * ensuring the correct flow of data.
- *
- * @param S the type of the values within the samples
- * @param mix the mixing function to apply
- * @return a `SampleMix` representing the mixed result of the sample
- */
-infix fun <S> Sampler<S>.to(mixer: Mixer<S>): Sampler<S> = when (this) {
-    is MixEvent -> if (mixers.last().mix == mixer.mix) apply { expandLast() } else apply { add(mixer) }
-    is TransformEvent -> MixEvent(listOf(this), mixer)
+    // Mixing
+    /**
+     * States intent to mix a `Group` of `Sampler's` using a `Mix` function.
+     * This operation aggregates the outputs of the independent `Sampler` into a single output,
+     * maintaining the flow of data from multiple inputs to a unified output.
+     *
+     * @param S the type of the values within the samples
+     * @param mix the mixing function to apply
+     * @return a `SampleMix` representing the mixed result of the samples
+     */
+    infix fun to(mix: Mixer<T>): Mix<T> = MultiTrack(this.list, mix)
 }
 
 /**
@@ -171,7 +216,7 @@ operator fun <T> Mixer<T>.times(multiplier: Int) = copyTo(multiplier)
  * @param fn the transformation function to be applied to a `Space`
  * @return a `Transform` object encapsulating the transformation function
  */
-fun <T> f(fn: Transformation<T>) = TransformEvent(fn)
+fun <T> concept(fn: MixConcept<T>) = SingleTrack(fn)
 
 /**
  * Creates a `Transform` object from a given transformation function.
@@ -181,62 +226,19 @@ fun <T> f(fn: Transformation<T>) = TransformEvent(fn)
  * @param fn the transformation function to be applied to a `Space`
  * @return a `Transform` object encapsulating the transformation function
  */
-fun <S> mix(fn: Mix<S>) = Mixer(Pair(fn, 1))
+fun <S> mix(fn: MixConcepts<S>) = Mixer(Pair(fn, 0))
 
 
-/// Example
-fun main() {
-    val summarizer = exampleSummarizer()
-    val enhancer = exampleEnhancer()
-    val enhancer2 = exampleManualEnhancer()
-    val proCon = exampleProsVsCon()
-}
+infix fun <T> Mix<T>.using(producer: (T) -> T) =
+    Producer(this, producer)
 
-private fun exampleSummarizer(): Sampler<String> {
+@JvmInline
+value class Producer<T>(val data: Pair<Mix<T>, (T) -> T>) {
+    constructor(mix: Mix<T>, producer: (T) -> T) : this(Pair(mix, producer))
 
-    val philosophical = f { "Show the philosophical answer for question: $it" }
+    val mixture get() = data.first
+    val producer get() = data.second
 
-    val scientific = f { "Show the scientific answer for question: $it" }
-
-    val summarize = mix { "Summarize the answers into one coherent answer. Answers: $it" }
-
-    return philosophical + scientific to summarize
-}
-
-private fun exampleProsVsCon(): Sampler<String> {
-
-    val pros = f { "Show me all the pros for this issue: $it" }
-
-    val cons = f { "Show me all the cons for this issue: $it" }
-
-    val summary = mix { "Show the pros and cons and weigh out the answers. Pros/Cons: $it" }
-
-    return pros + cons to summary
-}
-
-private fun exampleEnhancer(): Sampler<String> {
-
-    val scientific = f { "Show the scientific answer for question: $it" }
-
-    val answer = f { "Give an answer to the following question: $it" }
-
-    val betterAnswer = mix {
-        "The last answer was ok, can you give a better answer than this: ${it.last()}"
-    }
-
-    return answer to betterAnswer * 4
-}
-
-private fun exampleManualEnhancer(): Sampler<String> {
-
-    val scientific = f { "Show the scientific answer for question: $it" }
-
-    val answer = f { "Give an answer to the following question: $it" }
-
-    val betterAnswer = mix {
-        "The last answer was ok, can you give a better answer than this: ${it.last()}"
-    }
-
-    return answer to betterAnswer to betterAnswer to betterAnswer to betterAnswer
+    fun produce(input: T) = mixture(input, producer)
 }
 
