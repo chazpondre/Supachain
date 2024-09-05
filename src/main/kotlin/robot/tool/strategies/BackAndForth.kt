@@ -19,7 +19,7 @@ import dev.supachain.robot.tool.ToolMap
  * @since 0.1.0-alpha
 
  */
-internal data object BackAndForth : ToolUseStrategy {
+data object BackAndForth : ToolUseStrategy {
     /**
      * Invokes the back-and-forth tool use strategy.
      *
