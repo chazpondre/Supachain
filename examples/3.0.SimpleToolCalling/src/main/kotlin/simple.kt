@@ -28,7 +28,7 @@ fun main() {
 
     val robot = Robot<Ollama, Chat, SimpleMathExampleTools>()
 
-    val problem = "What is (16 * 16) / 2 - 2 ^ 2?" // 32/2 - 4 = 12
+    val problem = "What is (16 * 16) / 2 - 2 ^ 2?" // 128 - 4 = 123
     val answer = robot.chat(problem).await()
     println(answer)
 }
