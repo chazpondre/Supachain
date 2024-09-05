@@ -4,6 +4,8 @@ package dev.supachain.robot.provider
 
 import dev.supachain.robot.director.DirectorCore
 import dev.supachain.robot.provider.responses.CommonResponse
+import dev.supachain.robot.tool.ToolConfig
+import dev.supachain.robot.tool.ToolMap
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
 
 /**
@@ -46,4 +48,8 @@ abstract class Provider<T : Provider<T>>: Actions{
     @Suppress("UNCHECKED_CAST")
     inline operator
     fun invoke(modify: T.() -> Unit) = (this as T).modify()
+
+    internal val DirectorCore.tools: List<ToolConfig> get()=
+        if(toolsAllowed) toolStrategy.getTools(this.toolMap) else emptyList()
+
 }
