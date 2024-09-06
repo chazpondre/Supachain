@@ -1,56 +1,26 @@
-@file:Suppress("unused")
-
-package dev.supachain.robot.messenger.messaging
+package dev.supachain.robot.provider.tools
 
 import dev.supachain.robot.tool.ToolConfig
-import dev.supachain.utilities.SerializeWrite
 import dev.supachain.utilities.Parameter
 import dev.supachain.utilities.toJSONSchemaType
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Encoder
 
-/**
- * Serializes a list of `ToolConfig` objects into a format compatible with OpenAI function calls.
- *
- * This serializer transforms a list of `ToolConfig` objects, which represent tool configurations, into
- * a list of `OpenAiFunctionSchema` objects. This conversion is necessary for proper communication with the
- * OpenAI API, which expects function descriptions in a specific format.
- *
- * @since 0.1.0-alpha
+internal class OpenAITool: SerialToolList<OpenAITool.Schema>() {
+    @Serializable
+    data class Schema(
+        var name: String,
+        var description: String,
+        var parameters: OpenAIFunctionParams
+    )
 
- */
-internal class OpenAIFunctionListSerializer : SerializeWrite<List<ToolConfig>> {
-    override val descriptor: SerialDescriptor = ListSerializer(OpenAIFunctionSchema.serializer()).descriptor
-
-    override fun serialize(encoder: Encoder, value: List<ToolConfig>) {
-        encoder.encodeSerializableValue(
-            ListSerializer(OpenAIFunctionSchema.serializer()),
-            value.map { OpenAIFunctionSchema(it) })
-    }
-}
-
-/**
- * Represents a tool function description in the format expected by servers using the OpenAI Schema
- *
- * @property name The name of the tool function.
- * @property description A description of the tool function's purpose and functionality.
- * @property parameters A `OpenAIFunctionParams` object containing the parameter details.
- *
- * @since 0.1.0-alpha
- */
-@Serializable
-internal data class OpenAIFunctionSchema(
-    val name: String,
-    val description: String,
-    val parameters: OpenAIFunctionParams
-) {
-    constructor(toolConfig: ToolConfig) : this(
+    override fun serialTool(toolConfig: ToolConfig) = Schema(
         toolConfig.function.name,
         toolConfig.function.description,
         OpenAIFunctionParams(toolConfig.function.parameters)
     )
+
+    override fun toolSerializer(): KSerializer<Schema> = Schema.serializer()
 }
 
 /**
