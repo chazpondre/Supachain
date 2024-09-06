@@ -6,7 +6,7 @@ import dev.supachain.robot.NetworkOwner
 import dev.supachain.robot.director.DirectorCore
 import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.messenger.messaging.OpenAIFunctionListSerializer
+import dev.supachain.robot.provider.tools.OpenAITool
 import dev.supachain.robot.post
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.Provider
@@ -38,7 +38,7 @@ private interface OllamaApi : Extension<LocalAI> {
     data class ChatRequest(
         val model: String,
         val messages: List<Message>,
-        @Serializable(with = OpenAIFunctionListSerializer::class)
+        @Serializable(with = OpenAITool::class)
         val tools: List<ToolConfig> = emptyList(),
         val stream: Boolean
     ) : CommonChatRequest

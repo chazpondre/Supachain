@@ -9,11 +9,12 @@ import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.responses.OpenAIChatResponse
-import dev.supachain.robot.messenger.messaging.OpenAIFunctionListSerializer
 import dev.supachain.robot.*
 import dev.supachain.robot.NetworkOwner
 import dev.supachain.robot.director.DirectorCore
 import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.provider.tools.OpenAITool
+
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
@@ -89,10 +90,13 @@ private interface LocalAIAPI : Extension<LocalAI> {
         val model: String,
         val messages: List<Message>,
         val temperature: Double,
-        @SerialName("top_p") val topP: Double,
-        @SerialName("top_k") val topK: Int,
-        @SerialName("max_tokens") val maxTokens: Int,
-        @Serializable(with = OpenAIFunctionListSerializer::class)
+        @SerialName("top_p")
+        val topP: Double,
+        @SerialName("top_k")
+        val topK: Int,
+        @SerialName("max_tokens")
+        val maxTokens: Int,
+        @Serializable(with = OpenAITool::class)
         val functions: List<ToolConfig> = emptyList(),
     ) : CommonChatRequest
 }
