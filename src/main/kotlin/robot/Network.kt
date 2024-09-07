@@ -360,9 +360,13 @@ internal suspend inline fun<reified T: CommonRequest, reified R> NetworkOwner.po
 // Error handling function
 internal suspend inline
 fun <reified T> HttpResponse.formatAndCheckResponse(): T {
-    val json = Json { ignoreUnknownKeys = true }
+    var capturedString: String = ""
+    val json = Json {
+        ignoreUnknownKeys = true
+    }
     return try {
-        json.decodeFromString(bodyAsText())
+        capturedString = bodyAsText()
+        json.decodeFromString(capturedString)
     } catch (e: RedirectResponseException) {
         // Handle redirect (3xx status codes)
         throw Exception("Unexpected redirect: ${e.response.status.description}", e)
@@ -380,7 +384,10 @@ fun <reified T> HttpResponse.formatAndCheckResponse(): T {
         throw Exception("Server error: ${e.response.status.description}", e)
     } catch (e: Exception) {
         // Handle other exceptions (e.g., network errors, serialization issues)
-        throw Exception("Unexpected error during chat completion", e)
+        logger.error("Unexpected error formatting common response. Provider message:\n " +
+                "$capturedString. \n\nError -> $e")
+
+        throw e
     }
 }
 
