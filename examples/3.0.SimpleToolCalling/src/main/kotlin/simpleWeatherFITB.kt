@@ -2,6 +2,7 @@ import dev.supachain.robot.Defaults.ChatMarkdown
 import dev.supachain.robot.Robot
 import dev.supachain.robot.provider.models.LocalAI
 import dev.supachain.robot.tool.ToolSet
+import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.FillInTheBlank
 import dev.supachain.utilities.Debug
 
@@ -21,7 +22,7 @@ fun main() {
             url = "http://localhost:8888"
             temperature = 0.0
             chatModel = "meta-llama-3.1-8b-instruct"
-            toolStrategy = FillInTheBlank
+            toolStrategy = FillInTheBlank // This is the default strategy
         }
     }
 
