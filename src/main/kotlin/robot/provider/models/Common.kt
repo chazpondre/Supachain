@@ -8,7 +8,7 @@
 
 @file:Suppress("unused")
 
-package dev.supachain.robot.provider.responses
+package dev.supachain.robot.provider.models
 
 import dev.supachain.robot.messenger.messaging.FunctionCall
 import dev.supachain.robot.messenger.messaging.Message
@@ -29,7 +29,7 @@ import dev.supachain.robot.messenger.messaging.Message
  * @since 0.1.0-alpha
 
  */
-sealed interface CommonResponse {
+interface CommonResponse {
     val rankMessages: List<Message.FromAssistant>
     val topMessage get() = rankMessages.first()
     val requestedFunctions: List<FunctionCall>

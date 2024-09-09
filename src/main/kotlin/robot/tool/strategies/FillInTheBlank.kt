@@ -4,7 +4,7 @@ import dev.supachain.robot.tool.asKFunctionString
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.director.Director
 import dev.supachain.robot.director.asFunctionCall
-import dev.supachain.robot.provider.responses.CommonResponse
+import dev.supachain.robot.provider.models.CommonResponse
 import dev.supachain.robot.messenger.asSystemMessage
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.ToolMap
