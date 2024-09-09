@@ -21,9 +21,9 @@ internal data class OpenAIToolSendSchema(
     ) {
         @Serializable
         internal data class Parameters(
+            val type: String,
             val properties: MutableMap<String, TypeDescription>,
             val required: List<String>,
-            val type: String = "object"
         ) {
             @Serializable
             internal data class TypeDescription(val type: String, val description: String)
@@ -77,6 +77,6 @@ internal open class OpenAIToolSend : ToolListSend<OpenAIToolSendSchema>() {
                 properties[it.name] = OpenAIToolSendSchema.Function.Parameters.TypeDescription(it.type.toJSONSchemaType(), it.description)
             }
         }
-        return OpenAIToolSendSchema.Function.Parameters(propMap, required)
+        return OpenAIToolSendSchema.Function.Parameters("object", propMap, required)
     }
 }
