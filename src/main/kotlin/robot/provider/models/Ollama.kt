@@ -83,7 +83,7 @@ data class OllamaChatResponse(
         val role: String,
         val content: String,
         @SerialName("tool_calls")
-        val toolCalls: List<ToolCall>
+        val toolCalls: List<ToolCall>? = emptyList()
     ) {
         @Serializable
         data class ToolCall(
@@ -102,5 +102,6 @@ data class OllamaChatResponse(
     }
 
     override val requestedFunctions: List<FunctionCall>
-        get() = message.toolCalls.map { FunctionCall(it.function.arguments.mapToFunctionCall(), it.function.name) }
+        get() = message.toolCalls?.map { FunctionCall(it.function.arguments.mapToFunctionCall(), it.function.name) }
+            ?: emptyList()
 }
