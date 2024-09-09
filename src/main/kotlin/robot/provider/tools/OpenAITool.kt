@@ -68,15 +68,15 @@ internal open class OpenAIToolSend : ToolListSend<OpenAIToolSendSchema>() {
 
     // Serializers
     override fun outSerializer(): KSerializer<OpenAIToolSendSchema> = OpenAIToolSendSchema.serializer()
+}
 
-    // Utils
-    private fun List<Parameter>.asParameters(): OpenAIToolSendSchema.Function.Parameters {
-        val required = this.filter { it.required }.map { it.name }
-        val propMap = mutableMapOf<String, OpenAIToolSendSchema.Function.Parameters.TypeDescription>().also { properties ->
-            this.forEach {
-                properties[it.name] = OpenAIToolSendSchema.Function.Parameters.TypeDescription(it.type.toJSONSchemaType(), it.description)
-            }
+// Utils
+internal fun List<Parameter>.asParameters(): OpenAIToolSendSchema.Function.Parameters {
+    val required = this.filter { it.required }.map { it.name }
+    val propMap = mutableMapOf<String, OpenAIToolSendSchema.Function.Parameters.TypeDescription>().also { properties ->
+        this.forEach {
+            properties[it.name] = OpenAIToolSendSchema.Function.Parameters.TypeDescription(it.type.toJSONSchemaType(), it.description)
         }
-        return OpenAIToolSendSchema.Function.Parameters("object", propMap, required)
     }
+    return OpenAIToolSendSchema.Function.Parameters("object", propMap, required)
 }
