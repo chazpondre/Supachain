@@ -68,4 +68,4 @@ internal fun Provider<*>.getFeatureMap(): MutableMap<Feature, ProviderFeatureReq
     UpdateVideo to ::updateVideo,
     VaryVideo to ::varyVideo,
     ListModels to ::listModels
-).also { val x = 8; it }
+)

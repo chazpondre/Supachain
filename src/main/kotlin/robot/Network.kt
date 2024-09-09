@@ -360,7 +360,7 @@ internal suspend inline fun<reified T: CommonRequest, reified R> NetworkOwner.po
 // Error handling function
 internal suspend inline
 fun <reified T> HttpResponse.formatAndCheckResponse(): T {
-    var capturedString: String = ""
+    var capturedString = ""
     val json = Json {
         ignoreUnknownKeys = true
     }
