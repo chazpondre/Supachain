@@ -2,33 +2,48 @@
 
 package dev.supachain.robot.provider.tools
 
+import dev.supachain.robot.messenger.messaging.ToolCall
 import dev.supachain.robot.tool.ToolConfig
-import dev.supachain.utilities.SerializeWrite
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-/**
- * Serializes a list of `ToolConfig` objects into a format compatible with OpenAI function calls.
- *
- * This serializer transforms a list of `ToolConfig` objects, which represent tool configurations, into
- * a list of `OpenAiFunctionSchema` objects. This conversion is necessary for proper communication with the
- * OpenAI API, which expects function descriptions in a specific format.
- *
- * @since 0.1.0-alpha
+abstract class ToolListReceive<In> : KSerializer<List<ToolCall>> {
+    // Method to deserialize from the target format (In) to ToolConfig
+    abstract fun toolIn(tool: In): ToolCall
 
- */
-abstract class SerialToolList<T> : SerializeWrite<List<ToolConfig>> {
-    abstract fun serialTool(toolConfig: ToolConfig): T
-    abstract fun toolSerializer(): KSerializer<T>
+    // Serializer for the target format for deserialization (JSON B -> In)
+    abstract fun inSerializer(): KSerializer<In>
 
-    override val descriptor: SerialDescriptor by lazy { ListSerializer(toolSerializer()).descriptor }
+    override val descriptor: SerialDescriptor by lazy { ListSerializer(inSerializer()).descriptor }
 
-    // Converts List<ToolConfig> into the toolSerializer format
+    override fun deserialize(decoder: Decoder): List<ToolCall> {
+        // Decode the serialized data as a List of IN and map it back to ToolConfig
+        val serializedList = decoder.decodeSerializableValue(ListSerializer(inSerializer()))
+        return serializedList.map { toolIn(it) }
+    }
+
+    override fun serialize(encoder: Encoder, value: List<ToolCall>) =
+        throw IllegalStateException("Class can not be used for serialization")
+}
+
+abstract class ToolListSend<Out>: KSerializer<List<ToolConfig>> {
+    // Method to serialize ToolConfig into the target format (Out)
+    abstract fun toolOut(toolConfig: ToolConfig): Out
+
+    // Serializer for the target format for serialization (TOut -> JSON A)
+    abstract fun outSerializer(): KSerializer<Out>
+
+    // The descriptor should match the one used for deserialization
+    override val descriptor: SerialDescriptor by lazy { ListSerializer(outSerializer()).descriptor }
+
+    override fun deserialize(decoder: Decoder): List<ToolConfig> =
+        throw IllegalStateException("Class can not be used for deserialization")
+
     override fun serialize(encoder: Encoder, value: List<ToolConfig>) {
-        encoder.encodeSerializableValue(
-            ListSerializer(toolSerializer()),
-            value.map { serialTool(it) })
+        val serializedList = value.map { toolOut(it) }
+        encoder.encodeSerializableValue(ListSerializer(outSerializer()), serializedList)
     }
 }

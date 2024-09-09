@@ -3,6 +3,7 @@
 package dev.supachain.robot.messenger.messaging
 
 import dev.supachain.robot.messenger.Role
+import dev.supachain.robot.provider.tools.OpenAIToolReceive
 import dev.supachain.utilities.toJson
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -95,7 +96,12 @@ data class Message(
             }
 
         // Optional
-        val toolCalls: List<ToolCall>? get() = data.toolCalls
+        @SerialName("tool_calls")
+        @Serializable(with = OpenAIToolReceive::class)
+        var toolCalls: List<ToolCall>? get() = data.toolCalls
+        set(value) {
+            data.toolCalls
+        }
         val functionCall: FunctionCall? get() = data.functionCall
     }
 }

@@ -2,19 +2,15 @@
 
 package dev.supachain.robot.provider.models
 
-import dev.supachain.Modifiable
 import dev.supachain.Extension
-
-import dev.supachain.robot.provider.Actions
-import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.provider.CommonChatRequest
-import dev.supachain.robot.provider.responses.OpenAIChatResponse
+import dev.supachain.Modifiable
 import dev.supachain.robot.*
-import dev.supachain.robot.NetworkOwner
 import dev.supachain.robot.director.DirectorCore
 import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.provider.tools.OpenAITool
-
+import dev.supachain.robot.provider.Actions
+import dev.supachain.robot.provider.CommonChatRequest
+import dev.supachain.robot.provider.Provider
+import dev.supachain.robot.provider.tools.OpenAIToolSend
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
@@ -96,8 +92,8 @@ private interface LocalAIAPI : Extension<LocalAI> {
         val topK: Int,
         @SerialName("max_tokens")
         val maxTokens: Int,
-        @Serializable(with = OpenAITool::class)
-        val functions: List<ToolConfig> = emptyList(),
+        @Serializable(with = OpenAIToolSend::class)
+        val tools: List<ToolConfig> = emptyList(),
     ) : CommonChatRequest
 }
 

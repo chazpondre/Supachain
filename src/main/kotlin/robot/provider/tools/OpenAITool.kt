@@ -1,61 +1,82 @@
 package dev.supachain.robot.provider.tools
 
+import dev.supachain.robot.messenger.messaging.FunctionCall
+import dev.supachain.robot.messenger.messaging.ToolCall
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.utilities.Parameter
 import dev.supachain.utilities.toJSONSchemaType
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
-internal class OpenAITool: SerialToolList<OpenAITool.Schema>() {
+@Serializable
+internal data class OpenAIToolSendSchema(
+    val type: String,
+    val function: Function
+) {
     @Serializable
-    data class Schema(
+    internal data class Function(
         var name: String,
         var description: String,
-        var parameters: OpenAIFunctionParams
-    )
-
-    override fun serialTool(toolConfig: ToolConfig) = Schema(
-        toolConfig.function.name,
-        toolConfig.function.description,
-        OpenAIFunctionParams(toolConfig.function.parameters)
-    )
-
-    override fun toolSerializer(): KSerializer<Schema> = Schema.serializer()
-}
-
-/**
- * Represents the parameters of a tool function in the format expected by servers using the OpenAI Schema.
- *
- * It's specifically designed to match the OpenAI API requirements for describing function parameters.
- *
- * @property type The general type of the parameters ("object" in most cases).
- * @property properties A map of property names to their corresponding `TypeDescription` objects.
- * @property required A list of property names that are required for the function call.
- *
- * @since 0.1.0-alpha
- */
-@Serializable
-internal data class OpenAIFunctionParams(
-    val type: String,
-    val properties: MutableMap<String, TypeDescription>,
-    val required: List<String>
-) {
-    constructor(parameters: List<Parameter>) :
-            this("object", mutableMapOf(), parameters.filter { it.required }.map { it.name }) {
-        parameters.forEach { properties[it.name] = TypeDescription(it.type.toJSONSchemaType(), it.description) }
+        var parameters: Parameters
+    ) {
+        @Serializable
+        internal data class Parameters(
+            val properties: MutableMap<String, TypeDescription>,
+            val required: List<String>,
+            val type: String = "object"
+        ) {
+            @Serializable
+            internal data class TypeDescription(val type: String, val description: String)
+        }
     }
 }
 
-/**
- * Describes the type and description of a parameter in JSON Schema format.
- *
- * This data class provides information about the type of parameter expected by an OpenAI function,
- * as well as a description for better understanding of the parameter's purpose.
- *
- * @property type The JSON Schema type of the parameter (e.g., "string", "integer").
- * @property description A human-readable description of the parameter's purpose and expected format.
- *
- * @since 0.1.0-alpha
- */
 @Serializable
-internal data class TypeDescription(val type: String, val description: String)
+data class OpenAIToolReceiveSchema(
+    val id: String? = null,   // optional
+    val type: String? = null, // optional
+    val function: Function
+){
+    @Serializable
+    data class Function(
+        val name: String,
+        val arguments: Map<String, String>
+    )
+}
+
+internal open class OpenAIToolReceive : ToolListReceive<OpenAIToolReceiveSchema>() {
+    // Converters
+    override fun toolIn(tool: OpenAIToolReceiveSchema): ToolCall {
+        val arguments = tool.function.arguments.map { it.value }.joinToString()
+        return ToolCall(tool.function.name, "function", FunctionCall(arguments, tool.function.name))
+    }
+
+    // Serializers
+    override fun inSerializer(): KSerializer<OpenAIToolReceiveSchema> = OpenAIToolReceiveSchema.serializer()
+}
+
+internal open class OpenAIToolSend : ToolListSend<OpenAIToolSendSchema>() {
+    // Converters
+    override fun toolOut(toolConfig: ToolConfig) = OpenAIToolSendSchema(
+        "function",
+        OpenAIToolSendSchema.Function(
+            toolConfig.function.name,
+            toolConfig.function.description,
+            toolConfig.function.parameters.asParameters()
+        )
+    )
+
+    // Serializers
+    override fun outSerializer(): KSerializer<OpenAIToolSendSchema> = OpenAIToolSendSchema.serializer()
+
+    // Utils
+    private fun List<Parameter>.asParameters(): OpenAIToolSendSchema.Function.Parameters {
+        val required = this.filter { it.required }.map { it.name }
+        val propMap = mutableMapOf<String, OpenAIToolSendSchema.Function.Parameters.TypeDescription>().also { properties ->
+            this.forEach {
+                properties[it.name] = OpenAIToolSendSchema.Function.Parameters.TypeDescription(it.type.toJSONSchemaType(), it.description)
+            }
+        }
+        return OpenAIToolSendSchema.Function.Parameters(propMap, required)
+    }
+}
