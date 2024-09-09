@@ -66,11 +66,9 @@ import kotlinx.serialization.Serializable
  * @since 0.1.0-alpha
  */
 @Suppress("unused")
-class OpenAI : Provider<OpenAI>(), OpenAIActions {
+class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
     override val name: String get() = "Open AI API"
-    val models = OpenAIModels
-
-    var chatModel: String = ChatModels.gpt4o
+    var chatModel: String = models.chat.gpt4o
     var temperature: Double = 0.5
     var topP: Double = 0.0
     var maxTokens: Int = 0
@@ -250,7 +248,6 @@ private interface OpenAIAPI {
     ) : CommonImageRequest
 }
 
-@Suppress("unused")
 /*
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  ░░░░  ░░░      ░░░       ░░░        ░░  ░░░░░░░░░      ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒   ▒▒   ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
@@ -258,61 +255,69 @@ private interface OpenAIAPI {
 ███████████████████████████████  █  █  ██  ████  ██  ████  ██  ████████  ██████████████  ███████████████████████████████
 ███████████████████████████████  ████  ███      ███       ███        ██        ███      ████████████████████████████████
  */
-/**
- * Provides convenient access to OpenAI model names for various tasks.
- *
- * This object serves as a central repository for OpenAI model identifiers,
- * categorized by their primary functions (chat, embedding, moderation).
- *
- * @since 0.1.0-alpha
- */
-object OpenAIModels {
-    /** Models suitable for chat completions. */
-    val chat = ChatModels
 
-    /** Models designed for generating text embeddings. */
-    val embedding = EmbedModels
-
-    /** Models specializing in content moderation. */
-    val moderation = ModerationModels
-}
-
-/**
- * Object containing names for OpenAI's chat models.
- */
 @Suppress("unused")
-object ChatModels {
-    val gpt4o get() = "gpt-4o"
-    val gpt4Turbo get() = "gpt-4-turbo"
-    val gpt4TurboPreview get() = "gpt-4-turbo-preview"
-    val gpt4V0125Preview get() = "gpt-4-0125-preview"
-    val gpt4V1106Preview get() = "gpt-4-1106-preview"
-    val gpt4 get() = "gpt-4"
-    val gpt4V0613 get() = "gpt-4-0613"
-    val gpt35Turbo get() = "gpt-3.5-turbo"
-    val gpt35TurboV0125 get() = "gpt-3.5-turbo-0125"
-    val gpt35TurboV1106 get() = "gpt-3.5-turbo-1106"
-    val gpt35TurboInstruct get() = "gpt-3.5-turbo-instruct"
-}
 
-/**
- * Object containing names for OpenAI's text embedding models.
- */
-@Suppress("unused")
-object EmbedModels {
-    val textEmbedding3Large get() = "text-embed-3-large"
-    val textEmbedding3Small get() = "text-embed-3-small"
-    val textEmbeddingAda002 get() = "text-embed-3-ada-002"
-}
+interface OpenAIModels {
 
-/**
- * Object containing names for OpenAI's moderation models.
- */
-@Suppress("unused")
-object ModerationModels {
-    val textModerationLatest get() = "text-moderation-latest"
-    val textModerationStable get() = "text-moderation-stable"
-    val textModeration007 get() = "text-moderation-007"
+    val models get() = Models
+
+    /**
+     * Provides convenient access to OpenAI model names for various tasks.
+     *
+     * This object serves as a central repository for OpenAI model identifiers,
+     * categorized by their primary functions (chat, embedding, moderation).
+     *
+     * @since 0.1.0-alpha
+     */
+    object Models {
+        /** Models suitable for chat completions. */
+        val chat = Chat
+
+        /** Models designed for generating text embeddings. */
+        val embedding = Embed
+
+        /** Models specializing in content moderation. */
+        val moderation = Moderation
+    }
+
+    /**
+     * Object containing names for OpenAI's chat models.
+     */
+    @Suppress("unused")
+    object Chat {
+        val gpt4o get() = "gpt-4o"
+        val gpt4Turbo get() = "gpt-4-turbo"
+        val gpt4TurboPreview get() = "gpt-4-turbo-preview"
+        val gpt4V0125Preview get() = "gpt-4-0125-preview"
+        val gpt4V1106Preview get() = "gpt-4-1106-preview"
+        val gpt4 get() = "gpt-4"
+        val gpt4V0613 get() = "gpt-4-0613"
+        val gpt35Turbo get() = "gpt-3.5-turbo"
+        val gpt35TurboV0125 get() = "gpt-3.5-turbo-0125"
+        val gpt35TurboV1106 get() = "gpt-3.5-turbo-1106"
+        val gpt35TurboInstruct get() = "gpt-3.5-turbo-instruct"
+    }
+
+    /**
+     * Object containing names for OpenAI's text embedding models.
+     */
+    @Suppress("unused")
+    object Embed {
+        val textEmbedding3Large get() = "text-embed-3-large"
+        val textEmbedding3Small get() = "text-embed-3-small"
+        val textEmbeddingAda002 get() = "text-embed-3-ada-002"
+    }
+
+    /**
+     * Object containing names for OpenAI's moderation models.
+     */
+    @Suppress("unused")
+    object Moderation {
+        val textModerationLatest get() = "text-moderation-latest"
+        val textModerationStable get() = "text-moderation-stable"
+        val textModeration007 get() = "text-moderation-007"
+    }
 }
 
 @Suppress("unused")
@@ -338,7 +343,6 @@ object ModerationModels {
  * @since 0.1.0-alpha
  */
 private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI> {
-    // private extension OpenAi.Actions : NetworkOwner, Transactions
     override suspend
     fun chat(director: DirectorCore): OpenAIChatResponse =
         with(self()) {
