@@ -71,16 +71,7 @@ class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
     companion object : Modifiable<LocalAI>({ LocalAI() })
 
     override val self: () -> LocalAI get() = { this }
-}
 
-/*
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░       ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓  ▓▓       ▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-██████████████████████████████████████████████        ██  ███████████  █████████████████████████████████████████████████
-██████████████████████████████████████████████  ████  ██  ████████        ██████████████████████████████████████████████
-*/
-private interface LocalAIAPI : Extension<LocalAI> {
     @Serializable
     data class ChatRequest(
         val model: String,
@@ -95,17 +86,8 @@ private interface LocalAIAPI : Extension<LocalAI> {
         @Serializable(with = OpenAIToolSend::class)
         val tools: List<ToolConfig> = emptyList(),
     ) : CommonChatRequest
+
 }
-
-
-/*
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  ░░░░  ░░░      ░░░       ░░░        ░░  ░░░░░░░░░      ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒   ▒▒   ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓        ▓▓  ▓▓▓▓  ▓▓  ▓▓▓▓  ▓▓      ▓▓▓▓  ▓▓▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-███████████████████████████████  █  █  ██  ████  ██  ████  ██  ████████  ██████████████  ███████████████████████████████
-███████████████████████████████  ████  ███      ███       ███        ██        ███      ████████████████████████████████
- */
-/** TODO **/
 
 /*
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░░      ░░░        ░░        ░░░      ░░░   ░░░  ░░░      ░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -119,7 +101,7 @@ private interface LocalAIAPI : Extension<LocalAI> {
 private sealed interface LocalAIActions : NetworkOwner, Actions, Extension<LocalAI> {
     override suspend fun chat(director: DirectorCore): OpenAIChatResponse = with(self()) {
         return post(
-            "$url/v1/chat/completions", LocalAIAPI.ChatRequest(
+            "$url/v1/chat/completions", LocalAI.ChatRequest(
                 chatModel, director.messages,
                 temperature, topP, topK, maxTokens, director.tools
             )
