@@ -4,7 +4,7 @@ package dev.supachain.robot.tool.strategies
 import dev.supachain.robot.director.*
 import dev.supachain.robot.director.directive.Directive
 import dev.supachain.robot.messenger.asSystemMessage
-import dev.supachain.robot.provider.responses.CommonResponse
+import dev.supachain.robot.provider.models.CommonResponse
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.ToolMap
@@ -44,18 +44,23 @@ data object BackAndForth : ToolUseStrategy {
         if (response.requestedFunctions.isNotEmpty()) {
             var result: CallResult = Success
             for (call in response.requestedFunctions) {
-                result = call(callHistory)
-                when (result) {
-                    Success -> continue
-                    Recalled -> {
-                        interveneWithoutTools(callHistory)
-                        break
-                    }
+                try {
+                    result = call(callHistory)
+                    when (result) {
+                        Success -> continue
+                        Recalled -> {
+                            interveneWithoutTools(callHistory)
+                            break
+                        }
 
-                    is Error -> {
-                        messenger(result.exception.asSystemMessage())
-                        break
+                        is Error -> {
+                            messenger(result.exception.asSystemMessage())
+                            break
+                        }
                     }
+                } catch (e: Exception) {
+                    logger.error("Illegal call: $call in ${response.requestedFunctions}")
+                    throw e
                 }
             }
 

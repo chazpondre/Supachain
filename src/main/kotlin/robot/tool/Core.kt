@@ -36,7 +36,7 @@ data class RobotTool(
     @Transient val annotations: List<String> = emptyList(),
     @Transient val kFunction: KFunction<*>? = null
 ) {
-    fun toToolConfig() = ToolConfig(ToolType.FUNCTION, this)
+    fun toToolConfig() = ToolConfig( this)
 }
 /**
  * A type alias representing a set of tool configurations.
@@ -63,7 +63,7 @@ typealias ToolMap = MutableMap<String, ToolConfig>
 
  */
 @Serializable
-data class ToolConfig(val type: ToolType, val function: RobotTool) {
+data class ToolConfig(val function: RobotTool, val type: ToolType = ToolType.FUNCTION) {
     /**
      * Generates a Kotlin-like function signature string from the tool configuration.
      *

@@ -1,7 +1,7 @@
 package dev.supachain.robot.provider
 
 import dev.supachain.robot.director.DirectorCore
-import dev.supachain.robot.provider.responses.CommonResponse
+import dev.supachain.robot.provider.models.CommonResponse
 import dev.supachain.robot.provider.Feature.*
 import kotlin.reflect.KSuspendFunction1
 
@@ -68,4 +68,4 @@ internal fun Provider<*>.getFeatureMap(): MutableMap<Feature, ProviderFeatureReq
     UpdateVideo to ::updateVideo,
     VaryVideo to ::varyVideo,
     ListModels to ::listModels
-).also { val x = 8; it }
+)

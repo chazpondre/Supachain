@@ -8,7 +8,7 @@
 package dev.supachain.robot.provider
 
 import dev.supachain.robot.director.DirectorCore
-import dev.supachain.robot.provider.responses.CommonResponse
+import dev.supachain.robot.provider.models.CommonResponse
 
 /**
  * Interface defining the actions that a robot can perform.
