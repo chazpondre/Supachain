@@ -23,6 +23,7 @@ abstract class Provider<T : Provider<T>>: Actions{
     abstract var maxRetries: Int
     abstract var toolsAllowed: Boolean
     var loopDetection: Boolean = true
+    var useOnlyUserMessages: Boolean = false
     abstract var toolStrategy: ToolUseStrategy
     private val featureMap: Map<Feature, ProviderFeatureRequest> = getFeatureMap()
 

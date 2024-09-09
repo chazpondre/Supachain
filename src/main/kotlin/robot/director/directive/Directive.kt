@@ -56,10 +56,13 @@ data class Directive(
      *
      * @since 0.1.0-alpha
      */
-    fun getDirectiveMessages(directiveArguments: Array<Any?>): MutableList<Message> {
-        return mutableListOf(formattingMessage()).apply {
-            addAll(messages.sortedBy { it.role.ordinal })
-            addAll(getArgumentMessages(directiveArguments))
+    fun getDirectiveMessages(directiveArguments: Array<Any?>, useOnlyUserMessage: Boolean): MutableList<Message> {
+        return mutableListOf<Message>().apply {
+            if (!useOnlyUserMessage) {
+                addAll(messages.sortedBy { it.role.ordinal })
+                add(formattingMessage())
+            }
+            addAll(getArgumentMessages(directiveArguments, useOnlyUserMessage))
         }
     }
 
@@ -69,13 +72,14 @@ data class Directive(
      * @param directiveArguments The arguments passed to the method.
      * @return A list of messages representing the arguments.
      */
-    fun getArgumentMessages(directiveArguments: Array<Any?>): List<Message> =
+    fun getArgumentMessages(directiveArguments: Array<Any?>, useOnlyUserMessage: Boolean): List<Message> =
         List(parameters.size) { index -> directiveArguments[index] }.mapIndexed { index, arg ->
             val givenName = parameters[index].description
             val localName = parameters[index].name
             val name = givenName.ifBlank { localName }
 
-            "Your task is to answer question in $name. $name=`$arg`".asUserMessage()
+            if (useOnlyUserMessage) "$arg".asUserMessage()
+            else "Your task is to answer question in $name. $name=`$arg`".asUserMessage()
         }
 
     /**

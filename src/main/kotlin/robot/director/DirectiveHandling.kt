@@ -55,8 +55,12 @@ interface DirectiveHandling<T> : FunctionHandling<T> {
             val directive = directives[name] ?: throw IllegalStateException("Method $name not found in methodLookUp")
 
             // Add Messages to Messenger
-            defaultProvider.toolStrategy.message(this)?.also { messenger(it) }
-            messenger(directive.getDirectiveMessages(args))
+            if (defaultProvider.useOnlyUserMessages)
+                messenger(directive.getDirectiveMessages(args, defaultProvider.useOnlyUserMessages))
+            else {
+                defaultProvider.toolStrategy.message(this)?.also { messenger(it) }
+                messenger(directive.getDirectiveMessages(args, defaultProvider.useOnlyUserMessages))
+            }
 
             // Debug
             logReceiveDirectiveRequest(parent, name, args, directive)
