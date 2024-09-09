@@ -47,7 +47,7 @@ data class Message(
     val toolCalls: List<ToolCall>? = emptyList(),
     @SerialName("function_call")
     val functionCall: FunctionCall? = null,
-    @Transient val type: Type = Type.Text
+    @Transient var type: Type = Type.Text
 ) {
     override fun toString() = this.toJson()
 
@@ -71,7 +71,7 @@ data class Message(
 
      */
     enum class Type {
-        Image, Text, Audio, Document, Function
+        Image, @SerialName("text")Text, Audio, Document, Function
     }
 
     /**
@@ -88,6 +88,7 @@ data class Message(
     @JvmInline
     @Serializable
     value class FromAssistant(val data: Message) {
+        constructor(role: Role, content: String) : this(Message(role, content))
         val role: Role get() = data.role
         var content: String
             get() = data.content
