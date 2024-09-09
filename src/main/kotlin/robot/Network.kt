@@ -17,6 +17,7 @@ import dev.supachain.utilities.Debug
 import dev.supachain.utilities.toJson
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.engine.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -53,7 +54,7 @@ interface NetworkClient {
     /**
      * The underlying Ktor HttpClient instance used for network requests.
      */
-    val http: HttpClient
+    val httpClient: HttpClient
 }
 
 /**
@@ -93,7 +94,7 @@ interface NetworkClient {
  * ```
  *
  * @param config A `NetworkConfig` instance defining the client's behavior.
- * @property http The underlying `HttpClient` used for communication (lazily initialized).
+ * @property httpClient The underlying `HttpClient` used for communication (lazily initialized).
  *
  * @since 0.1.0-alpha
  */
@@ -102,9 +103,34 @@ class KTORClient(override val config: NetworkConfig) : NetworkClient {
      * Lazily initialized HttpClient instance with configurations from ClientConfig,
      * supporting both HTTP and WebSocket communication.
      */
-    override val http by lazy {
-        HttpClient(CIO) { // Use the CIO engine
+    override val httpClient by lazy {
+        if (config.engine != null) HttpClient(config.engine!!.invoke()) {
+            defaultRequest {
+                // Set up default headers
+                config.headers.forEach { (key, value) -> header(key, value) }
+            }
 
+            engine {
+                // Enables pipelining, allowing multiple requests to be sent over a single connection without
+                // waiting for responses to improve performance in specific scenarios.
+                pipelining = config.pipelining
+
+                // Optional proxy configuration for routing requests through an intermediary server.
+                config.proxyConfig?.let { proxy = it }
+            }
+
+            // Installs content negotiation with JSON support for pretty-printed output.
+            install(ContentNegotiation) {
+                json(Json {
+                    prettyPrint = true
+                    isLenient = true
+                })
+            }
+
+            // Install WebSocket plugin to enable WebSocket support
+            install(WebSockets)
+        }
+        else HttpClient(CIO) { // Use the CIO engine
             defaultRequest {
                 // Set up default headers
                 config.headers.forEach { (key, value) -> header(key, value) }
@@ -189,7 +215,7 @@ class KTORClient(override val config: NetworkConfig) : NetworkClient {
      * @param uri The URI to connect to (e.g., "wss://your-websocket-server").
      */
     suspend fun webSocketSession(uri: URI, block: suspend DefaultClientWebSocketSession.() -> Unit) {
-        http.webSocket(
+        httpClient.webSocket(
             method = HttpMethod.Get,
             host = uri.host,
             port = uri.port,
@@ -285,7 +311,8 @@ data class NetworkConfig(
     var pipelining: Boolean = false,
     var proxyConfig: ProxyConfig? = null,
     var httpsConfig: ((TLSConfiguration).() -> Unit)? = null,
-    val streamable: Boolean = false
+    val streamable: Boolean = false,
+    var engine: (() -> HttpClientEngine)? = null
 ) : Modifies<NetworkConfig> {
     /**
      * Sets all timeout durations to the specified value.
@@ -326,7 +353,7 @@ data class NetworkConfig(
  * @since 0.1.0-alpha
 
  */
-private inline fun <reified T> jsonRequest(request: T): HttpRequestBuilder.() -> Unit = {
+private inline fun <reified T> HttpRequestBuilder.jsonRequest(request: T) {
     contentType(ContentType.Application.Json)
     setBody(request)
 }
@@ -352,24 +379,32 @@ internal interface NetworkOwner {
  * @since 0.1.0-alpha
 
  */
-internal suspend inline fun<reified T: CommonRequest, reified R> NetworkOwner.post(url: String, request: T): R =
-    networkClient.http
-        .post(url, jsonRequest(request.apply { logger.debug(Debug("Network"), "[Network/Request]\nPost.Request[$url] ${toJson()}") }))
-        .formatAndCheckResponse()
+internal suspend inline fun <reified T : CommonRequest, reified R> NetworkOwner.post(
+    url: String,
+    request: T,
+    postHeaders: Map<String, String> = mutableMapOf()
+): R =
+    networkClient.httpClient
+        .post(url) {
+            headers { postHeaders.forEach { (key, value) -> append(key, value) } }
+            jsonRequest(request.withNetworkLog<T>("POST", url))
+        }.formatAndCheckResponse()
+
+private inline fun <reified T : CommonRequest> T.withNetworkLog(type:String, url: String): T {
+    logger.debug(Debug("Network"), "[Network/Request]\n@[$url] ${toJson()}")
+    return this
+}
 
 // Error handling function
 internal suspend inline
 fun <reified T> HttpResponse.formatAndCheckResponse(): T {
-    var capturedString = ""
+    var capturedString: String = ""
     val json = Json {
         ignoreUnknownKeys = true
-        prettyPrint = true
     }
     return try {
         capturedString = bodyAsText()
-        json.decodeFromString<T>(capturedString).also {
-            logger.debug(Debug("Network"), "[Network/Response]\n${it.toJson()}")
-        }
+        json.decodeFromString(capturedString)
     } catch (e: RedirectResponseException) {
         // Handle redirect (3xx status codes)
         throw Exception("Unexpected redirect: ${e.response.status.description}", e)
