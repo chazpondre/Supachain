@@ -5,6 +5,7 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlin.reflect.KClass
@@ -159,3 +160,5 @@ fun String.formatArgumentsFromJson(keyRankParameterMap: Map<String, Pair<Int, Pa
 
     return result.toTypedArray()
 }
+
+fun Map<String, JsonElement>.mapToFunctionCall(): String = values.joinToString()
