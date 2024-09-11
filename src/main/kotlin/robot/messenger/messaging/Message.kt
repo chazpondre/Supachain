@@ -38,7 +38,7 @@ import kotlinx.serialization.Transient
  */
 @Serializable
 data class Message(
-    val role: Role,
+    var role: Role,
     var content: String,
     var name: String? = null,
     @SerialName("tool_call_id")
@@ -83,8 +83,10 @@ data class Message(
      * @property data The underlying `Message` object containing the assistant message details.
      *
      * @since 0.1.0-alpha
-
      */
+
+    fun asAssistantMessage() = FromAssistant(this)
+
     @JvmInline
     @Serializable
     value class FromAssistant(val data: Message) {

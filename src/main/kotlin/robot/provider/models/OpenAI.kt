@@ -1,28 +1,20 @@
 package dev.supachain.robot.provider.models
 
-import dev.supachain.Modifiable
+import dev.supachain.ExperimentalAPI
 import dev.supachain.Extension
-
-import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.provider.Actions
-
+import dev.supachain.Modifiable
 import dev.supachain.robot.*
 import dev.supachain.robot.director.DirectorCore
-import dev.supachain.robot.messenger.messaging.CommonLogProbContainer
-import dev.supachain.robot.messenger.messaging.FunctionCall
-import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.messenger.messaging.Usage
-import dev.supachain.robot.provider.CommonAudioRequest
-import dev.supachain.robot.provider.CommonChatRequest
-import dev.supachain.robot.provider.CommonEmbedRequest
-import dev.supachain.robot.provider.CommonImageRequest
-import dev.supachain.robot.provider.CommonModRequest
-import dev.supachain.robot.post
+import dev.supachain.robot.messenger.Role
+import dev.supachain.robot.messenger.messaging.*
+import dev.supachain.robot.provider.*
+import dev.supachain.robot.provider.tools.OpenAIToolReceive
 import dev.supachain.robot.tool.ToolChoice
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
 import dev.supachain.utilities.toJson
+import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -68,31 +60,35 @@ import kotlinx.serialization.Serializable
 @Suppress("unused")
 class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
     override val name: String get() = "Open AI API"
+    var apiKey: String = ""
     var chatModel: String = models.chat.gpt4o
     var temperature: Double = 0.5
     var topP: Double = 0.0
-    var maxTokens: Int = 0
+    var maxTokens: Int = 2048
     var maxToolExecutions: Int = 4
-    var logProbabilities: Boolean = true
+    var logProbabilities: Boolean = false
     var parallelToolCalling: Boolean = true
     var n: Int = 1
-    var presencePenalty = 1.0
-    var frequencyPenalty = 1.0
+    var presencePenalty = 0.0
+    var frequencyPenalty = 0.0
     var stop: List<String> = emptyList()
     var logitBias: Map<String, Int> = emptyMap()
     var defaultUser: String = ""
     val network: NetworkConfig = NetworkConfig()
 
     override var maxRetries: Int = 3
-    override var url: String = "http://localhost:$8080"
+    override var url: String = "https://api.openai.com"
     override val networkClient: NetworkClient by lazy { KTORClient(network) }
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = BackAndForth
 
-    // #Modifiable, #Extended
-    override val self = { this }
+    internal val headers
+        get() = mutableMapOf(
+            HttpHeaders.Authorization to "Bearer $apiKey"
+        )
 
     companion object : Modifiable<OpenAI>({ OpenAI() })
+    override val self = { this }
 }
 
 @Suppress("unused")
@@ -103,7 +99,7 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
 ██████████████████████████████████████████████        ██  ███████████  █████████████████████████████████████████████████
 ██████████████████████████████████████████████  ████  ██  ████████        ██████████████████████████████████████████████
 */
-private interface OpenAIAPI {
+interface OpenAIAPI {
     /**
      * Data class representing a chat completion request with additional parameters.
      *
@@ -181,6 +177,7 @@ private interface OpenAIAPI {
      * @version 1.0.0
      */
     @Serializable
+    @ExperimentalAPI
     data class EmbedRequest(
         val model: String,
         val input: List<String>,
@@ -199,6 +196,7 @@ private interface OpenAIAPI {
      * @since 0.1.0-alpha
      */
     @Serializable
+    @ExperimentalAPI
     data class ModerationRequest(
         val input: String,
         val model: String
@@ -217,6 +215,7 @@ private interface OpenAIAPI {
      * @since 0.1.0-alpha
      */
     @Serializable
+    @ExperimentalAPI
     data class WriteAudioRequest(
         val model: String = "whisper-1",
         val input: String,
@@ -239,6 +238,7 @@ private interface OpenAIAPI {
      * @since 0.1.0-alpha
      */
     @Serializable
+    @ExperimentalAPI
     data class WriteImageRequest(
         val prompt: String,
         val n: Int = 1,
@@ -246,6 +246,49 @@ private interface OpenAIAPI {
         @SerialName("response_format") val responseFormat: String? = null,
         val user: String? = null
     ) : CommonImageRequest
+
+    @Serializable
+    data class ChatResponse(
+        val id: String,
+        @SerialName("object") val type: String,
+        val created: Int,
+        val model: String,
+        val choices: List<Choice>,
+        val usage: Usage,
+        @SerialName("service_tier")
+        val serviceTier: String? = null,
+        val systemFingerprint: String? = null
+    ) : CommonResponse {
+        @Serializable
+        data class Choice(
+            val index: Int,
+            val message: ResponseMessage,
+            @SerialName("finish_reason")
+            private val finishReason: String,
+            @SerialName("logprobs")
+            val logProbability: CommonLogProbContainer? = null,
+        ) {
+            @JvmInline
+            @Serializable
+            value class ResponseMessage(val data: Message) {
+                val role: Role get() = data.role
+                val content: String get() = data.content
+                @SerialName("tool_calls")
+                @Serializable(with = OpenAIToolReceive::class)
+                val toolCalls: List<ToolCall>? get() = data.toolCalls
+            }
+        }
+
+        override val rankMessages: List<Message.FromAssistant> get() = choices.map { it.message.data.asAssistantMessage() }
+        override val requestedFunctions: List<FunctionCall>
+            get() = (rankMessages[0].toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList()) +
+                    // This is for backwards compatibility of the deprecated OpenAI function call
+                    listOfNotNull(rankMessages[0].functionCall)
+
+        override fun toString(): String = this.toJson()
+    }
+
+
 }
 
 /*
@@ -344,14 +387,14 @@ interface OpenAIModels {
  */
 private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI> {
     override suspend
-    fun chat(director: DirectorCore): OpenAIChatResponse =
+    fun chat(director: DirectorCore): OpenAIAPI.ChatResponse =
         with(self()) {
             return post(
                 "$url/v1/chat/completions", OpenAIAPI.ChatRequest(
                     director.messages, chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
                     parallelToolCalling, presencePenalty, director.defaultSeed, stop, network.streamable,
                     temperature, topP, director.tools
-                )
+                ), headers
             )
         }
 
@@ -363,7 +406,7 @@ private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI
                     director.messages, chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
                     parallelToolCalling, presencePenalty, director.defaultSeed, stop, network.streamable,
                     temperature, topP, director.tools
-                )
+                ), headers
             )
         }
 
@@ -375,78 +418,7 @@ private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI
                     director.messages, chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
                     parallelToolCalling, presencePenalty, director.defaultSeed, stop, network.streamable,
                     temperature, topP, director.tools
-                )
+                ), headers
             )
         }
-}
-
-/**
- * Represents a response from an AI provider in a chat-based interaction.
- *
- * This class encapsulates the data returned by an AI provider after processing a chat request. It provides a
- * structured representation of the provider's output, including potential responses and metadata about the generation process.
- *
- * @property id A unique identifier for this specific response, useful for tracking and referencing.
- * @property type The type of object returned, typically "chat.completion" for chat responses.
- * @property created The Unix timestamp (in seconds) indicating when the response was generated by the provider.
- * @property model The identifier of the language model or system used by the provider to produce the response.
- * @property choices A list of `CommonChatChoice` objects, each representing a potential response from the provider.
- * @property usage A `Usage` object providing details about token usage for the request and response, helpful for cost tracking.
- * @property serviceTier (Optional) The service tier or plan used for the request, if applicable.
- * @property systemFingerprint (Optional) A unique identifier for the system configuration used to generate the response,
- *                             useful for debugging and reproducibility.
- *
- * @since 0.1.0-alpha
-
- */
-@Serializable
-data class OpenAIChatResponse(
-    val id: String,
-    @SerialName("object") val type: String,
-    val created: Int,
-    val model: String,
-    val choices: List<OpenAIChatChoice>,
-    val usage: Usage,
-    @SerialName("service_tier")
-    val serviceTier: String? = null,
-    val systemFingerprint: String? = null
-) : CommonResponse {
-    private var currentChatChoice = 0
-
-    override val rankMessages: List<Message.FromAssistant> get() = choices.map { it.message }
-    override val requestedFunctions: List<FunctionCall>
-        get() = (rankMessages[0].toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList()) +
-                // This is for backwards compatibility of the deprecated OpenAI function call
-                listOfNotNull(rankMessages[0].functionCall)
-    override fun toString(): String = this.toJson()
-}
-
-/**
- * Represents a single choice within a response from an AI provider.
- *
- * This data class encapsulates one possible response generated by an AI provider
- * as part of a larger `CommonResponse`.
- *
- * @property index The position or rank of this choice within the list of choices in the response.
- *                 Lower indices often indicate higher relevance or probability.
- * @property message The actual content of the response, represented as a `Message.FromAssistant` object.
- * @property finishReason A string explaining why the AI provider stopped generating this response. Common reasons
- *                        include reaching a maximum token limit, encountering a stop sequence, or
- *                        completing a natural stopping point in the text.
- * @property logProbability (Optional) A `CommonLogProbContainer` object containing log probabilities for the tokens
- *                          in the generated response. This can be useful for analyzing the model's decision-making process.
- *
- * @since 0.1.0-alpha
-
- */
-@Serializable
-data class OpenAIChatChoice(
-    val index: Int,
-    val message: Message.FromAssistant,
-    @SerialName("finish_reason")
-    private val finishReason: String,
-    @SerialName("logprobs")
-    val logProbability: CommonLogProbContainer? = null,
-) {
-    override fun toString(): String = this.toJson()
 }

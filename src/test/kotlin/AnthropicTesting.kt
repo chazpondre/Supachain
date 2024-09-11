@@ -4,7 +4,6 @@ import dev.supachain.robot.provider.models.Anthropic
 import dev.supachain.robot.tool.ToolSet
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.utilities.Debug
-import dev.supachain.utilities.toJson
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import io.ktor.utils.io.*

@@ -99,7 +99,7 @@ class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
 
 // private extension LocalAI.Actions : NetworkOwner, Transactions
 private sealed interface LocalAIActions : NetworkOwner, Actions, Extension<LocalAI> {
-    override suspend fun chat(director: DirectorCore): OpenAIChatResponse = with(self()) {
+    override suspend fun chat(director: DirectorCore): OpenAIAPI.ChatResponse = with(self()) {
         return post(
             "$url/v1/chat/completions", LocalAI.ChatRequest(
                 chatModel, director.messages,
