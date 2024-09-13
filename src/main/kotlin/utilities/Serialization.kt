@@ -23,10 +23,10 @@ import kotlin.reflect.KType
  * @receiver The object to serialize.
  * @return A JSON string representation of the object.
  */
-inline fun <reified T> T.toJson(): String {
+inline fun <reified T> T.toJson(pretty: Boolean = true): String {
     val json = Json {
         encodeDefaults = false // Don't include default values in JSON
-        prettyPrint = true     // Format the JSON for readability (optional)
+        prettyPrint = pretty     // Format the JSON for readability (optional)
     }
 
     return try {
