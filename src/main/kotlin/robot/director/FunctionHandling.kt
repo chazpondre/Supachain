@@ -1,7 +1,6 @@
 package dev.supachain.robot.director
 
 import dev.supachain.robot.messenger.Messenger
-import dev.supachain.robot.messenger.asFunctionMessage
 import dev.supachain.robot.messenger.messaging.FunctionCall
 import dev.supachain.robot.tool.ToolMap
 import dev.supachain.utilities.*
@@ -45,8 +44,6 @@ interface FunctionHandling<T> {
         return if (callString in callHistory) Recalled
         else try {
             invokeFunctionWithDefaults(function, toolProxy, arguments.mapNotNull { it }.toTypedArray()).let {
-                // Add Function Call message to Messenger
-                this@FunctionHandling.messenger(it.asFunctionMessage(name))
                 // Register Call
                 callHistory[callString] = it.toString()
                 Success

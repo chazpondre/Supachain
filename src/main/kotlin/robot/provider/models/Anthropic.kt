@@ -57,6 +57,8 @@ class Anthropic : Provider<Anthropic>(), AnthropicAPI, AnthropicActions, Network
     var topK: Int = 0
     override var url: String = "https://api.anthropic.com/v1"
     var version: String = "2023-06-01"
+    override val toolResultMessage: (result: String) -> Message =
+        { Message(Role.FUNCTION, it, name) }
 
     var chatModel: String = models.chat.claude35Sonnet_20240620
     val stream: Boolean = false

@@ -114,14 +114,14 @@ interface DirectiveHandling<T> : FunctionHandling<T> {
         args: Array<Any?>,
         callHistory: MutableMap<String, String> = mutableMapOf()
     ) {
-        // Todo Should featureProvider
+        // Todo Should be featureProvider
         val response = defaultProvider.request(directive.feature, this)
         messenger(response.rankMessages.first().data)
         logger.debug(Debug("Director"), "[Response/Provider]\n Response: {}", this)
 
         // Handle Tool Strategy
         when (defaultProvider.toolStrategy) {
-            is BackAndForth -> BackAndForth(this, response, directive, name, args, callHistory)
+            is BackAndForth -> BackAndForth(this, response, directive, name, args, callHistory, defaultProvider)
             is FillInTheBlank -> FillInTheBlank(this, response)
         }
     }

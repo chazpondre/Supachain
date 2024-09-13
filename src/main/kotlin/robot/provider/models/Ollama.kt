@@ -29,6 +29,8 @@ class Ollama : Provider<Ollama>(), OllamaActions, NetworkOwner {
     override var maxRetries: Int = 3
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = FillInTheBlank
+    override val toolResultMessage: (result: String) -> Message =
+        { Message(Role.FUNCTION, it, name) }
 
     val network: NetworkConfig = NetworkConfig()
     override val networkClient: NetworkClient by lazy { KTORClient(network) }

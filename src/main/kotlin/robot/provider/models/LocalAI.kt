@@ -6,6 +6,7 @@ import dev.supachain.Extension
 import dev.supachain.Modifiable
 import dev.supachain.robot.*
 import dev.supachain.robot.director.DirectorCore
+import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.CommonChatRequest
@@ -50,6 +51,8 @@ import kotlinx.serialization.Serializable
 class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
     override val name: String get() = "Mr Robot"
     override var url: String = "http://localhost:$8888"
+    override val toolResultMessage: (result: String) -> Message =
+        { Message(Role.FUNCTION, it, name) }
 
     var backend = "llama-cpp"
     var batch = 0

@@ -3,10 +3,10 @@ package dev.supachain.robot.tool.strategies
 
 import dev.supachain.robot.director.*
 import dev.supachain.robot.director.directive.Directive
-import dev.supachain.robot.messenger.asFunctionMessage
 import dev.supachain.robot.messenger.asSystemMessage
 import dev.supachain.robot.provider.models.CommonResponse
 import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.ToolMap
 
@@ -41,8 +41,7 @@ data object BackAndForth : ToolUseStrategy {
         name: String,
         args: Array<Any?>,
         callHistory: MutableMap<String, String>,
-        resultMessage: (result: String) -> Message = { it.asFunctionMessage(name) },
-        includeSeekCompletionMessage: Boolean = true
+        provider: Provider<*>
     ) = with(director) {
         if (response.requestedFunctions.isNotEmpty()) {
             var result: CallResult = Success
@@ -68,9 +67,9 @@ data object BackAndForth : ToolUseStrategy {
             }
 
             if (result == Success) {
-                if (includeSeekCompletionMessage) messenger(seekCompletionMessage)
+                if (provider.includeSeekCompletionMessage) messenger(seekCompletionMessage)
                 val callResult = callHistory.asIterable().last().value
-                messenger(resultMessage(callResult))
+                messenger(provider.toolResultMessage(callResult))
             }
 
             handleProviderMessaging(directive, name, args, callHistory)

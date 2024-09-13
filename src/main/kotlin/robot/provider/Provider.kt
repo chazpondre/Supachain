@@ -3,6 +3,7 @@
 package dev.supachain.robot.provider
 
 import dev.supachain.robot.director.DirectorCore
+import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.models.CommonResponse
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
@@ -24,9 +25,10 @@ abstract class Provider<T : Provider<T>>: Actions{
     abstract var toolsAllowed: Boolean
     var loopDetection: Boolean = true
     var useOnlyUserMessages: Boolean = false
+    var includeSeekCompletionMessage: Boolean = true
     abstract var toolStrategy: ToolUseStrategy
     private val featureMap: Map<Feature, ProviderFeatureRequest> = getFeatureMap()
-
+    internal abstract val toolResultMessage: (result: String) -> Message
     /**
      * Executes a request to the AI provider for a specific feature.
      *

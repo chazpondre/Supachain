@@ -95,6 +95,8 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
     val network: NetworkConfig = NetworkConfig()
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = BackAndForth
+    override val toolResultMessage: (result: String) -> Message =
+        { Message(Role.FUNCTION, it, name) }
 
     var apiKey: String = ""
     var chatModel: String = models.chat.gpt4o
