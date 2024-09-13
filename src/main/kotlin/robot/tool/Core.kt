@@ -120,6 +120,7 @@ enum class ToolType {
  * @since 0.1.0-alpha
 
  */
+@Serializable
 enum class ToolChoice {
     @SerialName("auto")
     AUTO,
