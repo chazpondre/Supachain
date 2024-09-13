@@ -146,7 +146,6 @@ class OpenAITesting {
                 assertTrue(expectedMessage.isContainedIn(jsonRequest))
                 assertTrue(expectedToolJson.isContainedIn(jsonRequest))
 
-
                 messageNumber++
 
                 // Mock a successful response

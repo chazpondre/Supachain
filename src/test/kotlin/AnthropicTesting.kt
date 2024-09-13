@@ -15,7 +15,7 @@ import kotlin.test.Test
 
 @ToolSet
 class MockWeatherTool {
-    fun get_weather(location: String, unit: String): String = "The weather in $location is 18°C."
+    fun get_weather(location: String, unit: String = "Celsius"): Int = 18
 }
 
 class AnthropicTesting {
@@ -94,6 +94,8 @@ class AnthropicTesting {
     @Test
     fun `test chat request with function call`() {
         Debug show "Network"
+        var messageNumber = 0
+
         val mockEngine = MockEngine { request ->
             // Check if the correct URL is used
             assertEquals(request.url.toString(), "https://api.anthropic.com/v1/messages")
@@ -105,51 +107,52 @@ class AnthropicTesting {
             val requestBody = request.body.toByteReadPacket().readText()
             val jsonRequest = Json.parseToJsonElement(requestBody).jsonObject
 
-            // Expected JSON structure
-            val expectedJson = buildJsonObject {
-                put("model", JsonPrimitive("claude-3-5-sonnet-20240620"))
-                put("max_tokens", JsonPrimitive(2048))
-                put("temperature", JsonPrimitive(0.0))
-                put("stream", JsonPrimitive(false))
-                put("messages", buildJsonArray {
-                    add(buildJsonObject {
-                        put("role", JsonPrimitive("user"))
-                        put("content", JsonPrimitive("What's the weather like in San Francisco?"))
+            if(messageNumber == 0) {
+                // Expected JSON structure
+                val expectedJson = buildJsonObject {
+                    put("model", JsonPrimitive("claude-3-5-sonnet-20240620"))
+                    put("max_tokens", JsonPrimitive(2048))
+                    put("temperature", JsonPrimitive(0.0))
+                    put("stream", JsonPrimitive(false))
+                    put("messages", buildJsonArray {
+                        add(buildJsonObject {
+                            put("role", JsonPrimitive("user"))
+                            put("content", JsonPrimitive("What's the weather like in San Francisco?"))
+                        })
                     })
-                })
 
-                // Add the tools key and its array
-                put("tools", buildJsonArray {
-                    add(buildJsonObject {
-                        put("name", JsonPrimitive("get_weather"))
-                        put("description", JsonPrimitive(""))
-                        put("input_schema", buildJsonObject {
-                            put("type", JsonPrimitive("object"))
-                            put("properties", buildJsonObject {
-                                put("location", buildJsonObject {
-                                    put("type", JsonPrimitive("string"))
-                                    put("description", JsonPrimitive(""))
+                    // Add the tools key and its array
+                    put("tools", buildJsonArray {
+                        add(buildJsonObject {
+                            put("name", JsonPrimitive("get_weather"))
+                            put("description", JsonPrimitive(""))
+                            put("input_schema", buildJsonObject {
+                                put("type", JsonPrimitive("object"))
+                                put("properties", buildJsonObject {
+                                    put("location", buildJsonObject {
+                                        put("type", JsonPrimitive("string"))
+                                        put("description", JsonPrimitive(""))
+                                    })
+                                    put("unit", buildJsonObject {
+                                        put("type", JsonPrimitive("string"))
+                                        put("description", JsonPrimitive(""))
+                                    })
                                 })
-                                put("unit", buildJsonObject {
-                                    put("type", JsonPrimitive("string"))
-                                    put("description", JsonPrimitive(""))
+                                put("required", buildJsonArray {
+                                    add(JsonPrimitive("location"))
                                 })
-                            })
-                            put("required", buildJsonArray {
-                                add(JsonPrimitive("location"))
-                                add(JsonPrimitive("unit"))
                             })
                         })
                     })
-                })
-            }
+                }
 
-            // Compare the JSON request and the expected JSON, ignoring order
-            assertTrue(jsonRequest.equalsJsonUnordered(expectedJson))
+                // Compare the JSON request and the expected JSON, ignoring order
+                assertTrue(expectedJson.isContainedIn(jsonRequest))
+                messageNumber++
 
-            respond(
-                content = ByteReadChannel(
-                    """
+                respond(
+                    content = ByteReadChannel(
+                        """
                     {
                       "id": "msg_01Aq9w938a90dw8q",
                       "model": "claude-3-5-sonnet-20240620",
@@ -165,17 +168,40 @@ class AnthropicTesting {
                           "id": "toolu_01A09q90qw90lq917835lq9",
                           "name": "get_weather",
                           "input": {
-                            "location": "San Francisco",
-                            "unit": "celsius"
+                            "location": "San Francisco"
                           }
                         }
                       ]
                     }
                 """.trimIndent()
-                ),
-                status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, "application/json")
-            )
+                    ),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json")
+                )
+            }
+            else {
+                assertTrue(expectedChatToolCallMessage().isContainedIn(jsonRequest))
+                respond(
+                    content = ByteReadChannel(
+                        """
+                    {
+                      "id": "msg_01Aq9w938a90dw8q",
+                      "model": "claude-3-5-sonnet-20240620",
+                      "stop_reason": "tool_use",
+                      "role": "assistant",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "The weather is 18 degrees"
+                        }
+                      ]
+                    }
+                """.trimIndent()
+                    ),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json")
+                )
+            }
         }
 
         val robot = Robot<Anthropic, Defaults.PlainChat, MockWeatherTool> {
@@ -190,7 +216,15 @@ class AnthropicTesting {
         val question = "What's the weather like in San Francisco?"
         val answer = robot.chat(question).await()
 
-        // Validate if the tool call is properly invoked and response is correct
-        assertEquals("<thinking>I need to use the get_weather, and the user wants SF, which is likely San Francisco, CA.</thinking>", answer)
+        assertEquals("The weather is 18 degrees", answer)
+    }
+
+    private fun expectedChatToolCallMessage() = buildJsonObject {
+        put("messages", buildJsonArray {
+            add(buildJsonObject {
+                put("role", JsonPrimitive("function"))
+                put("content", JsonPrimitive("18"))
+            })
+        })
     }
 }

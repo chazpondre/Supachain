@@ -13,6 +13,7 @@ import dev.supachain.robot.provider.tools.AnthropicTool
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.FillInTheBlank
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
+import dev.supachain.utilities.toJson
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -138,6 +139,9 @@ data class AnthropicChatResponse(
     override val requestedFunctions: List<FunctionCall>
         // Possible BUG function calls may not be in correct order in it.input.map
         get() = content.mapNotNull {
-            if (it.type == "tool_use") FunctionCall(it.input!!.values.joinToString(), it.name!!) else null
+            if (it.type == "tool_use") FunctionCall(
+                it.input!!.toJson(false),
+                it.name!!
+            ) else null
         }
 }
