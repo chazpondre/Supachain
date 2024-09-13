@@ -214,3 +214,11 @@ object KTypeSerializer : KSerializer<KType> {
 fun KFunction<*>.getAnnotationsByNameExcluding(vararg excluding: String) =
     annotations.mapNotNull { it.annotationClass.simpleName }.filterNot { it in excluding.toSet() }
 
+fun KType.isEnumType(): Boolean {
+    val kClass = classifier as? KClass<*> ?: return false
+    return kClass.isSubclassOf(Enum::class)
+}
+
+fun KType.enumConstants(): List<String> =
+    (classifier as? KClass<*>)?.java?.enumConstants?.map { it.toString() } ?: emptyList()
+
