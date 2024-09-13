@@ -119,10 +119,10 @@ private fun KFunction<*>.parameters(): List<Parameter> {
     return valueParameters.mapIndexed { index, param ->
         val description = parametersAnnotation.getOrNull(index) ?: ""
         val typeName = param.type
-        Parameter(param, description, typeName, param.name!!)
+        val isRequired = !param.isOptional && !param.type.isMarkedNullable
+        Parameter(param, description, typeName, param.name!!, isRequired)
     }
 }
-//}
 
 /**
  * Extracts a list of `RobotTool` objects representing the configuration of tool-annotated functions within the provided Kotlin class.
@@ -156,8 +156,7 @@ fun KClass<*>.getToolMethods(): List<RobotTool> {
     val exclusions = listOf("equals", "hashCode", "toString")
     val isToolSet = this.findAnnotation<ToolSet>() != null
     return getFunctions().mapNotNull { function ->
-        val toolAnnotation: Tool? =
-            function.findAnnotation<Tool>() ?: if (isToolSet) null else return@mapNotNull null
+        val toolAnnotation: Tool? = function.findAnnotation<Tool>() ?: if (isToolSet) null else return@mapNotNull null
         if (function.name in exclusions) return@mapNotNull null
         val functionParameters: List<Parameter> = function.parameters()
         val otherAnnotations: List<String> =
