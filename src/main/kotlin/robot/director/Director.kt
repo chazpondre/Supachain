@@ -111,22 +111,20 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
      *
      * @since 0.1.0-alpha
      */
-    inline fun <reified ToolInterface : ToolType> setToolset(): Director<P, API, *> = this.also {
-            toolProxyObject = {
-                if (ToolInterface::class.visibility != KVisibility.PUBLIC)
-                    throw IllegalArgumentException("Your class must not have private visibility")
-                createObjectFromNoArgClass<ToolInterface>()
-            }
+    inline fun <reified ToolInterface : ToolType> setUpToolset(): Director<P, API, *> = this.also {
+        toolProxyObject = {
+            if (ToolInterface::class.visibility != KVisibility.PUBLIC)
+                throw IllegalArgumentException("Your class must not have private visibility")
+            createObjectFromNoArgClass<ToolInterface>()
+        }
 
-            val tools = ToolInterface::class.getToolMethods().map { it.toToolConfig() }
-            logger.debug(
-                Debug("Director"),
-                "[Configuration]\nUses Toolset: {},\nTools: {}",
-                ToolInterface::class.simpleName,
-                tools
-            )
+        val tools = ToolInterface::class.getToolMethods().map { it.toToolConfig() }
+        logger.debug(
+            Debug("Director"), "[Configuration]\nUses Toolset: {},\nTools: {}",
+            ToolInterface::class.simpleName, tools
+        )
 
-            tools.forEach { toolMap[it.function.name] = it }
+        tools.forEach { toolMap[it.function.name] = it }
     }
 
     /**

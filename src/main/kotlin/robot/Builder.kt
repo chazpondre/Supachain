@@ -36,7 +36,7 @@ object Robot {
         }
         return Director<RobotProvider, Interface, Tools>(provider)
             .apply(modify)
-            .setToolset<Tools>()
+            .setUpToolset<Tools>()
             .setUpDirectives<Interface>()
     }
 }
