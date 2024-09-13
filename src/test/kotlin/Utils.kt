@@ -2,7 +2,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
-fun JsonElement.isSubsetIn(other: JsonElement, path: String = "obj"): Boolean = when {
+fun JsonElement.isContainedIn(other: JsonElement, path: String = "obj"): Boolean = when {
     this is JsonObject && other is JsonObject -> {
         entries.all { (key, value) ->
             val newPath = "$path.$key"
@@ -10,7 +10,7 @@ fun JsonElement.isSubsetIn(other: JsonElement, path: String = "obj"): Boolean = 
                 println("Missing key at $newPath")
                 false
             } else {
-                value.isSubsetIn(other[key]!!, newPath)
+                value.isContainedIn(other[key]!!, newPath)
             }
         }
     }
@@ -18,12 +18,12 @@ fun JsonElement.isSubsetIn(other: JsonElement, path: String = "obj"): Boolean = 
     this is JsonArray && other is JsonArray -> {
         this.all { element ->
             other.any { otherElement ->
-                element.isSubsetIn(otherElement, path)
+                element.isContainedIn(otherElement, path)
             }
         }
     }
 
-    else -> this == other
+    else -> (this == other).also { if(!it) println("$path: $this != $other") }
 }
 
 
