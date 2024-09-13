@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.supachain.robot.provider.models
 
 import dev.supachain.ExperimentalAPI

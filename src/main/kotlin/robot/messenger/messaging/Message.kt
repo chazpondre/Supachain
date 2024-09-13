@@ -74,6 +74,8 @@ data class Message(
         Image, @SerialName("text")Text, Audio, Document, Function
     }
 
+    fun asAssistantMessage() = FromAssistant(this)
+
     /**
      * Represents an assistant message in an AI conversation.
      *
@@ -84,9 +86,6 @@ data class Message(
      *
      * @since 0.1.0-alpha
      */
-
-    fun asAssistantMessage() = FromAssistant(this)
-
     @JvmInline
     @Serializable
     value class FromAssistant(val data: Message) {

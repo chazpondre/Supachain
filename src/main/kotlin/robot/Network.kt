@@ -5,7 +5,7 @@
 ██████████████████████████  ██    ██  ███████████  █████   ██   ██  ████  ██  ███  ███  ███  ███████████████████████████
 ██████████████████████████  ███   ██        █████  █████  ████  ███      ███  ████  ██  ████  ██████████████████████████
  */
-@file:Suppress("unused")
+@file:Suppress("unused", "UNUSED_PARAMETER")
 
 package dev.supachain.robot
 
@@ -398,7 +398,7 @@ private inline fun <reified T : CommonRequest> T.withNetworkLog(type:String, url
 // Error handling function
 internal suspend inline
 fun <reified T> HttpResponse.formatAndCheckResponse(): T {
-    var capturedString: String = ""
+    var capturedString = ""
     val json = Json {
         ignoreUnknownKeys = true
     }
