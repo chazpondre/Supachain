@@ -39,7 +39,7 @@ import kotlinx.serialization.Transient
 @Serializable
 data class Message(
     var role: Role,
-    var content: String,
+    var content: String?,
     var name: String? = null,
     @SerialName("tool_call_id")
     var callId: String? = null,
@@ -93,7 +93,7 @@ data class Message(
         constructor(role: Role, content: String) : this(Message(role, content))
         val role: Role get() = data.role
         var content: String
-            get() = data.content
+            get() = data.content ?: ""
             set(value) {
                 data.content
             }

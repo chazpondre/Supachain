@@ -67,7 +67,7 @@ interface DirectiveHandling<T> : FunctionHandling<T> {
 
             // Request
             handleProviderMessaging(directive, name, args)
-            return messenger.lastMessage().content
+            return messenger.lastMessage().content ?: ""
         } catch (e: Exception) {
             logger.error("Error handling method $name of $parent", e)
             throw e
