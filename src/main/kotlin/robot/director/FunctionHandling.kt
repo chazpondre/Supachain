@@ -6,6 +6,9 @@ import dev.supachain.robot.messenger.messaging.FunctionCall
 import dev.supachain.robot.tool.ToolMap
 import dev.supachain.utilities.*
 import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
+import kotlin.reflect.full.instanceParameter
+import kotlin.reflect.full.valueParameters
 
 @Suppress("EmptyMethod")
 interface FunctionHandling<T> {
@@ -41,7 +44,7 @@ interface FunctionHandling<T> {
 
         return if (callString in callHistory) Recalled
         else try {
-            function(toolProxy, * arguments).let {
+            invokeFunctionWithDefaults(function, toolProxy, arguments.mapNotNull { it }.toTypedArray()).let {
                 // Add Function Call message to Messenger
                 this@FunctionHandling.messenger(it.asFunctionMessage(name))
                 // Register Call
@@ -50,6 +53,29 @@ interface FunctionHandling<T> {
             }
         } catch (e: Exception) {
             Error(e)
+        }
+    }
+
+    // Helper function to handle function invocation with defaults
+    fun <T> invokeFunctionWithDefaults(function: KFunction<*>, toolProxy: T, arguments: Array<Any>): Any? {
+        // If the number of parameters exceeds the arguments (default parameter case)
+        return if (function.parameters.size - 1 > arguments.size) { // +1 for the instance parameter
+            val paramsMap = mutableMapOf<KParameter, Any?>()
+
+            // Assign instance parameter (for member functions, if applicable)
+            function.instanceParameter?.let { paramsMap[it] = toolProxy }
+
+            // Assign provided arguments to value parameters
+            function.valueParameters.forEachIndexed { index, parameter ->
+                if (index < arguments.size) paramsMap[parameter] = arguments[index]
+            }
+
+            // Use callBy to handle the default parameters and invoke the function
+            function.callBy(paramsMap)
+        } else {
+            if (function.instanceParameter != null) function.call(toolProxy, *arguments)
+            // If no default parameters are involved, invoke the function normally
+            else function.call(*arguments)
         }
     }
 
