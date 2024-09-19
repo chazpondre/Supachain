@@ -88,7 +88,7 @@ import kotlinx.serialization.Serializable
  * @since 0.1.0-alpha
  */
 @Suppress("unused")
-class OpenAI : Provider<OpenAIResponse, OpenAI>(), OpenAIActions, OpenAIModels {
+class OpenAI : Provider<OpenAIMessage, OpenAI>(), OpenAIActions, OpenAIModels {
     override val name: String get() = "Open AI API"
     override var url: String = "https://api.openai.com"
     override var maxRetries: Int = 3
@@ -96,7 +96,7 @@ class OpenAI : Provider<OpenAIResponse, OpenAI>(), OpenAIActions, OpenAIModels {
     val network: NetworkConfig = NetworkConfig()
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = BackAndForth
-    override var messenger: Messenger<OpenAIResponse> = Messenger(this)
+    override var messenger: Messenger<OpenAIMessage> = Messenger(this)
     override val toolResultMessage: (result: String) -> Message =
         { Message(Role.FUNCTION, it) }
 
@@ -135,7 +135,8 @@ class OpenAI : Provider<OpenAIResponse, OpenAI>(), OpenAIActions, OpenAIModels {
 ██████████████████████████████████████████████        ██  ███████████  █████████████████████████████████████████████████
 ██████████████████████████████████████████████  ████  ██  ████████        ██████████████████████████████████████████████
 */
-sealed interface OpenAIResponse: CommonResponse
+sealed interface OpenAIMessage : CommonMessage
+
 private fun List<ToolConfig>.asOpenAITools() = map { OpenAIAPI.ChatRequest.Tool(it) }
 
 interface OpenAIAPI {
@@ -224,7 +225,7 @@ interface OpenAIAPI {
         @SerialName("service_tier")
         val serviceTier: String? = null,
         val systemFingerprint: String? = null
-    ) : OpenAIResponse {
+    ) : OpenAIMessage {
         @Serializable
         data class Choice(
             val index: Int,
@@ -246,11 +247,11 @@ interface OpenAIAPI {
             }
         }
 
-        override val rankMessages: List<Message.FromAssistant> get() = choices.map { it.message.data.asAssistantMessage() }
-        override val requestedFunctions: List<FunctionCall>
-            get() = (rankMessages[0].toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList()) +
+        override fun message(): Message = choices[0].message.data
+        override fun functions(): List<FunctionCall> =
+            (message().toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList()) +
                     // This is for backwards compatibility of the deprecated OpenAI function call
-                    listOfNotNull(rankMessages[0].functionCall)
+                    listOfNotNull(message().functionCall)
 
         override fun toString(): String = this.toJson()
     }
@@ -389,7 +390,7 @@ interface OpenAIModels {
  *
  * @since 0.1.0-alpha
  */
-private sealed interface OpenAIActions : NetworkOwner, Actions<OpenAIResponse>, Extension<OpenAI> {
+private sealed interface OpenAIActions : NetworkOwner, Actions<OpenAIMessage>, Extension<OpenAI> {
     override suspend
     fun chat(tools: List<ToolConfig>): OpenAIAPI.ChatResponse =
         with(self()) {

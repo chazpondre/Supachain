@@ -4,10 +4,10 @@ import dev.supachain.robot.director.directive.Directive
 import dev.supachain.robot.director.directive.FromSystem
 import dev.supachain.robot.director.directive.FromUser
 import dev.supachain.robot.director.directive.Use
-import dev.supachain.robot.messenger.asSystemMessage
-import dev.supachain.robot.messenger.asUserMessage
 import dev.supachain.robot.messenger.messaging.FunctionCall
 import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.messenger.messaging.asSystemMessage
+import dev.supachain.robot.messenger.messaging.asUserMessage
 import dev.supachain.robot.provider.Feature
 import dev.supachain.robot.tool.Parameters
 import dev.supachain.robot.tool.RobotTool

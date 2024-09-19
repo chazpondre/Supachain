@@ -5,7 +5,7 @@ package dev.supachain.robot.provider
 import dev.supachain.robot.messenger.MessageFilter
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.provider.models.CommonResponse
+import dev.supachain.robot.provider.models.CommonMessage
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
 
@@ -21,7 +21,7 @@ import dev.supachain.robot.tool.strategies.ToolUseStrategy
  * @since 0.1.0-alpha
 
  */
-abstract class Provider<ResponseType: CommonResponse, T : Provider<ResponseType, T>> : Actions<ResponseType> {
+abstract class Provider<ResponseType: CommonMessage, T : Provider<ResponseType, T>> : Actions<ResponseType> {
     abstract var maxRetries: Int
     abstract var toolsAllowed: Boolean
     abstract var toolStrategy: ToolUseStrategy

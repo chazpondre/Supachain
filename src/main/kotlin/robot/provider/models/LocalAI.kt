@@ -48,11 +48,11 @@ import kotlinx.serialization.Serializable
  *
  * @since 0.1.0-alpha
  */
-class LocalAI : Provider<OpenAIResponse, LocalAI>(), LocalAIActions, NetworkOwner {
+class LocalAI : Provider<OpenAIMessage, LocalAI>(), LocalAIActions, NetworkOwner {
     override val name: String get() = "Mr Robot"
     override var url: String = "http://localhost:$8888"
     override val toolResultMessage: (result: String) -> Message =
-        { Message(Role.FUNCTION, it, name) }
+        { Message(Role.FUNCTION, it) }
 
     var backend = "llama-cpp"
     var batch = 0
@@ -65,7 +65,7 @@ class LocalAI : Provider<OpenAIResponse, LocalAI>(), LocalAIActions, NetworkOwne
     override var maxRetries: Int = 3
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = BackAndForth
-    override var messenger: Messenger<OpenAIResponse> = Messenger(this)
+    override var messenger: Messenger<OpenAIMessage> = Messenger(this)
 
     // Network
     val network: NetworkConfig = NetworkConfig()
@@ -101,9 +101,9 @@ class LocalAI : Provider<OpenAIResponse, LocalAI>(), LocalAIActions, NetworkOwne
 ██████████████████████████  ████  ███      ██████  █████        ███      ███  ███   ███      ███████████████████████████
  */
 
-sealed interface LocalAIResponse : CommonResponse
+sealed interface LocalAIResponse : CommonMessage
 // private extension LocalAI.Actions : NetworkOwner, Transactions
-private sealed interface LocalAIActions : NetworkOwner, Actions<OpenAIResponse>, Extension<LocalAI> {
+private sealed interface LocalAIActions : NetworkOwner, Actions<OpenAIMessage>, Extension<LocalAI> {
     override suspend fun chat(tools: List<ToolConfig>): OpenAIAPI.ChatResponse = with(self()) {
         return post(
             "$url/v1/chat/completions", LocalAI.ChatRequest(

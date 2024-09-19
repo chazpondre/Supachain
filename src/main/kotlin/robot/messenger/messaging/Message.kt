@@ -40,9 +40,6 @@ import kotlinx.serialization.Transient
 data class Message(
     var role: Role,
     var content: String?,
-    var name: String? = null,
-    @SerialName("tool_call_id")
-    var callId: String? = null,
     @SerialName("tool_calls")
     val toolCalls: List<ToolCall>? = emptyList(),
     @SerialName("function_call")
@@ -71,7 +68,8 @@ data class Message(
 
      */
     enum class Type {
-        Image, @SerialName("text")Text, Audio, Document, Function
+        Image, @SerialName("text")
+        Text, Audio, Document, Function
     }
 
     fun asAssistantMessage() = FromAssistant(this)
@@ -90,6 +88,7 @@ data class Message(
     @Serializable
     value class FromAssistant(val data: Message) {
         constructor(role: Role, content: String) : this(Message(role, content))
+
         val role: Role get() = data.role
         var content: String
             get() = data.content ?: ""
@@ -100,10 +99,57 @@ data class Message(
         // Optional
         @SerialName("tool_calls")
         @Serializable(with = OpenAIToolReceive::class)
-        var toolCalls: List<ToolCall>? get() = data.toolCalls
-        set(value) {
-            data.toolCalls
-        }
+        var toolCalls: List<ToolCall>?
+            get() = data.toolCalls
+            set(value) {
+                data.toolCalls
+            }
         val functionCall: FunctionCall? get() = data.functionCall
     }
 }
+
+/**
+ * Converts any object into a system message for an AI conversation.
+ *
+ * This extension function simplifies the creation of system messages by automatically converting
+ * any object into a `Message` with the role `Role.SYSTEM`. It uses the `toString()` representation
+ * of the object as the message content.
+ *
+ * @receiver The object to be converted into a system message.
+ * @param name An optional name or identifier for the system (defaults to null).
+ * @return A `Message` object representing the system message.
+ *
+ * @since 0.1.0-alpha
+
+ */
+internal fun Any.asSystemMessage(): Message = Message(Role.SYSTEM, toString())
+
+/**
+ * Converts any object into an assistant message for an AI conversation.
+ * This extension function simplifies the creation of assistant messages by automatically converting
+ * any object into a Message with the role `Role.ASSISTANT`. It uses the toString() representation
+ * of the object as the message content.
+ *
+ * @receiver The object to be converted into an assistant message.
+ * @param name An optional name or identifier for the assistant (defaults to null).
+ * @return A Message object representing the assistant message.
+ *
+ * @since 0.1.0-alpha
+ */
+internal fun Any.asAssistantMessage(): Message = Message(Role.ASSISTANT, toString())
+
+/**
+ * Converts any object into a user message for an AI conversation.
+ *
+ * This extension function facilitates the creation of user messages by automatically converting
+ * any object into a `Message` with the role `Role.USER`. It utilizes the `toString()` representation
+ * of the object as the message content.
+ *
+ * @receiver The object to be transformed into a user message.
+ * @param name An optional name or identifier for the user (defaults to null).
+ * @return A `Message` object representing the user message.
+ *
+ * @since 0.1.0-alpha
+
+ */
+internal fun Any.asUserMessage(): Message = Message(Role.USER, toString())

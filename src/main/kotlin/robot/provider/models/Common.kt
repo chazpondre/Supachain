@@ -29,9 +29,7 @@ import dev.supachain.robot.messenger.messaging.Message
  * @since 0.1.0-alpha
 
  */
-interface CommonResponse {
-    val rankMessages: List<Message.FromAssistant>
-    val topMessage get() = rankMessages.first()
-    val requestedFunctions: List<FunctionCall>
+interface CommonMessage {
+    fun message(): Message
+    fun functions(): List<FunctionCall>
 }
-

@@ -1,15 +1,15 @@
 package dev.supachain.robot.tool.strategies
 
-import dev.supachain.robot.tool.asKFunctionString
-import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.director.RobotCore
 import dev.supachain.robot.director.asFunctionCall
 import dev.supachain.robot.messenger.ToolResultAction
 import dev.supachain.robot.messenger.ToolResultMessage
-import dev.supachain.robot.messenger.asAssistantMessage
-import dev.supachain.robot.provider.models.CommonResponse
-import dev.supachain.robot.messenger.asSystemMessage
+import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.messenger.messaging.asAssistantMessage
+import dev.supachain.robot.messenger.messaging.asSystemMessage
+import dev.supachain.robot.provider.models.CommonMessage
 import dev.supachain.robot.tool.ToolConfig
+import dev.supachain.robot.tool.asKFunctionString
 import dev.supachain.utilities.templates
 
 /**
@@ -103,8 +103,8 @@ data object FillInTheBlank : ToolUseStrategy {
      * @param robot The `Director` instance responsible for managing the AI interaction.
      * @param response The `CommonResponse` received from the AI provider.
      */
-    operator fun invoke(robot: RobotCore<*, *, *>, response: CommonResponse): ToolResultMessage = with(robot) {
-        val template = response.rankMessages.first().content.templates()
+    operator fun invoke(robot: RobotCore<*, *, *>, response: CommonMessage): ToolResultMessage = with(robot) {
+        val template = response.message().content?.templates() ?: throw Exception("FillInTheBlank content is missing")
         val results = template.expressions.map { it.asFunctionCall()().toString() }
         Result(ToolResultAction.ReplaceAndComplete).apply {
             messages.add(template.fill(results).asAssistantMessage())

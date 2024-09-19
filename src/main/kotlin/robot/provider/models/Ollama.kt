@@ -2,14 +2,13 @@ package dev.supachain.robot.provider.models
 
 import dev.supachain.Extension
 import dev.supachain.robot.*
-import dev.supachain.robot.NetworkOwner
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.FunctionCall
-import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.post
+import dev.supachain.robot.messenger.messaging.asAssistantMessage
 import dev.supachain.robot.provider.Actions
+import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.provider.tools.OpenAIToolSend
 import dev.supachain.robot.tool.ToolConfig
@@ -20,7 +19,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-class Ollama : Provider<OllamaResponse, Ollama>(), OllamaActions, NetworkOwner {
+class Ollama : Provider<OllamaMessage, Ollama>(), OllamaActions, NetworkOwner {
     var chatModel: String = "llama3.1"
     val stream: Boolean = false
 
@@ -29,9 +28,9 @@ class Ollama : Provider<OllamaResponse, Ollama>(), OllamaActions, NetworkOwner {
     override var maxRetries: Int = 3
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = FillInTheBlank
-    override var messenger: Messenger<OllamaResponse> = Messenger(this)
+    override var messenger: Messenger<OllamaMessage> = Messenger(this)
     override val toolResultMessage: (result: String) -> Message =
-        { Message(Role.FUNCTION, it, name) }
+        { Message(Role.FUNCTION, it) }
 
     val network: NetworkConfig = NetworkConfig()
     override val networkClient: NetworkClient by lazy { KTORClient(network) }
@@ -50,7 +49,7 @@ class Ollama : Provider<OllamaResponse, Ollama>(), OllamaActions, NetworkOwner {
     }
 }
 
-private sealed interface OllamaActions : NetworkOwner, Actions<OllamaResponse>, Extension<Ollama> {
+private sealed interface OllamaActions : NetworkOwner, Actions<OllamaMessage>, Extension<Ollama> {
     override suspend fun chat(tools: List<ToolConfig>): OllamaChatResponse = with(self()) {
         return post(
             "$url/api/chat",
@@ -59,7 +58,8 @@ private sealed interface OllamaActions : NetworkOwner, Actions<OllamaResponse>, 
     }
 }
 
-sealed interface OllamaResponse: CommonResponse
+sealed interface OllamaMessage: CommonMessage
+
 @Serializable
 data class OllamaChatResponse(
     val model: String,
@@ -81,7 +81,7 @@ data class OllamaChatResponse(
     val evalDuration: Long,
     @SerialName("done_reason")
     val doneReason: String?
-) : OllamaResponse {
+) : OllamaMessage {
     @Serializable
     data class OllamaMessage(
         val role: String,
@@ -101,11 +101,7 @@ data class OllamaChatResponse(
         }
     }
 
-    override val rankMessages: List<Message.FromAssistant> by lazy {
-        listOf(Message.FromAssistant(Message(Role.ASSISTANT, message.content)))
-    }
-
-    override val requestedFunctions: List<FunctionCall>
-        get() = message.toolCalls?.map { FunctionCall(it.function.arguments.mapToFunctionCall(), it.function.name) }
+    override fun message() = message.content.asAssistantMessage()
+    override fun functions(): List<FunctionCall> = message.toolCalls?.map { FunctionCall(it.function.arguments.mapToFunctionCall(), it.function.name) }
             ?: emptyList()
 }

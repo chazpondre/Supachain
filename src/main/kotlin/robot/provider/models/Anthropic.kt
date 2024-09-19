@@ -6,6 +6,7 @@ import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.FunctionCall
 import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.messenger.messaging.asAssistantMessage
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.Provider
@@ -46,10 +47,10 @@ interface AnthropicModels {
     }
 }
 
-sealed interface AnthropicResponse : CommonResponse
+sealed interface AnthropicMessage : CommonMessage
 
 @Suppress("unused")
-class Anthropic : Provider<AnthropicResponse, Anthropic>(), AnthropicAPI, AnthropicActions, NetworkOwner,
+class Anthropic : Provider<AnthropicMessage, Anthropic>(), AnthropicAPI, AnthropicActions, NetworkOwner,
     AnthropicModels {
     var apiKey: String = ""
     var beta: String = ""
@@ -61,7 +62,7 @@ class Anthropic : Provider<AnthropicResponse, Anthropic>(), AnthropicAPI, Anthro
     override var url: String = "https://api.anthropic.com/v1"
     var version: String = "2023-06-01"
     override val toolResultMessage: (result: String) -> Message =
-        { Message(Role.FUNCTION, it, name) }
+        { Message(Role.FUNCTION, it) }
 
     var chatModel: String = models.chat.claude35Sonnet_20240620
     val stream: Boolean = false
@@ -70,7 +71,7 @@ class Anthropic : Provider<AnthropicResponse, Anthropic>(), AnthropicAPI, Anthro
     override var maxRetries: Int = 3
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = FillInTheBlank
-    override var messenger: Messenger<AnthropicResponse> = Messenger(this)
+    override var messenger: Messenger<AnthropicMessage> = Messenger(this)
 
     internal val headers
         get() = mutableMapOf(
@@ -100,7 +101,7 @@ private interface AnthropicAPI : Extension<Anthropic> {
     ) : CommonChatRequest
 }
 
-private sealed interface AnthropicActions : NetworkOwner, Actions<AnthropicResponse>, Extension<Anthropic> {
+private sealed interface AnthropicActions : NetworkOwner, Actions<AnthropicMessage>, Extension<Anthropic> {
     override suspend fun chat(tools: List<ToolConfig>): AnthropicChatResponse = with(self()) {
         return post(
             "$url/messages",
@@ -120,7 +121,7 @@ data class AnthropicChatResponse(
     @SerialName("stop_sequence") val stopSequence: String? = null,
     val type: String? = null,
     val usage: Usage? = null
-) : AnthropicResponse {
+) : AnthropicMessage {
     @Serializable
     data class Content(
         val type: String,
@@ -136,14 +137,12 @@ data class AnthropicChatResponse(
         @SerialName("output_tokens") val outputTokens: Int
     )
 
-    override val rankMessages: List<Message.FromAssistant>
-        get() = content.mapNotNull { if (it.type == "text") Message.FromAssistant(Role.ASSISTANT, it.text!!) else null }
-    override val requestedFunctions: List<FunctionCall>
-        // Possible BUG function calls may not be in correct order in it.input.map
-        get() = content.mapNotNull {
-            if (it.type == "tool_use") FunctionCall(
-                it.input!!.toJson(false),
-                it.name!!
-            ) else null
-        }
+    override fun message(): Message = (content.last().text ?: "").asAssistantMessage()
+
+    override fun functions(): List<FunctionCall> = content.mapNotNull {
+        if (it.type == "tool_use") FunctionCall(
+            it.input!!.toJson(false),
+            it.name!!
+        ) else null
+    }
 }

@@ -2,9 +2,9 @@ package dev.supachain.robot.director.directive
 
 import dev.supachain.robot.answer.Answer
 import dev.supachain.robot.answer.formatRules
-import dev.supachain.robot.messenger.asSystemMessage
-import dev.supachain.robot.messenger.asUserMessage
 import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.messenger.messaging.asSystemMessage
+import dev.supachain.robot.messenger.messaging.asUserMessage
 import dev.supachain.robot.provider.Feature
 import dev.supachain.utilities.KTypeSerializer
 import dev.supachain.utilities.Parameter
@@ -103,7 +103,6 @@ interface AbstractDirective {
                 "character instead of comma. " +
                 "For each item: " + subClass.formatRules()
     }
-
 }
 
 /**

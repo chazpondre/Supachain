@@ -4,10 +4,10 @@ package dev.supachain.robot.tool.strategies
 import dev.supachain.robot.director.*
 import dev.supachain.robot.messenger.ToolResultAction
 import dev.supachain.robot.messenger.ToolResultMessage
-import dev.supachain.robot.messenger.asSystemMessage
-import dev.supachain.robot.provider.models.CommonResponse
 import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.messenger.messaging.asSystemMessage
 import dev.supachain.robot.provider.Provider
+import dev.supachain.robot.provider.models.CommonMessage
 import dev.supachain.robot.tool.ToolConfig
 
 /**
@@ -43,21 +43,21 @@ data object BackAndForth : ToolUseStrategy {
     internal operator fun invoke(
         robot: RobotCore<*, *, *>,
         lastUserMessage: Message,
-        response: CommonResponse,
+        response: CommonMessage,
         provider: Provider<*, *>, // TODO Decouple Provider
         toolResult: Result?
     ): ToolResultMessage = with(robot) {
         val result = toolResult ?: Result()
-        if (response.requestedFunctions.isNotEmpty()) {
+        if (response.functions().isNotEmpty()) {
 
             var callStatus: CallStatus = Success
-            for ((index, call) in response.requestedFunctions.withIndex()) {
+            for ((index, call) in response.functions().withIndex()) {
                 try {
                     callStatus = call(result.callHistory)
                     when (callStatus) {
                         Success -> {
                             if (
-                                index == response.requestedFunctions.lastIndex &&
+                                index == response.functions().lastIndex &&
                                 provider.includeSeekCompletionMessage
                             ) result.messages.add(completionMessage)
 
@@ -80,7 +80,7 @@ data object BackAndForth : ToolUseStrategy {
                         }
                     }
                 } catch (e: Exception) {
-                    logger.error("Illegal call: $call in ${response.requestedFunctions}")
+                    logger.error("Illegal call: $call in ${response.functions()}")
                     throw e
                 }
             }

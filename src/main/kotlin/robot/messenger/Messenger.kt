@@ -15,7 +15,7 @@ import dev.supachain.robot.director.directive.Objective
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.Feature
 import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.provider.models.CommonResponse
+import dev.supachain.robot.provider.models.CommonMessage
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.FillInTheBlank
@@ -57,10 +57,10 @@ interface ToolResultMessage {
  * @since 0.1.0-alpha
 
  */
-class Messenger<ResponseType : CommonResponse> internal constructor
-    (private val provider: Provider<ResponseType, *>, maxMessages: Int = 10) {
+class Messenger<MessageType : CommonMessage> internal constructor
+    (private val provider: Provider<MessageType, *>, maxMessages: Int = 10) {
 
-    private val responses: MutableList<ResponseType> = mutableListOf()
+    private val responses: MutableList<MessageType> = mutableListOf()
     private val conversations: ConversationHistory = mutableListOf(mutableListOf())
     private val logger = LoggerFactory.getLogger(Messenger::class.qualifiedName)
 
@@ -115,9 +115,8 @@ class Messenger<ResponseType : CommonResponse> internal constructor
         val response = handleResponse(feature, robot.allTools)
         // Handle Tool Calls
         val result: ToolResultMessage = handleToolCalling(robot, response, toolResult)
-        // Store Messages
-        result.messages.forEach { it.store() }
-        result.messages.clear()
+        // Store And Clear Tool Result
+        result.messages.apply { forEach { it.store() }; clear() }
 
         // Handle Action
         return when (result.action) {
@@ -153,20 +152,27 @@ class Messenger<ResponseType : CommonResponse> internal constructor
      * @since 0.1.0-alpha
 
      */
-    private suspend fun handleResponse(feature: Feature, tools: List<ToolConfig>): ResponseType {
+    private suspend fun handleResponse(feature: Feature, tools: List<ToolConfig>): MessageType {
         val response = provider.request(feature, tools)
         responses.add(response)
-        response.topMessage.data.store()
+        response.message().store()
         logger.debug(Debug("Messenger"), "Response: \n{}", response)
         return response
     }
 
-    private fun Messenger<ResponseType>.handleToolCalling(
+    private fun Messenger<MessageType>.handleToolCalling(
         robot: RobotCore<*, *, *>,
-        response: ResponseType,
+        response: MessageType,
         toolResult: ToolResultMessage?
     ): ToolResultMessage = when (provider.toolStrategy) {
-        is BackAndForth -> BackAndForth(robot, lastUserMessage(), response, provider, toolResult as BackAndForth.Result?)
+        is BackAndForth -> BackAndForth(
+            robot,
+            lastUserMessage(),
+            response,
+            provider,
+            toolResult as BackAndForth.Result?
+        )
+
         is FillInTheBlank -> FillInTheBlank(robot, response)
     }
 
