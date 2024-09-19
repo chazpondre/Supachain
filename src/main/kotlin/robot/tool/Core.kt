@@ -37,6 +37,20 @@ data class RobotTool(
     @Transient val kFunction: KFunction<*>? = null
 ) {
     fun toToolConfig() = ToolConfig( this)
+    /**
+     * Generates a Kotlin-like function signature string from the tool configuration.
+     *
+     * This function constructs a string representation of the tool function's signature,
+     * including its name, parameter types, and return type (if available).
+     *
+     * @return A string resembling a Kotlin function declaration for the tool.
+     */
+    fun asKFunctionString() =
+        "fun ${name}(${
+            parameters.joinToString(", ") {
+                "${it.name}: ${it.type.getShortName()}"
+            }
+        })" + ":${kFunction?.returnType?.getShortName()}"
 }
 /**
  * A type alias representing a set of tool configurations.
@@ -72,12 +86,7 @@ data class ToolConfig(val function: RobotTool, val type: ToolType = ToolType.FUN
      *
      * @return A string resembling a Kotlin function declaration for the tool.
      */
-    fun asKFunctionString() =
-        "fun ${function.name}(${
-            function.parameters.joinToString(", ") {
-                "${it.name}: ${it.type.getShortName()}"
-            }
-        })" + ":${function.kFunction?.returnType?.getShortName()}"
+    fun asKFunctionString() = function.asKFunctionString()
 }
 
 /**
