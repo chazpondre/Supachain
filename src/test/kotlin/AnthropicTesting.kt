@@ -1,5 +1,6 @@
 import dev.supachain.robot.Defaults
 import dev.supachain.robot.Robot
+import dev.supachain.robot.messenger.MessageFilter
 import dev.supachain.robot.provider.models.Anthropic
 import dev.supachain.robot.tool.ToolSet
 import dev.supachain.robot.tool.strategies.BackAndForth
@@ -83,7 +84,9 @@ class AnthropicTesting {
             defaultProvider {
                 apiKey = "ANTHROPIC_API_KEY"
                 network.engine = { mockEngine }
-                useOnlyUserMessages = true
+                useFormatMessage = false
+                userMessagePrimer = false
+                messageFilter = MessageFilter.OnlyUserMessages
             }
         }
 
@@ -209,7 +212,9 @@ class AnthropicTesting {
                 apiKey = "ANTHROPIC_API_KEY"
                 network.engine = { mockEngine }
                 toolStrategy = BackAndForth
-                useOnlyUserMessages = true
+                userMessagePrimer = false
+                useFormatMessage = false
+                messageFilter = MessageFilter.OnlyUserMessages
             }
         }
 

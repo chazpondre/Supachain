@@ -1,5 +1,6 @@
 import dev.supachain.robot.Defaults
 import dev.supachain.robot.Robot
+import dev.supachain.robot.messenger.MessageFilter
 import dev.supachain.robot.provider.models.OpenAI
 import dev.supachain.robot.tool.Parameters
 import dev.supachain.robot.tool.Tool
@@ -51,7 +52,9 @@ class OpenAITesting {
             defaultProvider {
                 apiKey = "OPENAI_API_KEY"
                 network.engine = { mockEngine }
-                useOnlyUserMessages = true
+                useFormatMessage = false
+                userMessagePrimer = false
+                messageFilter = MessageFilter.OnlyUserMessages
                 chatModel = models.chat.gpt4o
             }
         }
@@ -166,7 +169,9 @@ class OpenAITesting {
             defaultProvider {
                 apiKey = "OPENAI_API_KEY"
                 network.engine = { mockEngine }
-                useOnlyUserMessages = true
+                useFormatMessage = false
+                userMessagePrimer = false
+                messageFilter = MessageFilter.OnlyUserMessages
                 chatModel = models.chat.gpt4o
                 toolStrategy = BackAndForth
             }
