@@ -10,7 +10,7 @@ typealias Coordinates = Array<Int>
 @ToolSet
 class Tools {
     fun getLongLat(city: String): Coordinates = arrayOf(0, 0)
-    fun getWeather(coordinates: Coordinates): Double =27.0
+    fun getWeather(coordinates: Coordinates): Double = 27.0
 }
 
 fun main() {
