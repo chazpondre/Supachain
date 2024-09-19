@@ -15,54 +15,13 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmErasure
 
-/**
- * Represents a directive for a robot, encapsulating method details and associated information.
- *
- * This data class describes a command or instruction to be executed by a robot. It includes the
- * method's name, its parameters, the expected return type, any relevant messages, and the associated feature.
- *
- * @property name The name of the method to be executed by the robot.
- * @property parameters A list of [Parameter] objects detailing the method's input parameters.
- * @property returnType The [KType] representing the expected return type of the method.
- * @property messages A list of [Message] objects containing additional information or context relevant to the directive.
- * @property feature The [Feature] associated with this directive, providing context for its execution.
- *
- * @since 0.1.0-alpha
 
- */
-@Serializable
-data class Directive(
-    val name: String,
-    val parameters: List<Parameter>,
-    @Serializable(with = KTypeSerializer::class)
-    val returnType: KType,
-    val messages: List<Message>,
-    val feature: Feature,
-) {
-//    /**
-//     * Retrieves all messages associated with a directive, combining existing messages with those extracted from function arguments.
-//     *
-//     * This function processes the messages related to a given directive, ensuring a logical order based on their roles (e.g., USER, ASSISTANT, SYSTEM). It also integrates messages derived from the function arguments, providing a comprehensive set of messages for the Robot's interaction.
-//     *
-//     * **Steps:**
-//     * 1. **Sorts Existing Messages:** Orders the existing messages by their `Role` to maintain a natural conversation flow.
-//     * 2. **Extracts Argument Messages:** Retrieves messages from the function arguments using `getArgumentMessages`, capturing information about the parameters of the function being called.
-//     * 3. **Combines Messages:** Adds the extracted argument messages to the end of the sorted list, creating a comprehensive set of messages for the Robot.
-//     *
-//     * **Returns:**
-//     * A mutable list of messages, combining the original messages with the extracted argument messages.
-//     *
-//     * @param directiveArguments The arguments passed to the function that this directive is associated with.
-//     *
-//     * @since 0.1.0-alpha
-//     */
-////    fun getDirectiveMessages(directiveArguments: Array<Any?>, useUserMessagePrimer: Boolean): Array<Message> {
-////        return mutableListOf<Message>().apply {
-////            addAll(generalMessages)
-////            add(formattingMessage())
-////            addAll(argumentMessages(directiveArguments, useUserMessagePrimer))
-////        }.toTypedArray()
-////    }
+class Objective(val data: Pair<Directive, Array<Any?>>) : AbstractDirective by data.first {
+    constructor(directive: Directive, arguments: Array<Any?>) : this(Pair(directive, arguments))
+
+    private val directive: Directive get() = data.first
+    val arguments: Array<Any?> get() = data.second
+
 
     /**
      * Converts method arguments of a method into a list of messages.
@@ -70,8 +29,8 @@ data class Directive(
      * @param directiveArguments The arguments passed to the method.
      * @return A list of messages representing the arguments.
      */
-    fun argumentMessages(directiveArguments: Array<Any?>, usePrimer: Boolean): List<Message> =
-        List(parameters.size) { index -> directiveArguments[index] }.mapIndexed { index, arg ->
+    fun argumentMessages(usePrimer: Boolean): List<Message> =
+        List(parameters.size) { index -> arguments[index] }.mapIndexed { index, arg ->
             val givenName = parameters[index].description
             val localName = parameters[index].name
             val name = givenName.ifBlank { localName }
@@ -80,7 +39,22 @@ data class Directive(
             else "$arg".asUserMessage()
         }
 
+
+    override fun toString(): String {
+        return "↓↓↓↓↓↓↓  Objective  ↓↓↓↓↓↓↓\n - Directive: $directive\n - Arguments: $arguments\n - Feature: $feature"
+    }
+}
+
+interface AbstractDirective {
+    val name: String
+    val parameters: List<Parameter>
+
+    @Serializable(with = KTypeSerializer::class)
+    val returnType: KType
+    val messages: List<Message>
+    val feature: Feature
     val rankedConfigMessages get() = messages.sortedBy { it.role.ordinal }
+
 
     /**
      * Determines the expected output format based on a method's return type.
@@ -94,7 +68,6 @@ data class Directive(
      * @throws IllegalArgumentException If the return type is `Unit` or unsupported.
      *
      * @since 0.1.0-alpha
-
      */
     fun formattingMessage(): Message {
         // Extract the KClass representing the return type (handling Deferred)
@@ -123,7 +96,7 @@ data class Directive(
      * @return A string containing the format rules for the collection.
      * @throws IllegalArgumentException If the expected generic type for the collection is not found.
      */
-    private fun collectionFormatRules(): String {
+    fun collectionFormatRules(): String {
         val subClass = returnType.arguments.firstOrNull()?.type?.arguments?.firstOrNull()?.type?.jvmErasure
             ?: throw IllegalStateException("Expected a Answer type for Directive to be Collection type, received $this")
         return "\nYou must use CSV format. Do not number lines. Put every item separated by newline " +
@@ -131,5 +104,31 @@ data class Directive(
                 "For each item: " + subClass.formatRules()
     }
 
+}
+
+/**
+ * Represents a directive for a robot, encapsulating method details and associated information.
+ *
+ * This data class describes a command or instruction to be executed by a robot. It includes the
+ * method's name, its parameters, the expected return type, any relevant messages, and the associated feature.
+ *
+ * @property name The name of the method to be executed by the robot.
+ * @property parameters A list of [Parameter] objects detailing the method's input parameters.
+ * @property returnType The [KType] representing the expected return type of the method.
+ * @property messages A list of [Message] objects containing additional information or context relevant to the directive.
+ * @property feature The [Feature] associated with this directive, providing context for its execution.
+ *
+ * @since 0.1.0-alpha
+
+ */
+@Serializable
+data class Directive(
+    override val name: String,
+    override val parameters: List<Parameter>,
+    @Serializable(with = KTypeSerializer::class)
+    override val returnType: KType,
+    override val messages: List<Message>,
+    override val feature: Feature,
+) : AbstractDirective {
     override fun toString(): String = this.toJson()
 }

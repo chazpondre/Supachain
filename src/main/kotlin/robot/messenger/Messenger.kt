@@ -11,7 +11,7 @@ package dev.supachain.robot.messenger
 
 import dev.supachain.robot.director.RobotCore
 import dev.supachain.robot.director.RobotInterface
-import dev.supachain.robot.director.directive.Directive
+import dev.supachain.robot.director.directive.Objective
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.Feature
 import dev.supachain.robot.provider.Provider
@@ -76,36 +76,32 @@ class Messenger<ResponseType : CommonResponse> internal constructor
 
     internal suspend
     fun send(
-        args: Array<Any?>,
-        director: RobotCore<*, *, *>,
-        filter: MessageFilter,
-        directive: Directive,
+        robot: RobotCore<*, *, *>,
+        objective: Objective,
     ): Message {
-        setupMessages(args, directive, director, filter)
-        return getResult(director, directive.feature)
+        setupMessages(robot, objective)
+        return getResult(robot, objective.feature)
     }
 
     private fun setupMessages(
-        args: Array<Any?>,
-        directive: Directive,
-        director: RobotInterface,
-        filter: MessageFilter
+        robot: RobotInterface,
+        objective: Objective
     ) {
         // Get All Messages
         val messageList = mutableListOf<Message>().apply {
             // Add Config Messages
-            addAll(directive.rankedConfigMessages)
+            addAll(objective.rankedConfigMessages)
             // Formatting Message
-            if (provider.useFormatMessage) add(directive.formattingMessage())
+            if (provider.useFormatMessage) add(objective.formattingMessage())
             // Tool Strategy Messages
-            provider.toolStrategy.onRequestMessage(director.allTools)?.also { add(it) }
+            provider.toolStrategy.onRequestMessage(robot.allTools)?.also { add(it) }
             // Argument Messages
-            addAll(directive.argumentMessages(args, provider.userMessagePrimer))
+            addAll(objective.argumentMessages(provider.userMessagePrimer))
         }
 
         // Filter Messages & Store
         messageList.filter {
-            when (filter) {
+            when (provider.messageFilter) {
                 MessageFilter.OnlyUserMessages -> it.role == Role.USER
                 MessageFilter.OnlySystemMessages -> it.role == Role.SYSTEM
                 MessageFilter.None -> true
@@ -114,25 +110,25 @@ class Messenger<ResponseType : CommonResponse> internal constructor
     }
 
     private tailrec suspend
-    fun getResult(director: RobotCore<*, *, *>, feature: Feature, toolResult: ToolResultMessage? = null): Message {
+    fun getResult(robot: RobotCore<*, *, *>, feature: Feature, toolResult: ToolResultMessage? = null): Message {
         // Handle Response
-        val response = handleResponse(feature, director.allTools)
+        val response = handleResponse(feature, robot.allTools)
         // Handle Tool Calls
-        val result: ToolResultMessage = handleToolCalling(director, response, toolResult)
+        val result: ToolResultMessage = handleToolCalling(robot, response, toolResult)
         // Store Messages
         result.messages.forEach { it.store() }
+        result.messages.clear()
 
         // Handle Action
         return when (result.action) {
-            ToolResultAction.Retry -> getResult(director, feature, result)
-            ToolResultAction.Update -> getResult(director, feature, result)
+            ToolResultAction.Retry -> getResult(robot, feature, result)
+            ToolResultAction.Update -> getResult(robot, feature, result)
             ToolResultAction.Complete -> lastMessage()
             ToolResultAction.ReplaceAndComplete -> lastMessage().apply {
                 currentConversation.removeAt(currentConversation.lastIndex - 1)
             }
         }
     }
-
 
     /**
      * Handles the response from the default language model provider and delegates further processing based on the tool strategy.
@@ -166,12 +162,12 @@ class Messenger<ResponseType : CommonResponse> internal constructor
     }
 
     private fun Messenger<ResponseType>.handleToolCalling(
-        director: RobotCore<*, *, *>,
+        robot: RobotCore<*, *, *>,
         response: ResponseType,
         toolResult: ToolResultMessage?
     ): ToolResultMessage = when (provider.toolStrategy) {
-        is BackAndForth -> BackAndForth(director, lastUserMessage(), response, provider, toolResult as BackAndForth.Result)
-        is FillInTheBlank -> FillInTheBlank(director, response)
+        is BackAndForth -> BackAndForth(robot, lastUserMessage(), response, provider, toolResult as BackAndForth.Result?)
+        is FillInTheBlank -> FillInTheBlank(robot, response)
     }
 
     fun finalResponse() = lastMessage().content ?: ""

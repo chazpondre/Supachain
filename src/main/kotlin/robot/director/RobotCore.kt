@@ -10,6 +10,7 @@ package dev.supachain.robot.director
 
 import dev.supachain.robot.answer.Answer
 import dev.supachain.robot.director.directive.Directive
+import dev.supachain.robot.director.directive.Objective
 import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.tool.ToolMap
 import dev.supachain.utilities.*
@@ -24,10 +25,8 @@ import kotlin.reflect.KVisibility
 
 internal interface RobotInterface {
     val defaultProvider: Provider<*, *>
-//    val featureProviderMap: Map<Feature, Provider<*, *>>
     val directives: MutableMap<String, Directive>
     val toolMap: ToolMap
-    var defaultSeed: Int?
     val allTools get() = toolMap.values.toList()
 }
 
@@ -55,8 +54,6 @@ internal interface RobotInterface {
  * @property defaultProvider The default AI provider for handling requests.
  * @property toolMap A map of tool names to their configurations.
  * @property directives A map of directive names to their corresponding `Directive` objects.
- * @property defaultSeed An optional seed value for controlling the randomness of AI-generated responses.
- * @property messenger An instance of `Messenger` for managing conversation history.
  * @property toolProxy A proxy object for executing tool functions.
  * @property toolProxyObject A lazy-initialized function that creates an instance of the `ToolType` class
  *                           containing the tool functions.
@@ -68,11 +65,10 @@ data class RobotCore<P : Provider<*, *>, API : Any, ToolType : Any>(
     override var defaultProvider: P,
     override val toolMap: ToolMap = mutableMapOf(),
     override val directives: MutableMap<String, Directive> = mutableMapOf(),
-    override var defaultSeed: Int? = null,
     override val job: CompletableJob = SupervisorJob(),
     override val coroutineContext: CoroutineContext = Dispatchers.IO + job,
-//    override val messenger: Messenger<> = Messenger(),
-) : DirectiveHandling<ToolType>, RobotInterface, RunsInBackground {
+) : FunctionHandling<ToolType>, RobotInterface, RunsInBackground {
+
     override val toolProxy by lazy { toolProxyObject() }
     lateinit var toolProxyObject: () -> ToolType
 
@@ -114,13 +110,14 @@ data class RobotCore<P : Provider<*, *>, API : Any, ToolType : Any>(
             createObjectFromNoArgClass<ToolInterface>()
         }
 
-        val tools = ToolInterface::class.getToolMethods().map { it.toToolConfig() }
+        ToolInterface::class.getToolMethods()
+            .map { it.toToolConfig() }
+            .forEach { toolMap[it.function.name] = it }
+
         logger.debug(
             Debug("Director"), "[Configuration]\nUses Toolset: {},\nTools: {}",
-            ToolInterface::class.simpleName, tools
+            ToolInterface::class.simpleName, toolMap
         )
-
-        tools.forEach { toolMap[it.function.name] = it }
     }
 
     /**
@@ -142,6 +139,51 @@ data class RobotCore<P : Provider<*, *>, API : Any, ToolType : Any>(
 
         return directiveInterface by { parent, name, args, returnType ->
             Answer<Any>(returnType, scope.async { handleDirectiveRequest(parent, name, args) })
+        }
+    }
+
+    /**
+     * Processes a directive request, handles the provider's response, and returns the final message content.
+     *
+     * This function is responsible for the core logic of handling directives within the `RobotCore`.
+     * It performs the following key steps:
+     *
+     * 1. **Directive Retrieval:** Fetches the `RobotDirective` associated with the given proxied `name` from the `directives` map.
+     *    If the directive is not found, an `IllegalStateException` is thrown.
+     * 2. **Provider Interaction:** Sends the provided arguments to the default provider's `messenger`, along with the directive.
+     * 3. **Result Extraction:** Retrieves the final response from the `messenger`.
+     * 4. **Error Handling:** Catches any exceptions during processing, logs an error message with context,
+     *    and rethrows the exception for further handling by the caller.
+     *
+     * @param parent The name of the parent or context initiating this directive request (used for logging purposes).
+     * @param name The name of the directive to be executed.
+     * @param args An array of arguments to be passed to the underlying function associated with the directive.
+     * @return The content of the final message in the `Messenger`, representing the response or result.
+     * @throws IllegalStateException If the specified directive is not found in the `directives` map.
+     * @throws Exception If any other error occurs during the processing of the directive.
+     *
+     * @since 0.1.0-alpha
+     */
+    suspend
+    fun handleDirectiveRequest(parent: String, name: String, args: Array<Any?>): String {
+        try {
+            // Get Corresponding Directive
+            val directive = directives[name] ?: throw IllegalStateException("Method $name not found in methodLookUp")
+            val objective = Objective(directive, args)
+
+            // Debug
+            logger.debug(Debug("Director"), objective.toString())
+
+            // Get Provider
+            val provider = defaultProvider
+            return with(provider) {
+                messenger.send(this@RobotCore, objective)
+                messenger.finalResponse()
+            }
+
+        } catch (e: Exception) {
+            logger.error("Error handling method $name of $parent", e)
+            throw e
         }
     }
 }

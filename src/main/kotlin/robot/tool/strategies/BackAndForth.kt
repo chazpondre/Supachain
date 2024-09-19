@@ -33,7 +33,7 @@ data object BackAndForth : ToolUseStrategy {
      * This function handles the core logic of the `BackAndForth` strategy. It processes the AI provider's response,
      * executes requested function calls, and manages the conversation flow.
      *
-     * @param director The `Director` instance responsible for orchestrating the AI interaction.
+     * @param robot The `Director` instance responsible for orchestrating the AI interaction.
      * @param response The `CommonResponse` received from the AI provider.
      * @param directive The `Directive` object containing instructions and restrictions for the AI's actions.
      * @param name The name of the current function being executed (for logging).
@@ -41,12 +41,13 @@ data object BackAndForth : ToolUseStrategy {
      * @param callHistory A mutable map to track the history of function calls and their results.
      */
     internal operator fun invoke(
-        director: RobotCore<*, *, *>,
+        robot: RobotCore<*, *, *>,
         lastUserMessage: Message,
         response: CommonResponse,
         provider: Provider<*, *>, // TODO Decouple Provider
-        result: Result = Result()
-    ): ToolResultMessage = with(director) {
+        toolResult: Result?
+    ): ToolResultMessage = with(robot) {
+        val result = toolResult ?: Result()
         if (response.requestedFunctions.isNotEmpty()) {
 
             var callStatus: CallStatus = Success
@@ -83,7 +84,7 @@ data object BackAndForth : ToolUseStrategy {
                     throw e
                 }
             }
-        }
+        } else result.action = ToolResultAction.Complete
         result
     }
 

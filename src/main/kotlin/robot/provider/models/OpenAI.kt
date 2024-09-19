@@ -98,7 +98,7 @@ class OpenAI : Provider<OpenAIResponse, OpenAI>(), OpenAIActions, OpenAIModels {
     override var toolStrategy: ToolUseStrategy = BackAndForth
     override var messenger: Messenger<OpenAIResponse> = Messenger(this)
     override val toolResultMessage: (result: String) -> Message =
-        { Message(Role.FUNCTION, it, name) }
+        { Message(Role.FUNCTION, it) }
 
     var apiKey: String = ""
     var chatModel: String = models.chat.gpt4o

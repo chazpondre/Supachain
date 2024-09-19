@@ -100,10 +100,10 @@ data object FillInTheBlank : ToolUseStrategy {
      * This function processes a response from the AI provider by executing any function calls
      * embedded within the response template and replacing them with their results.
      *
-     * @param director The `Director` instance responsible for managing the AI interaction.
+     * @param robot The `Director` instance responsible for managing the AI interaction.
      * @param response The `CommonResponse` received from the AI provider.
      */
-    operator fun invoke(director: RobotCore<*, *, *>, response: CommonResponse): ToolResultMessage = with(director) {
+    operator fun invoke(robot: RobotCore<*, *, *>, response: CommonResponse): ToolResultMessage = with(robot) {
         val template = response.rankMessages.first().content.templates()
         val results = template.expressions.map { it.asFunctionCall()().toString() }
         Result(ToolResultAction.ReplaceAndComplete).apply {
