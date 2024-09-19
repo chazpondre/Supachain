@@ -404,6 +404,7 @@ fun <reified T> HttpResponse.formatAndCheckResponse(): T {
     }
     return try {
         capturedString = bodyAsText()
+        logger.debug(Debug("Network"), "[Network/Received]\n@[status:${this.status}, from: ${this.request.url}]\n$capturedString")
         json.decodeFromString(capturedString)
     } catch (e: RedirectResponseException) {
         // Handle redirect (3xx status codes)

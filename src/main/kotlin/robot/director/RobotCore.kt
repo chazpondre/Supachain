@@ -9,7 +9,6 @@
 package dev.supachain.robot.director
 
 import dev.supachain.robot.answer.Answer
-import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.director.directive.Directive
 import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.tool.ToolMap
@@ -23,14 +22,12 @@ import org.slf4j.LoggerFactory
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KVisibility
 
-internal interface DirectorCore {
-    val defaultProvider: Provider<*>
+internal interface RobotInterface {
+    val defaultProvider: Provider<*, *>
+//    val featureProviderMap: Map<Feature, Provider<*, *>>
     val directives: MutableMap<String, Directive>
     val toolMap: ToolMap
-    val messenger: Messenger
     var defaultSeed: Int?
-
-    val messages get() = messenger.messages()
     val allTools get() = toolMap.values.toList()
 }
 
@@ -67,20 +64,19 @@ internal interface DirectorCore {
  * @since 0.1.0-alpha
 
  */
-data class Director<P : Provider<*>, API : Any, ToolType : Any>(
+data class RobotCore<P : Provider<*, *>, API : Any, ToolType : Any>(
     override var defaultProvider: P,
     override val toolMap: ToolMap = mutableMapOf(),
     override val directives: MutableMap<String, Directive> = mutableMapOf(),
     override var defaultSeed: Int? = null,
     override val job: CompletableJob = SupervisorJob(),
     override val coroutineContext: CoroutineContext = Dispatchers.IO + job,
-    override val messenger: Messenger = Messenger(),
-) : DirectiveHandling<ToolType>, DirectorCore, RunsInBackground {
-
+//    override val messenger: Messenger<> = Messenger(),
+) : DirectiveHandling<ToolType>, RobotInterface, RunsInBackground {
     override val toolProxy by lazy { toolProxyObject() }
     lateinit var toolProxyObject: () -> ToolType
 
-    val logger: Logger by lazy { LoggerFactory.getLogger(Director::class.java) }
+    val logger: Logger by lazy { LoggerFactory.getLogger(RobotCore::class.java) }
 
     /**
      * Registers a tool interface within the director, enabling access to its functionalities.
@@ -111,7 +107,7 @@ data class Director<P : Provider<*>, API : Any, ToolType : Any>(
      *
      * @since 0.1.0-alpha
      */
-    inline fun <reified ToolInterface : ToolType> setUpToolset(): Director<P, API, *> = this.also {
+    inline fun <reified ToolInterface : ToolType> setUpToolset(): RobotCore<P, API, *> = this.also {
         toolProxyObject = {
             if (ToolInterface::class.visibility != KVisibility.PUBLIC)
                 throw IllegalArgumentException("Your class must not have private visibility")

@@ -4,7 +4,7 @@ package dev.supachain.robot
 
 import dev.supachain.CompileTime
 import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.director.Director
+import dev.supachain.robot.director.RobotCore
 
 object Robot {
     /**
@@ -27,14 +27,14 @@ object Robot {
     @JvmStatic
     @CompileTime
     inline operator
-    fun <reified RobotProvider : Provider<RobotProvider>, reified Interface : Any, reified Tools : Any>
-            invoke(modify: Director<RobotProvider, Interface, Tools>.() -> Unit = {}): Interface {
+    fun <reified RobotProvider : Provider<*, RobotProvider>, reified Interface : Any, reified Tools : Any>
+            invoke(modify: RobotCore<RobotProvider, Interface, Tools>.() -> Unit = {}): Interface {
         val provider = try {
             RobotProvider::class.java.getDeclaredConstructor().newInstance()
         } catch (e: Exception) {
             throw RuntimeException("Error creating instance of ${RobotProvider::class.simpleName}: ${e.message}", e)
         }
-        return Director<RobotProvider, Interface, Tools>(provider)
+        return RobotCore<RobotProvider, Interface, Tools>(provider)
             .apply(modify)
             .setUpToolset<Tools>()
             .setUpDirectives<Interface>()

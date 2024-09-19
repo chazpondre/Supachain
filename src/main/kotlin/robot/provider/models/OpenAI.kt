@@ -6,7 +6,7 @@ import dev.supachain.ExperimentalAPI
 import dev.supachain.Extension
 import dev.supachain.Modifiable
 import dev.supachain.robot.*
-import dev.supachain.robot.director.DirectorCore
+import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.*
 import dev.supachain.robot.provider.*
@@ -28,6 +28,7 @@ import kotlinx.serialization.Serializable
 █████████████████████████████████████████  ████  ██  ████  ██  ███  ███  ███████████████████████████████████████████████
 ██████████████████████████████████████████      ████      ███  ████  ██        █████████████████████████████████████████
  */
+
 
 /**
  * Configuration for interacting with OpenAI's API as an AI Robot.
@@ -87,7 +88,7 @@ import kotlinx.serialization.Serializable
  * @since 0.1.0-alpha
  */
 @Suppress("unused")
-class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
+class OpenAI : Provider<OpenAIResponse, OpenAI>(), OpenAIActions, OpenAIModels {
     override val name: String get() = "Open AI API"
     override var url: String = "https://api.openai.com"
     override var maxRetries: Int = 3
@@ -95,6 +96,7 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
     val network: NetworkConfig = NetworkConfig()
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = BackAndForth
+    override var messenger: Messenger<OpenAIResponse> = Messenger(this)
     override val toolResultMessage: (result: String) -> Message =
         { Message(Role.FUNCTION, it, name) }
 
@@ -133,7 +135,9 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
 ██████████████████████████████████████████████        ██  ███████████  █████████████████████████████████████████████████
 ██████████████████████████████████████████████  ████  ██  ████████        ██████████████████████████████████████████████
 */
-private fun List<ToolConfig>.asTool() = map { OpenAIAPI.ChatRequest.Tool(it) }
+sealed interface OpenAIResponse: CommonResponse
+private fun List<ToolConfig>.asOpenAITools() = map { OpenAIAPI.ChatRequest.Tool(it) }
+
 interface OpenAIAPI {
     @Serializable
     data class ChatRequest(
@@ -177,8 +181,6 @@ interface OpenAIAPI {
                         parameters.toProperties(),
                         parameters.filter { it.required }.map { it.name }
                     )
-
-
                 }
 
                 constructor(toolConfig: ToolConfig) :
@@ -209,7 +211,6 @@ interface OpenAIAPI {
                 }
             }
         }
-
     }
 
     @Serializable
@@ -223,7 +224,7 @@ interface OpenAIAPI {
         @SerialName("service_tier")
         val serviceTier: String? = null,
         val systemFingerprint: String? = null
-    ) : CommonResponse {
+    ) : OpenAIResponse {
         @Serializable
         data class Choice(
             val index: Int,
@@ -388,39 +389,15 @@ interface OpenAIModels {
  *
  * @since 0.1.0-alpha
  */
-private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI> {
+private sealed interface OpenAIActions : NetworkOwner, Actions<OpenAIResponse>, Extension<OpenAI> {
     override suspend
-    fun chat(director: DirectorCore): OpenAIAPI.ChatResponse =
+    fun chat(tools: List<ToolConfig>): OpenAIAPI.ChatResponse =
         with(self()) {
             return post(
                 "$url/v1/chat/completions", OpenAIAPI.ChatRequest(
-                    director.messages, chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
-                    parallelToolCalling, presencePenalty, seed ?: director.defaultSeed, stop, network.streamable,
-                    temperature, topP, director.tools.asTool(), toolChoice, user
-                ), headers
-            )
-        }
-
-    override suspend
-    fun embedding(director: DirectorCore): CommonResponse =
-        with(self()) {
-            return post(
-                "$url/v1/chat/completions", OpenAIAPI.ChatRequest(
-                    director.messages, chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
-                    parallelToolCalling, presencePenalty, director.defaultSeed, stop, network.streamable,
-                    temperature, topP, director.tools.asTool(), toolChoice, user
-                ), headers
-            )
-        }
-
-    override suspend
-    fun moderation(director: DirectorCore): CommonResponse =
-        with(self()) {
-            return post(
-                "$url/v1/chat/completions", OpenAIAPI.ChatRequest(
-                    director.messages, chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
-                    parallelToolCalling, presencePenalty, director.defaultSeed, stop, network.streamable,
-                    temperature, topP, director.tools.asTool(), toolChoice, user
+                    messenger.messages(), chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
+                    parallelToolCalling, presencePenalty, seed, stop, network.streamable,
+                    temperature, topP, tools.asOpenAITools(), toolChoice, user
                 ), headers
             )
         }

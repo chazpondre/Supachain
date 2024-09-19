@@ -39,32 +39,30 @@ data class Directive(
     val messages: List<Message>,
     val feature: Feature,
 ) {
-    /**
-     * Retrieves all messages associated with a directive, combining existing messages with those extracted from function arguments.
-     *
-     * This function processes the messages related to a given directive, ensuring a logical order based on their roles (e.g., USER, ASSISTANT, SYSTEM). It also integrates messages derived from the function arguments, providing a comprehensive set of messages for the Robot's interaction.
-     *
-     * **Steps:**
-     * 1. **Sorts Existing Messages:** Orders the existing messages by their `Role` to maintain a natural conversation flow.
-     * 2. **Extracts Argument Messages:** Retrieves messages from the function arguments using `getArgumentMessages`, capturing information about the parameters of the function being called.
-     * 3. **Combines Messages:** Adds the extracted argument messages to the end of the sorted list, creating a comprehensive set of messages for the Robot.
-     *
-     * **Returns:**
-     * A mutable list of messages, combining the original messages with the extracted argument messages.
-     *
-     * @param directiveArguments The arguments passed to the function that this directive is associated with.
-     *
-     * @since 0.1.0-alpha
-     */
-    fun getDirectiveMessages(directiveArguments: Array<Any?>, useOnlyUserMessage: Boolean): MutableList<Message> {
-        return mutableListOf<Message>().apply {
-            if (!useOnlyUserMessage) {
-                addAll(messages.sortedBy { it.role.ordinal })
-                add(formattingMessage())
-            }
-            addAll(getArgumentMessages(directiveArguments, useOnlyUserMessage))
-        }
-    }
+//    /**
+//     * Retrieves all messages associated with a directive, combining existing messages with those extracted from function arguments.
+//     *
+//     * This function processes the messages related to a given directive, ensuring a logical order based on their roles (e.g., USER, ASSISTANT, SYSTEM). It also integrates messages derived from the function arguments, providing a comprehensive set of messages for the Robot's interaction.
+//     *
+//     * **Steps:**
+//     * 1. **Sorts Existing Messages:** Orders the existing messages by their `Role` to maintain a natural conversation flow.
+//     * 2. **Extracts Argument Messages:** Retrieves messages from the function arguments using `getArgumentMessages`, capturing information about the parameters of the function being called.
+//     * 3. **Combines Messages:** Adds the extracted argument messages to the end of the sorted list, creating a comprehensive set of messages for the Robot.
+//     *
+//     * **Returns:**
+//     * A mutable list of messages, combining the original messages with the extracted argument messages.
+//     *
+//     * @param directiveArguments The arguments passed to the function that this directive is associated with.
+//     *
+//     * @since 0.1.0-alpha
+//     */
+////    fun getDirectiveMessages(directiveArguments: Array<Any?>, useUserMessagePrimer: Boolean): Array<Message> {
+////        return mutableListOf<Message>().apply {
+////            addAll(generalMessages)
+////            add(formattingMessage())
+////            addAll(argumentMessages(directiveArguments, useUserMessagePrimer))
+////        }.toTypedArray()
+////    }
 
     /**
      * Converts method arguments of a method into a list of messages.
@@ -72,15 +70,17 @@ data class Directive(
      * @param directiveArguments The arguments passed to the method.
      * @return A list of messages representing the arguments.
      */
-    fun getArgumentMessages(directiveArguments: Array<Any?>, useOnlyUserMessage: Boolean): List<Message> =
+    fun argumentMessages(directiveArguments: Array<Any?>, usePrimer: Boolean): List<Message> =
         List(parameters.size) { index -> directiveArguments[index] }.mapIndexed { index, arg ->
             val givenName = parameters[index].description
             val localName = parameters[index].name
             val name = givenName.ifBlank { localName }
 
-            if (useOnlyUserMessage) "$arg".asUserMessage()
-            else "Your task is to answer question in $name. $name=`$arg`".asUserMessage()
+            if (usePrimer) "Your task is to answer question in $name. $name=`$arg`".asUserMessage()
+            else "$arg".asUserMessage()
         }
+
+    val rankedConfigMessages get() = messages.sortedBy { it.role.ordinal }
 
     /**
      * Determines the expected output format based on a method's return type.
@@ -96,7 +96,7 @@ data class Directive(
      * @since 0.1.0-alpha
 
      */
-    private fun formattingMessage(): Message {
+    fun formattingMessage(): Message {
         // Extract the KClass representing the return type (handling Deferred)
         val returnClass = when (returnType.classifier) {
             Answer::class -> returnType.arguments[0].type?.classifier as? KClass<*>

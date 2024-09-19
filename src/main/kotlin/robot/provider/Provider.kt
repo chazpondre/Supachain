@@ -2,7 +2,8 @@
 
 package dev.supachain.robot.provider
 
-import dev.supachain.robot.director.DirectorCore
+import dev.supachain.robot.messenger.MessageFilter
+import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.models.CommonResponse
 import dev.supachain.robot.tool.ToolConfig
@@ -20,15 +21,19 @@ import dev.supachain.robot.tool.strategies.ToolUseStrategy
  * @since 0.1.0-alpha
 
  */
-abstract class Provider<T : Provider<T>>: Actions{
+abstract class Provider<ResponseType: CommonResponse, T : Provider<ResponseType, T>> : Actions<ResponseType> {
     abstract var maxRetries: Int
     abstract var toolsAllowed: Boolean
-    var loopDetection: Boolean = true
-    var useOnlyUserMessages: Boolean = false
-    var includeSeekCompletionMessage: Boolean = true
     abstract var toolStrategy: ToolUseStrategy
-    private val featureMap: Map<Feature, ProviderFeatureRequest> = getFeatureMap()
+    var loopDetection: Boolean = true
+    var userMessagePrimer: Boolean = true
+    var useFormatMessage: Boolean = true
+    var messageFilter : MessageFilter = MessageFilter.None
+    var includeSeekCompletionMessage: Boolean = true
+
+    internal abstract var messenger: Messenger<ResponseType>
     internal abstract val toolResultMessage: (result: String) -> Message
+
     /**
      * Executes a request to the AI provider for a specific feature.
      *
@@ -44,14 +49,50 @@ abstract class Provider<T : Provider<T>>: Actions{
 
      */
     internal suspend inline
-    fun request(feature: Feature, director: DirectorCore): CommonResponse = this.featureMap[feature]?.invoke(director)
-        ?: throw IllegalStateException("Unsupported Feature: The $feature feature is not support by $name")
+    fun request(feature: Feature, tools: List<ToolConfig>): ResponseType =
+        when (feature) {
+            // Feature chat is chatting
+            Feature.Chat -> chat(tools.allowed)
+            Feature.Embedding -> embedding()
+            Feature.Moderation -> moderation()
+            Feature.CreateSpeech -> createSpeech()
+            Feature.CreateTranscription -> createTranscription()
+            Feature.CreateTranslation -> createTranslation()
+            Feature.CreateFineTune -> createFineTune()
+            Feature.ListFineTunes -> listFineTunes()
+            Feature.ListFineTuneEvents -> listFineTuneEvents()
+            Feature.ListFineTuneCheckPoints -> listFineTuneCheckPoints()
+            Feature.FineTuneInfo -> fineTuneInfo()
+            Feature.FineTuneCancel -> fineTuneCancel()
+            Feature.CreateBatch -> createBatch()
+            Feature.GetBatch -> getBatch()
+            Feature.CancelBatch -> cancelBatch()
+            Feature.ListBatches -> listBatches()
+            Feature.UploadFile -> uploadFile()
+            Feature.ListFiles -> listFiles()
+            Feature.GetFile -> getFile()
+            Feature.DeleteFile -> deleteFile()
+            Feature.GetFileContent -> getFileContent()
+            Feature.CreateImage -> createImage()
+            Feature.ReadImage -> readImage()
+            Feature.UpdateImage -> updateImage()
+            Feature.VaryImage -> varyImage()
+            Feature.CreateAudio -> createAudio()
+            Feature.ReadAudio -> readAudio()
+            Feature.UpdateAudio -> updateAudio()
+            Feature.VaryAudio -> varyAudio()
+            Feature.CreateVideo -> createVideo()
+            Feature.ReadVideo -> readVideo()
+            Feature.UpdateVideo -> updateVideo()
+            Feature.VaryVideo -> varyVideo()
+            Feature.ListModels -> listModels()
+        }
 
     @Suppress("UNCHECKED_CAST")
     inline operator
     fun invoke(modify: T.() -> Unit) = (this as T).modify()
 
-    internal val DirectorCore.tools: List<ToolConfig> get()=
-        if(toolsAllowed) toolStrategy.getTools(this.toolMap) else emptyList()
+    internal val List<ToolConfig>.allowed: List<ToolConfig>
+        get() = if (toolsAllowed) toolStrategy.getTools(this) else emptyList()
 
 }

@@ -2,7 +2,7 @@ package dev.supachain.robot.provider.models
 
 import dev.supachain.Extension
 import dev.supachain.robot.*
-import dev.supachain.robot.director.DirectorCore
+import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.FunctionCall
 import dev.supachain.robot.messenger.messaging.Message
@@ -46,8 +46,11 @@ interface AnthropicModels {
     }
 }
 
+sealed interface AnthropicResponse : CommonResponse
+
 @Suppress("unused")
-class Anthropic : Provider<Anthropic>(), AnthropicAPI, AnthropicActions, NetworkOwner, AnthropicModels {
+class Anthropic : Provider<AnthropicResponse, Anthropic>(), AnthropicAPI, AnthropicActions, NetworkOwner,
+    AnthropicModels {
     var apiKey: String = ""
     var beta: String = ""
     var modelName: String = ""
@@ -67,6 +70,7 @@ class Anthropic : Provider<Anthropic>(), AnthropicAPI, AnthropicActions, Network
     override var maxRetries: Int = 3
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = FillInTheBlank
+    override var messenger: Messenger<AnthropicResponse> = Messenger(this)
 
     internal val headers
         get() = mutableMapOf(
@@ -80,9 +84,6 @@ class Anthropic : Provider<Anthropic>(), AnthropicAPI, AnthropicActions, Network
     override val networkClient: NetworkClient by lazy { KTORClient(network) }
 
     override val self: () -> Anthropic get() = { this }
-
-    internal fun DirectorCore.asAnthropicTools() =
-        tools.map { 17 }
 }
 
 private interface AnthropicAPI : Extension<Anthropic> {
@@ -99,13 +100,12 @@ private interface AnthropicAPI : Extension<Anthropic> {
     ) : CommonChatRequest
 }
 
-private sealed interface AnthropicActions : NetworkOwner, Actions, Extension<Anthropic> {
-    override suspend fun chat(director: DirectorCore): AnthropicChatResponse = with(self()) {
+private sealed interface AnthropicActions : NetworkOwner, Actions<AnthropicResponse>, Extension<Anthropic> {
+    override suspend fun chat(tools: List<ToolConfig>): AnthropicChatResponse = with(self()) {
         return post(
             "$url/messages",
-            AnthropicAPI.ChatRequest(
-                chatModel, director.messages, maxTokens, temperature, director.tools, stream
-            ), headers
+            AnthropicAPI.ChatRequest(chatModel, messenger.messages(), maxTokens, temperature, tools, stream),
+            headers
         )
     }
 }
@@ -120,7 +120,7 @@ data class AnthropicChatResponse(
     @SerialName("stop_sequence") val stopSequence: String? = null,
     val type: String? = null,
     val usage: Usage? = null
-) : CommonResponse {
+) : AnthropicResponse {
     @Serializable
     data class Content(
         val type: String,

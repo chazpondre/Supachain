@@ -3,7 +3,7 @@ package dev.supachain.robot.provider.models
 import dev.supachain.Extension
 import dev.supachain.robot.*
 import dev.supachain.robot.NetworkOwner
-import dev.supachain.robot.director.DirectorCore
+import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.FunctionCall
 import dev.supachain.robot.provider.CommonChatRequest
@@ -20,7 +20,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
-class Ollama : Provider<Ollama>(), OllamaActions, NetworkOwner {
+class Ollama : Provider<OllamaResponse, Ollama>(), OllamaActions, NetworkOwner {
     var chatModel: String = "llama3.1"
     val stream: Boolean = false
 
@@ -29,6 +29,7 @@ class Ollama : Provider<Ollama>(), OllamaActions, NetworkOwner {
     override var maxRetries: Int = 3
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = FillInTheBlank
+    override var messenger: Messenger<OllamaResponse> = Messenger(this)
     override val toolResultMessage: (result: String) -> Message =
         { Message(Role.FUNCTION, it, name) }
 
@@ -49,15 +50,16 @@ class Ollama : Provider<Ollama>(), OllamaActions, NetworkOwner {
     }
 }
 
-private sealed interface OllamaActions : NetworkOwner, Actions, Extension<Ollama> {
-    override suspend fun chat(director: DirectorCore): OllamaChatResponse = with(self()) {
+private sealed interface OllamaActions : NetworkOwner, Actions<OllamaResponse>, Extension<Ollama> {
+    override suspend fun chat(tools: List<ToolConfig>): OllamaChatResponse = with(self()) {
         return post(
             "$url/api/chat",
-            Ollama.Api.ChatRequest(chatModel, director.messages, director.tools, stream)
+            Ollama.Api.ChatRequest(chatModel, messenger.messages(), tools, stream)
         )
     }
 }
 
+sealed interface OllamaResponse: CommonResponse
 @Serializable
 data class OllamaChatResponse(
     val model: String,
@@ -79,7 +81,7 @@ data class OllamaChatResponse(
     val evalDuration: Long,
     @SerialName("done_reason")
     val doneReason: String?
-) : CommonResponse {
+) : OllamaResponse {
     @Serializable
     data class OllamaMessage(
         val role: String,

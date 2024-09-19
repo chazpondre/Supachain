@@ -2,13 +2,13 @@ package dev.supachain.robot.tool.strategies
 
 
 import dev.supachain.robot.director.*
-import dev.supachain.robot.director.directive.Directive
+import dev.supachain.robot.messenger.ToolResultAction
+import dev.supachain.robot.messenger.ToolResultMessage
 import dev.supachain.robot.messenger.asSystemMessage
 import dev.supachain.robot.provider.models.CommonResponse
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.tool.ToolConfig
-import dev.supachain.robot.tool.ToolMap
 
 /**
  * Represents a tool use strategy where the AI interacts with tools iteratively until a final answer is reached.
@@ -21,6 +21,12 @@ import dev.supachain.robot.tool.ToolMap
 
  */
 data object BackAndForth : ToolUseStrategy {
+    internal class Result(
+        override var action: ToolResultAction = ToolResultAction.Complete,
+        override val messages: MutableList<Message> = mutableListOf(),
+        val callHistory: MutableMap<String, String> = mutableMapOf()
+    ) : ToolResultMessage
+
     /**
      * Invokes the back-and-forth tool use strategy.
      *
@@ -34,29 +40,41 @@ data object BackAndForth : ToolUseStrategy {
      * @param args The arguments passed to the function.
      * @param callHistory A mutable map to track the history of function calls and their results.
      */
-    suspend operator fun invoke(
-        director: Director<*, *, *>,
+    internal operator fun invoke(
+        director: RobotCore<*, *, *>,
+        lastUserMessage: Message,
         response: CommonResponse,
-        directive: Directive,
-        name: String,
-        args: Array<Any?>,
-        callHistory: MutableMap<String, String>,
-        provider: Provider<*>
-    ) = with(director) {
+        provider: Provider<*, *>, // TODO Decouple Provider
+        result: Result = Result()
+    ): ToolResultMessage = with(director) {
         if (response.requestedFunctions.isNotEmpty()) {
-            var result: CallResult = Success
-            for (call in response.requestedFunctions) {
+
+            var callStatus: CallStatus = Success
+            for ((index, call) in response.requestedFunctions.withIndex()) {
                 try {
-                    result = call(callHistory)
-                    when (result) {
-                        Success -> continue
+                    callStatus = call(result.callHistory)
+                    when (callStatus) {
+                        Success -> {
+                            if (
+                                index == response.requestedFunctions.lastIndex &&
+                                provider.includeSeekCompletionMessage
+                            ) result.messages.add(completionMessage)
+
+                            val callResult = result.callHistory.asIterable().last().value
+                            result.messages.add(provider.toolResultMessage(callResult))
+                            result.action = ToolResultAction.Update
+                        }
+
                         Recalled -> {
-                            interveneWithoutTools(callHistory)
+                            result.messages.add(toolRecallMessage)
+                            result.messages.add(interventionMessage(lastUserMessage, result.callHistory))
+                            result.action = ToolResultAction.Retry
                             break
                         }
 
                         is Error -> {
-                            messenger(result.exception.asSystemMessage())
+                            result.messages.add((callStatus.exception.asSystemMessage()))
+                            result.action = ToolResultAction.Retry
                             break
                         }
                     }
@@ -65,15 +83,8 @@ data object BackAndForth : ToolUseStrategy {
                     throw e
                 }
             }
-
-            if (result == Success) {
-                if (provider.includeSeekCompletionMessage) messenger(seekCompletionMessage)
-                val callResult = callHistory.asIterable().last().value
-                messenger(provider.toolResultMessage(callResult))
-            }
-
-            handleProviderMessaging(directive, name, args, callHistory)
         }
+        result
     }
 
     /**
@@ -95,27 +106,21 @@ data object BackAndForth : ToolUseStrategy {
      * @since 0.1.0-alpha
 
      */
-    private fun Director<*, *, *>.interveneWithoutTools(callMap: MutableMap<String, String>) {
-        val userMessage = messenger.lastUserMessage().copy()
-            .apply {
-                content += " \nNote the following may contain the answer." +
-                        "[${callMap.map { "${it.key} has result ${it.value}." }}]. " +
-                        "If you see the answer, say it in the desired format."
-            }
+    private fun interventionMessage(lastUserMessage: Message, callMap: MutableMap<String, String>) =
+        lastUserMessage.copy().apply {
+            content += " \nNote the following may contain the answer." +
+                    "[${callMap.map { "${it.key} has result ${it.value}." }}]. " +
+                    "If you see the answer, say it in the desired format."
+        }
 
-        messenger.newConversation()
-        messenger(completionMessageWhenToolFailed, userMessage)
-    }
-
-    private val seekCompletionMessage
+    private val completionMessage
         get() = ("If you know the final answer after reading the result content from a function call, respond " +
                 "with ONLY the answer in the require format")
             .asSystemMessage()
 
-    private val completionMessageWhenToolFailed
+    private val toolRecallMessage
         get() = "You must find the answer in the user message and format it to the required format.".asSystemMessage()
 
-    override fun message(director: Director<*, *, *>): Message? = null
-
-    override fun getTools(toolMap: ToolMap): List<ToolConfig> = toolMap.values.toList()
+    override fun onRequestMessage(toolSet: List<ToolConfig>): Message? = null
+    override fun getTools(tools: List<ToolConfig>): List<ToolConfig> = tools
 }

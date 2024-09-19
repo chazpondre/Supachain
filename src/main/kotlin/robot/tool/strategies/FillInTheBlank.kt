@@ -2,12 +2,14 @@ package dev.supachain.robot.tool.strategies
 
 import dev.supachain.robot.tool.asKFunctionString
 import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.director.Director
+import dev.supachain.robot.director.RobotCore
 import dev.supachain.robot.director.asFunctionCall
+import dev.supachain.robot.messenger.ToolResultAction
+import dev.supachain.robot.messenger.ToolResultMessage
+import dev.supachain.robot.messenger.asAssistantMessage
 import dev.supachain.robot.provider.models.CommonResponse
 import dev.supachain.robot.messenger.asSystemMessage
 import dev.supachain.robot.tool.ToolConfig
-import dev.supachain.robot.tool.ToolMap
 import dev.supachain.utilities.templates
 
 /**
@@ -22,6 +24,10 @@ import dev.supachain.utilities.templates
 
  */
 data object FillInTheBlank : ToolUseStrategy {
+    internal class Result(
+        override var action: ToolResultAction = ToolResultAction.Complete,
+        override val messages: MutableList<Message> = mutableListOf(),
+    ) : ToolResultMessage
     /**
      * Constructs a system message listing available functions and providing usage instructions.
      *
@@ -31,10 +37,10 @@ data object FillInTheBlank : ToolUseStrategy {
      * @param director The `Director` instance containing the list of available tools.
      * @return A `Message` object representing the system message.
      */
-    override fun message(director: Director<*, *, *>): Message =
-        if (director.allTools.isEmpty()) "Answer to the best of your ability".asSystemMessage()
+    override fun onRequestMessage(toolSet: List<ToolConfig>): Message =
+        if (toolSet.isEmpty()) "Answer to the best of your ability".asSystemMessage()
         else
-            ("Declared Functions: [${director.allTools.asKFunctionString()}, " +
+            ("Declared Functions: [${toolSet.asKFunctionString()}, " +
                     "fun doubleArrayOf(vararg elements: Double): DoubleArray, " +
                     "fun floatArrayOf(vararg elements: Float): FloatArray, " +
                     "fun longArrayOf(vararg elements: Long): LongArray, " +
@@ -97,12 +103,13 @@ data object FillInTheBlank : ToolUseStrategy {
      * @param director The `Director` instance responsible for managing the AI interaction.
      * @param response The `CommonResponse` received from the AI provider.
      */
-    operator fun invoke(director: Director<*, *, *>, response: CommonResponse) = with(director) {
+    operator fun invoke(director: RobotCore<*, *, *>, response: CommonResponse): ToolResultMessage = with(director) {
         val template = response.rankMessages.first().content.templates()
         val results = template.expressions.map { it.asFunctionCall()().toString() }
-
-        messenger.lastMessage().content = template.fill(results)
+        Result(ToolResultAction.ReplaceAndComplete).apply {
+            messages.add(template.fill(results).asAssistantMessage())
+        }
     }
 
-    override fun getTools(toolMap: ToolMap): List<ToolConfig> = emptyList()
+    override fun getTools(tools: List<ToolConfig>): List<ToolConfig> = emptyList()
 }

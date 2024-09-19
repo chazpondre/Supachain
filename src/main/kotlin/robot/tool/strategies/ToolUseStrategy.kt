@@ -1,9 +1,7 @@
 package dev.supachain.robot.tool.strategies
 
-import dev.supachain.robot.director.Director
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.tool.ToolConfig
-import dev.supachain.robot.tool.ToolMap
 
 /**
  * Represents a strategy for using tools in AI interactions.
@@ -16,6 +14,6 @@ import dev.supachain.robot.tool.ToolMap
 
  */
 sealed interface ToolUseStrategy {
-    fun message(director: Director<*, *, *>): Message?
-    fun getTools(toolMap: ToolMap): List<ToolConfig>
+    fun onRequestMessage(toolSet: List<ToolConfig>): Message?
+    fun getTools(tools: List<ToolConfig>): List<ToolConfig>
 }

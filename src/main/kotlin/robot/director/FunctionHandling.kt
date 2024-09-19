@@ -1,6 +1,5 @@
 package dev.supachain.robot.director
 
-import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.messaging.FunctionCall
 import dev.supachain.robot.tool.ToolMap
 import dev.supachain.utilities.*
@@ -12,7 +11,6 @@ import kotlin.reflect.full.valueParameters
 @Suppress("EmptyMethod")
 interface FunctionHandling<T> {
     val toolMap: ToolMap
-    val messenger: Messenger
     val toolProxy: T
 
     /**
@@ -38,7 +36,7 @@ interface FunctionHandling<T> {
      *
      * @since 0.1.0-alpha
      */
-    operator fun FunctionCall.invoke(callHistory: MutableMap<String, String>): CallResult {
+    operator fun FunctionCall.invoke(callHistory: MutableMap<String, String>): CallStatus {
         val (function, arguments, callString) = this.info()
 
         return if (callString in callHistory) Recalled
@@ -171,22 +169,22 @@ private typealias ParamMap = Map<String, Pair<Int, Parameter>>
  *  - `Recalled`: The function call has already been made with the same arguments and was not re-executed.
  *  - `Error`: The function call failed due to an exception.
  */
-sealed interface CallResult
+sealed interface CallStatus
 
 /**
  * Indicates that a function call was executed successfully.
  */
-internal data object Success : CallResult
+internal data object Success : CallStatus
 
 /**
  * Indicates that a function call was not executed because it has already been made with the same arguments.
  */
-internal data object Recalled : CallResult
+internal data object Recalled : CallStatus
 
 /**
  * Indicates that a function call failed due to an exception.
  *
  * @property exception The exception that occurred during the function call.
  */
-internal class Error(val exception: Exception) : CallResult
+internal class Error(val exception: Exception) : CallStatus
 

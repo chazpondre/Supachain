@@ -5,7 +5,7 @@ package dev.supachain.robot.provider.models
 import dev.supachain.Extension
 import dev.supachain.Modifiable
 import dev.supachain.robot.*
-import dev.supachain.robot.director.DirectorCore
+import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.Actions
@@ -48,7 +48,7 @@ import kotlinx.serialization.Serializable
  *
  * @since 0.1.0-alpha
  */
-class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
+class LocalAI : Provider<OpenAIResponse, LocalAI>(), LocalAIActions, NetworkOwner {
     override val name: String get() = "Mr Robot"
     override var url: String = "http://localhost:$8888"
     override val toolResultMessage: (result: String) -> Message =
@@ -65,6 +65,7 @@ class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
     override var maxRetries: Int = 3
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = BackAndForth
+    override var messenger: Messenger<OpenAIResponse> = Messenger(this)
 
     // Network
     val network: NetworkConfig = NetworkConfig()
@@ -100,13 +101,14 @@ class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
 ██████████████████████████  ████  ███      ██████  █████        ███      ███  ███   ███      ███████████████████████████
  */
 
+sealed interface LocalAIResponse : CommonResponse
 // private extension LocalAI.Actions : NetworkOwner, Transactions
-private sealed interface LocalAIActions : NetworkOwner, Actions, Extension<LocalAI> {
-    override suspend fun chat(director: DirectorCore): OpenAIAPI.ChatResponse = with(self()) {
+private sealed interface LocalAIActions : NetworkOwner, Actions<OpenAIResponse>, Extension<LocalAI> {
+    override suspend fun chat(tools: List<ToolConfig>): OpenAIAPI.ChatResponse = with(self()) {
         return post(
             "$url/v1/chat/completions", LocalAI.ChatRequest(
-                chatModel, director.messages,
-                temperature, topP, topK, maxTokens, director.tools
+                chatModel, messenger.messages(),
+                temperature, topP, topK, maxTokens, tools
             )
         )
     }
