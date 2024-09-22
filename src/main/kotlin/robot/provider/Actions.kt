@@ -7,6 +7,7 @@
  */
 package dev.supachain.robot.provider
 
+import dev.supachain.robot.provider.models.Message
 import dev.supachain.robot.tool.ToolConfig
 
 /**
@@ -19,36 +20,36 @@ import dev.supachain.robot.tool.ToolConfig
  * @since 0.1.0-alpha
 
  */
-internal interface Actions<Response> {
+internal interface Actions {
     val name: String
 
     suspend
-    fun chat(tools: List<ToolConfig>): Response =
+    fun chat(tools: List<ToolConfig>): Message =
         throw NotImplementedError(
             "$name does not currently support chat, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun embedding(): Response =
+    fun embedding(): Message =
         throw NotImplementedError(
             "$name does not currently support embedding, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun moderation(): Response =
+    fun moderation(): Message =
         throw NotImplementedError(
             "$name does not currently support moderation, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createSpeech(): Response =
+    fun createSpeech(): Message =
         throw NotImplementedError(
             "$name does not currently support createSpeech, try updating the project if $name supports this feature"
         )
 
     suspend
     fun createTranscription()
-            : Response =
+            : Message =
         throw NotImplementedError(
             "$name does not currently support createTranscription, try updating the project if $name supports this " +
                     "feature"
@@ -56,27 +57,27 @@ internal interface Actions<Response> {
 
     suspend
     fun createTranslation()
-            : Response =
+            : Message =
         throw NotImplementedError(
             "$name does not currently support createTranslation, try updating the project if $name supports this " +
                     "feature"
         )
 
     suspend
-    fun createFineTune(): Response =
+    fun createFineTune(): Message =
         throw NotImplementedError(
             "$name does not currently support createFineTune, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun listFineTunes(): Response =
+    fun listFineTunes(): Message =
         throw NotImplementedError(
             "$name does not currently support listFineTunes, try updating the project if $name supports this feature"
         )
 
     suspend
     fun listFineTuneEvents()
-            : Response =
+            : Message =
         throw NotImplementedError(
             "$name does not currently support listFineTuneEvents, try updating the project if $name supports this " +
                     "feature"
@@ -84,152 +85,152 @@ internal interface Actions<Response> {
 
     suspend
     fun listFineTuneCheckPoints()
-            : Response =
+            : Message =
         throw NotImplementedError(
             "$name does not currently support listFineTuneCheckPoints, try updating the project if $name supports this" +
                     " feature"
         )
 
     suspend
-    fun fineTuneInfo(): Response =
+    fun fineTuneInfo(): Message =
         throw NotImplementedError(
             "$name does not currently support fineTuneInfo, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun fineTuneCancel(): Response =
+    fun fineTuneCancel(): Message =
         throw NotImplementedError(
             "$name does not currently support fineTuneCancel, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createBatch(): Response =
+    fun createBatch(): Message =
         throw NotImplementedError(
             "$name does not currently support createBatch, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun getBatch(): Response =
+    fun getBatch(): Message =
         throw NotImplementedError(
             "$name does not currently support getBatch, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun cancelBatch(): Response =
+    fun cancelBatch(): Message =
         throw NotImplementedError(
             "$name does not currently support cancelBatch, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun listBatches(): Response =
+    fun listBatches(): Message =
         throw NotImplementedError(
             "$name does not currently support listBatches, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun uploadFile(): Response =
+    fun uploadFile(): Message =
         throw NotImplementedError(
             "$name does not currently support uploadFile, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun listFiles(): Response =
+    fun listFiles(): Message =
         throw NotImplementedError(
             "$name does not currently support listFiles, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun getFile(): Response =
+    fun getFile(): Message =
         throw NotImplementedError(
             "$name does not currently support getFile, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun deleteFile(): Response =
+    fun deleteFile(): Message =
         throw NotImplementedError(
             "$name does not currently support deleteFile, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun getFileContent(): Response =
+    fun getFileContent(): Message =
         throw NotImplementedError(
             "$name does not currently support getFileContent, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createImage(): Response =
+    fun createImage(): Message =
         throw NotImplementedError(
             "$name does not currently support createImage, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun readImage(): Response =
+    fun readImage(): Message =
         throw NotImplementedError(
             "$name does not currently support readImage, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun updateImage(): Response =
+    fun updateImage(): Message =
         throw NotImplementedError(
             "$name does not currently support updateImage, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun varyImage(): Response =
+    fun varyImage(): Message =
         throw NotImplementedError(
             "$name does not currently support varyImage, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createAudio(): Response =
+    fun createAudio(): Message =
         throw NotImplementedError(
             "$name does not currently support createAudio, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun readAudio(): Response =
+    fun readAudio(): Message =
         throw NotImplementedError(
             "$name does not currently support readAudio, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun updateAudio(): Response =
+    fun updateAudio(): Message =
         throw NotImplementedError(
             "$name does not currently support updateAudio, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun varyAudio(): Response =
+    fun varyAudio(): Message =
         throw NotImplementedError(
             "$name does not currently support varyAudio, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createVideo(): Response =
+    fun createVideo(): Message =
         throw NotImplementedError(
             "$name does not currently support createVideo, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun readVideo(): Response =
+    fun readVideo(): Message =
         throw NotImplementedError(
             "$name does not currently support readVideo, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun updateVideo(): Response =
+    fun updateVideo(): Message =
         throw NotImplementedError(
             "$name does not currently support updateVideo, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun varyVideo(): Response =
+    fun varyVideo(): Message =
         throw NotImplementedError(
             "$name does not currently support varyVideo, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun listModels(): Response =
+    fun listModels(): Message =
         throw NotImplementedError(
             "$name does not currently support listModels, try updating the project if $name supports this feature"
         )

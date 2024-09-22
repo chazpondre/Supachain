@@ -11,8 +11,8 @@ package dev.supachain.robot
 
 import dev.supachain.Modifiable
 import dev.supachain.Modifies
-import dev.supachain.robot.provider.CommonRequest
 import dev.supachain.robot.messenger.messaging.ErrorResponse
+import dev.supachain.robot.provider.CommonRequest
 import dev.supachain.utilities.Debug
 import dev.supachain.utilities.toJson
 import io.ktor.client.*
@@ -388,7 +388,7 @@ internal suspend inline fun <reified T : CommonRequest, reified R> NetworkOwner.
         .post(url) {
             headers { postHeaders.forEach { (key, value) -> append(key, value) } }
             jsonRequest(request.withNetworkLog<T>("POST", url))
-        }.formatAndCheckResponse()
+        }.deserializeResponse()
 
 private inline fun <reified T : CommonRequest> T.withNetworkLog(type:String, url: String): T {
     logger.debug(Debug("Network"), "[Network/Request]\n@[$url] ${toJson()}")
@@ -397,7 +397,7 @@ private inline fun <reified T : CommonRequest> T.withNetworkLog(type:String, url
 
 // Error handling function
 internal suspend inline
-fun <reified T> HttpResponse.formatAndCheckResponse(): T {
+fun <reified T> HttpResponse.deserializeResponse(): T {
     var capturedString = ""
     val json = Json {
         ignoreUnknownKeys = true

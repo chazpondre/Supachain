@@ -5,10 +5,10 @@ import dev.supachain.robot.director.directive.FromSystem
 import dev.supachain.robot.director.directive.FromUser
 import dev.supachain.robot.director.directive.Use
 import dev.supachain.robot.messenger.messaging.FunctionCall
-import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.messenger.messaging.asSystemMessage
-import dev.supachain.robot.messenger.messaging.asUserMessage
 import dev.supachain.robot.provider.Feature
+import dev.supachain.robot.provider.models.TextMessage
+import dev.supachain.robot.provider.models.asSystemMessage
+import dev.supachain.robot.provider.models.asUserMessage
 import dev.supachain.robot.tool.Parameters
 import dev.supachain.robot.tool.RobotTool
 import dev.supachain.robot.tool.Tool
@@ -64,13 +64,13 @@ fun <T : Any> KClass<T>.getDirectives(): List<Directive> =
  * * **[FromSystem]:** Added as a system message (Role.SYSTEM).
  * * **[FromUser]:**  Added as a user message (Role.USER).
  *
- * @return A mutable list of [Message] objects derived from the found annotations. If no relevant annotations are present, an empty list is returned.
+ * @return A mutable list of [TextMessage] objects derived from the found annotations. If no relevant annotations are present, an empty list is returned.
  *
  * @since 0.1.0-alpha
 
  */
-private fun KFunction<*>.messages(): MutableList<Message> {
-    val messages = mutableListOf<Message>().apply {
+private fun KFunction<*>.messages(): MutableList<TextMessage> {
+    val messages = mutableListOf<TextMessage>().apply {
         findAnnotation<FromSystem>()?.apply { add(message.asSystemMessage()) }
         findAnnotation<FromUser>()?.apply { add(message.asUserMessage()) }
     }

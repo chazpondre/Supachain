@@ -1,6 +1,6 @@
 package dev.supachain.robot.tool.strategies
 
-import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.provider.models.Message
 import dev.supachain.robot.tool.ToolConfig
 
 /**

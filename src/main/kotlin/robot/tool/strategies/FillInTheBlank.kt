@@ -4,10 +4,10 @@ import dev.supachain.robot.director.RobotCore
 import dev.supachain.robot.director.asFunctionCall
 import dev.supachain.robot.messenger.ToolResultAction
 import dev.supachain.robot.messenger.ToolResultMessage
-import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.messenger.messaging.asAssistantMessage
-import dev.supachain.robot.messenger.messaging.asSystemMessage
-import dev.supachain.robot.provider.models.CommonMessage
+import dev.supachain.robot.provider.models.Message
+import dev.supachain.robot.provider.models.TextMessage
+import dev.supachain.robot.provider.models.asAssistantMessage
+import dev.supachain.robot.provider.models.asSystemMessage
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.asKFunctionString
 import dev.supachain.utilities.templates
@@ -37,7 +37,7 @@ data object FillInTheBlank : ToolUseStrategy {
      * @param director The `Director` instance containing the list of available tools.
      * @return A `Message` object representing the system message.
      */
-    override fun onRequestMessage(toolSet: List<ToolConfig>): Message =
+    override fun onRequestMessage(toolSet: List<ToolConfig>): TextMessage =
         if (toolSet.isEmpty()) "Answer to the best of your ability".asSystemMessage()
         else
             ("Declared Functions: [${toolSet.asKFunctionString()}, " +
@@ -103,8 +103,8 @@ data object FillInTheBlank : ToolUseStrategy {
      * @param robot The `Director` instance responsible for managing the AI interaction.
      * @param response The `CommonResponse` received from the AI provider.
      */
-    operator fun invoke(robot: RobotCore<*, *, *>, response: CommonMessage): ToolResultMessage = with(robot) {
-        val template = response.message().content?.templates() ?: throw Exception("FillInTheBlank content is missing")
+    operator fun invoke(robot: RobotCore<*, *, *>, response: Message): ToolResultMessage = with(robot) {
+        val template = response.text().toString().templates()
         val results = template.expressions.map { it.asFunctionCall()().toString() }
         Result(ToolResultAction.ReplaceAndComplete).apply {
             messages.add(template.fill(results).asAssistantMessage())

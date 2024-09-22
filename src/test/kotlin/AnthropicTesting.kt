@@ -44,7 +44,7 @@ class AnthropicTesting {
                 put("messages", buildJsonArray {
                     add(buildJsonObject {
                         put("role", JsonPrimitive("user"))
-                        put("content", JsonPrimitive("Hello, World"))
+                        put("content", JsonArray(listOf(JsonPrimitive("Hello, World"))))
                     })
                 })
             }
@@ -110,7 +110,7 @@ class AnthropicTesting {
             val requestBody = request.body.toByteReadPacket().readText()
             val jsonRequest = Json.parseToJsonElement(requestBody).jsonObject
 
-            if(messageNumber == 0) {
+            if (messageNumber == 0) {
                 // Expected JSON structure
                 val expectedJson = buildJsonObject {
                     put("model", JsonPrimitive("claude-3-5-sonnet-20240620"))
@@ -120,7 +120,10 @@ class AnthropicTesting {
                     put("messages", buildJsonArray {
                         add(buildJsonObject {
                             put("role", JsonPrimitive("user"))
-                            put("content", JsonPrimitive("What's the weather like in San Francisco?"))
+                            put(
+                                "content",
+                                JsonArray(listOf(JsonPrimitive("What's the weather like in San Francisco?")))
+                            )
                         })
                     })
 
@@ -134,11 +137,9 @@ class AnthropicTesting {
                                 put("properties", buildJsonObject {
                                     put("location", buildJsonObject {
                                         put("type", JsonPrimitive("string"))
-                                        put("description", JsonPrimitive(""))
                                     })
                                     put("unit", buildJsonObject {
                                         put("type", JsonPrimitive("string"))
-                                        put("description", JsonPrimitive(""))
                                     })
                                 })
                                 put("required", buildJsonArray {
@@ -181,8 +182,7 @@ class AnthropicTesting {
                     status = HttpStatusCode.OK,
                     headers = headersOf(HttpHeaders.ContentType, "application/json")
                 )
-            }
-            else {
+            } else {
                 assertTrue(expectedChatToolCallMessage().isContainedIn(jsonRequest))
                 respond(
                     content = ByteReadChannel(
@@ -228,7 +228,7 @@ class AnthropicTesting {
         put("messages", buildJsonArray {
             add(buildJsonObject {
                 put("role", JsonPrimitive("function"))
-                put("content", JsonPrimitive("18"))
+                put("content", JsonArray(listOf(JsonPrimitive("18"))))
             })
         })
     }

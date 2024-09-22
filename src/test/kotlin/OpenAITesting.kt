@@ -166,6 +166,7 @@ class OpenAITesting {
 
         // Set up the robot and perform the chat interaction
         val robot = Robot<OpenAI, Defaults.Chat, Tools> {
+            Debug show "Network"
             defaultProvider {
                 apiKey = "OPENAI_API_KEY"
                 network.engine = { mockEngine }
@@ -204,11 +205,11 @@ class OpenAITesting {
                             put("type", JsonPrimitive("object"))
                             put("properties", buildJsonObject {
                                 put("location", buildJsonObject {
-                                    put("type", JsonPrimitive("String"))
+                                    put("type", JsonPrimitive("string"))
                                     put("description", JsonPrimitive("The city and state, e.g. San Francisco, CA"))
                                 })
                                 put("unit", buildJsonObject {
-                                    put("type", JsonPrimitive("String"))
+                                    put("type", JsonPrimitive("string"))
                                     put(
                                         "enum",
                                         JsonArray(listOf(JsonPrimitive("Celsius"), JsonPrimitive("Fahrenheit")))

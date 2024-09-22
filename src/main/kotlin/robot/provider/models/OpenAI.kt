@@ -8,15 +8,17 @@ import dev.supachain.Modifiable
 import dev.supachain.robot.*
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
-import dev.supachain.robot.messenger.messaging.*
+import dev.supachain.robot.messenger.messaging.CommonLogProbContainer
+import dev.supachain.robot.messenger.messaging.FunctionCall
+import dev.supachain.robot.messenger.messaging.ToolCall
+import dev.supachain.robot.messenger.messaging.Usage
 import dev.supachain.robot.provider.*
-import dev.supachain.robot.provider.models.OpenAIAPI.ChatRequest.Tool.Function.Parameters.Property
-import dev.supachain.robot.provider.tools.OpenAIToolReceive
 import dev.supachain.robot.tool.ToolChoice
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
-import dev.supachain.utilities.*
+import dev.supachain.utilities.Parameter
+import dev.supachain.utilities.toJson
 import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -87,8 +89,8 @@ import kotlinx.serialization.Serializable
  *
  * @since 0.1.0-alpha
  */
-@Suppress("unused")
-class OpenAI : Provider<OpenAIMessage, OpenAI>(), OpenAIActions, OpenAIModels {
+@Suppress("unused", "MemberVisibilityCanBePrivate")
+class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
     override val name: String get() = "Open AI API"
     override var url: String = "https://api.openai.com"
     override var maxRetries: Int = 3
@@ -96,9 +98,8 @@ class OpenAI : Provider<OpenAIMessage, OpenAI>(), OpenAIActions, OpenAIModels {
     val network: NetworkConfig = NetworkConfig()
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = BackAndForth
-    override var messenger: Messenger<OpenAIMessage> = Messenger(this)
-    override val toolResultMessage: (result: String) -> Message =
-        { Message(Role.FUNCTION, it) }
+    override var messenger: Messenger = Messenger(this)
+    override val toolResultMessage: (result: String) -> TextMessage = { TextMessage(Role.FUNCTION, it) }
 
     var apiKey: String = ""
     var chatModel: String = models.chat.gpt4o
@@ -135,7 +136,6 @@ class OpenAI : Provider<OpenAIMessage, OpenAI>(), OpenAIActions, OpenAIModels {
 ██████████████████████████████████████████████        ██  ███████████  █████████████████████████████████████████████████
 ██████████████████████████████████████████████  ████  ██  ████████        ██████████████████████████████████████████████
 */
-sealed interface OpenAIMessage : CommonMessage
 
 private fun List<ToolConfig>.asOpenAITools() = map { OpenAIAPI.ChatRequest.Tool(it) }
 
@@ -170,13 +170,6 @@ interface OpenAIAPI {
                     val properties: Map<String, Property>,
                     val required: List<String>
                 ) {
-                    @Serializable
-                    data class Property(
-                        val type: String,
-                        val description: String? = null,
-                        val enum: List<String>? = null
-                    )
-
                     constructor(parameters: List<Parameter>) : this(
                         "object",
                         parameters.toProperties(),
@@ -194,25 +187,9 @@ interface OpenAIAPI {
 
             constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
         }
-
-        companion object {
-            fun List<Parameter>.toProperties(): Map<String, Property> {
-                return associate {
-                    if (it.type.isEnumType())
-                        it.name to Property(
-                            "String",
-                            it.description.ifBlank { null },
-                            it.type.enumConstants()
-                        )
-                    else
-                        it.name to Property(
-                            it.type.getShortName(),
-                            it.description.ifBlank { null }
-                        )
-                }
-            }
-        }
     }
+
+
 
     @Serializable
     data class ChatResponse(
@@ -225,7 +202,7 @@ interface OpenAIAPI {
         @SerialName("service_tier")
         val serviceTier: String? = null,
         val systemFingerprint: String? = null
-    ) : OpenAIMessage {
+    ) : Message {
         @Serializable
         data class Choice(
             val index: Int,
@@ -235,23 +212,21 @@ interface OpenAIAPI {
             @SerialName("logprobs")
             val logProbability: CommonLogProbContainer? = null,
         ) {
-            @JvmInline
             @Serializable
-            value class ResponseMessage(val data: Message) {
-                val role: Role get() = data.role
-                val content: String? get() = data.content
-
+            data class ResponseMessage(
+                val role: Role,
+                val content: String? = null,
                 @SerialName("tool_calls")
-                @Serializable(with = OpenAIToolReceive::class)
-                val toolCalls: List<ToolCall>? get() = data.toolCalls
-            }
+                val toolCalls: List<ToolCall>? = null
+            )
         }
 
-        override fun message(): Message = choices[0].message.data
-        override fun functions(): List<FunctionCall> =
-            (message().toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList()) +
-                    // This is for backwards compatibility of the deprecated OpenAI function call
-                    listOfNotNull(message().functionCall)
+        override fun text() = TextContent(choices[0].message.content ?: "")
+        override fun role() = Role.ASSISTANT
+        override fun functions(): List<FunctionCall> = with(choices[0].message) {
+            (toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList())
+        }
+        override fun contents(): List<Message.Content> = listOf(text())
 
         override fun toString(): String = this.toJson()
     }
@@ -390,7 +365,7 @@ interface OpenAIModels {
  *
  * @since 0.1.0-alpha
  */
-private sealed interface OpenAIActions : NetworkOwner, Actions<OpenAIMessage>, Extension<OpenAI> {
+private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI> {
     override suspend
     fun chat(tools: List<ToolConfig>): OpenAIAPI.ChatResponse =
         with(self()) {

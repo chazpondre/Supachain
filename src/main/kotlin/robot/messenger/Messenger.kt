@@ -12,15 +12,13 @@ package dev.supachain.robot.messenger
 import dev.supachain.robot.director.RobotCore
 import dev.supachain.robot.director.RobotInterface
 import dev.supachain.robot.director.directive.Objective
-import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.Feature
 import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.provider.models.CommonMessage
+import dev.supachain.robot.provider.models.Message
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.FillInTheBlank
 import dev.supachain.utilities.Debug
-import dev.supachain.utilities.toJson
 import org.slf4j.LoggerFactory
 
 typealias Conversation = MutableList<Message>
@@ -57,10 +55,9 @@ interface ToolResultMessage {
  * @since 0.1.0-alpha
 
  */
-class Messenger<MessageType : CommonMessage> internal constructor
-    (private val provider: Provider<MessageType, *>, maxMessages: Int = 10) {
+class Messenger internal constructor
+    (private val provider: Provider<*>, maxMessages: Int = 10) {
 
-    private val responses: MutableList<MessageType> = mutableListOf()
     private val conversations: ConversationHistory = mutableListOf(mutableListOf())
     private val logger = LoggerFactory.getLogger(Messenger::class.qualifiedName)
 
@@ -70,7 +67,7 @@ class Messenger<MessageType : CommonMessage> internal constructor
     private fun Message.log() = this.also { log(this) }
 
     private fun log(message: Message) =
-        logger.debug(Debug("Messenger"), "[Messenger]" + message.toJson())
+        logger.debug(Debug("Messenger"), "[Messenger]$message")
 
     fun messages(): List<Message> = currentConversation
 
@@ -102,11 +99,13 @@ class Messenger<MessageType : CommonMessage> internal constructor
         // Filter Messages & Store
         messageList.filter {
             when (provider.messageFilter) {
-                MessageFilter.OnlyUserMessages -> it.role == Role.USER
-                MessageFilter.OnlySystemMessages -> it.role == Role.SYSTEM
+                MessageFilter.OnlyUserMessages -> it.role() == Role.USER
+                MessageFilter.OnlySystemMessages -> it.role() == Role.SYSTEM
                 MessageFilter.None -> true
             }
-        }.forEach { it.store() }
+        }.forEach {
+            it.store()
+        }
     }
 
     private tailrec suspend
@@ -152,17 +151,16 @@ class Messenger<MessageType : CommonMessage> internal constructor
      * @since 0.1.0-alpha
 
      */
-    private suspend fun handleResponse(feature: Feature, tools: List<ToolConfig>): MessageType {
+    private suspend fun handleResponse(feature: Feature, tools: List<ToolConfig>): Message {
         val response = provider.request(feature, tools)
-        responses.add(response)
-        response.message().store()
+        response.store()
         logger.debug(Debug("Messenger"), "Response: \n{}", response)
         return response
     }
 
-    private fun Messenger<MessageType>.handleToolCalling(
+    private fun Messenger.handleToolCalling(
         robot: RobotCore<*, *, *>,
-        response: MessageType,
+        response: Message,
         toolResult: ToolResultMessage?
     ): ToolResultMessage = when (provider.toolStrategy) {
         is BackAndForth -> BackAndForth(
@@ -176,7 +174,7 @@ class Messenger<MessageType : CommonMessage> internal constructor
         is FillInTheBlank -> FillInTheBlank(robot, response)
     }
 
-    fun finalResponse() = lastMessage().content ?: ""
+    fun finalResponse() = lastMessage().text()
 
     /**
      * Adds a single message to the current conversation.
@@ -201,7 +199,7 @@ class Messenger<MessageType : CommonMessage> internal constructor
      * @return The last user message, or throws `NoSuchElementException` if no user message is found.
      * @throws NoSuchElementException If no user message is found in the current conversation.
      */
-    private fun lastUserMessage(): Message = currentConversation.findLast { it.role == Role.USER }!!
+    private fun lastUserMessage(): Message = currentConversation.findLast { it.role() == Role.USER }!!
 
     /**
      * Creates a new conversation and switches to it.

@@ -13,7 +13,10 @@ import dev.supachain.robot.director.directive.Directive
 import dev.supachain.robot.director.directive.Objective
 import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.tool.ToolMap
-import dev.supachain.utilities.*
+import dev.supachain.utilities.Debug
+import dev.supachain.utilities.RunsInBackground
+import dev.supachain.utilities.by
+import dev.supachain.utilities.createObjectFromNoArgClass
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,7 +27,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KVisibility
 
 internal interface RobotInterface {
-    val defaultProvider: Provider<*, *>
+    val defaultProvider: Provider<*>
     val directives: MutableMap<String, Directive>
     val toolMap: ToolMap
     val allTools get() = toolMap.values.toList()
@@ -61,7 +64,7 @@ internal interface RobotInterface {
  * @since 0.1.0-alpha
 
  */
-data class RobotCore<P : Provider<*, *>, API : Any, ToolType : Any>(
+data class RobotCore<P : Provider<*>, API : Any, ToolType : Any>(
     override var defaultProvider: P,
     override val toolMap: ToolMap = mutableMapOf(),
     override val directives: MutableMap<String, Directive> = mutableMapOf(),
@@ -178,7 +181,7 @@ data class RobotCore<P : Provider<*, *>, API : Any, ToolType : Any>(
             val provider = defaultProvider
             return with(provider) {
                 messenger.send(this@RobotCore, objective)
-                messenger.finalResponse()
+                messenger.finalResponse().toString()
             }
 
         } catch (e: Exception) {

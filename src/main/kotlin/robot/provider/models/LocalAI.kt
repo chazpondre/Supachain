@@ -7,14 +7,13 @@ import dev.supachain.Modifiable
 import dev.supachain.robot.*
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
-import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.provider.tools.OpenAIToolSend
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
+import dev.supachain.utilities.Parameter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -48,11 +47,11 @@ import kotlinx.serialization.Serializable
  *
  * @since 0.1.0-alpha
  */
-class LocalAI : Provider<OpenAIMessage, LocalAI>(), LocalAIActions, NetworkOwner {
+class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
     override val name: String get() = "Mr Robot"
     override var url: String = "http://localhost:$8888"
-    override val toolResultMessage: (result: String) -> Message =
-        { Message(Role.FUNCTION, it) }
+    override val toolResultMessage: (result: String) -> TextMessage =
+        { TextMessage(Role.FUNCTION, it) }
 
     var backend = "llama-cpp"
     var batch = 0
@@ -65,7 +64,7 @@ class LocalAI : Provider<OpenAIMessage, LocalAI>(), LocalAIActions, NetworkOwner
     override var maxRetries: Int = 3
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = BackAndForth
-    override var messenger: Messenger<OpenAIMessage> = Messenger(this)
+    override var messenger: Messenger = Messenger(this)
 
     // Network
     val network: NetworkConfig = NetworkConfig()
@@ -87,11 +86,39 @@ class LocalAI : Provider<OpenAIMessage, LocalAI>(), LocalAIActions, NetworkOwner
         val topK: Int,
         @SerialName("max_tokens")
         val maxTokens: Int,
-        @Serializable(with = OpenAIToolSend::class)
-        val tools: List<ToolConfig> = emptyList(),
-    ) : CommonChatRequest
+        val tools: List<Tool> = emptyList(),
+    ) : CommonChatRequest {
+        @Serializable
+        data class Tool(val type: String, val function: Function) {
+            @Serializable
+            data class Function(val name: String, val description: String?, val parameters: Parameters) {
+                @Serializable
+                data class Parameters(
+                    val type: String,
+                    val properties: Map<String, Property>,
+                    val required: List<String>
+                ) {
+                    constructor(parameters: List<Parameter>) : this(
+                        "object",
+                        parameters.toProperties(),
+                        parameters.filter { it.required }.map { it.name }
+                    )
+                }
+
+                constructor(toolConfig: ToolConfig) :
+                        this(
+                            toolConfig.function.name,
+                            toolConfig.function.description.ifBlank { null },
+                            Parameters(toolConfig.function.parameters)
+                        )
+            }
+
+            constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
+        }
+    }
 
 }
+
 
 /*
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░░      ░░░        ░░        ░░░      ░░░   ░░░  ░░░      ░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -100,15 +127,14 @@ class LocalAI : Provider<OpenAIMessage, LocalAI>(), LocalAIActions, NetworkOwner
 ██████████████████████████        ██  ████  █████  ████████  █████  ████  ██  ██    ████████  ██████████████████████████
 ██████████████████████████  ████  ███      ██████  █████        ███      ███  ███   ███      ███████████████████████████
  */
+private fun List<ToolConfig>.asLocalAITools() = map { LocalAI.ChatRequest.Tool(it) }
 
-sealed interface LocalAIResponse : CommonMessage
-// private extension LocalAI.Actions : NetworkOwner, Transactions
-private sealed interface LocalAIActions : NetworkOwner, Actions<OpenAIMessage>, Extension<LocalAI> {
+private sealed interface LocalAIActions : NetworkOwner, Actions, Extension<LocalAI> {
     override suspend fun chat(tools: List<ToolConfig>): OpenAIAPI.ChatResponse = with(self()) {
         return post(
             "$url/v1/chat/completions", LocalAI.ChatRequest(
                 chatModel, messenger.messages(),
-                temperature, topP, topK, maxTokens, tools
+                temperature, topP, topK, maxTokens, tools.asLocalAITools()
             )
         )
     }

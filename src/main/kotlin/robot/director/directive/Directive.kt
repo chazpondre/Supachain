@@ -2,10 +2,10 @@ package dev.supachain.robot.director.directive
 
 import dev.supachain.robot.answer.Answer
 import dev.supachain.robot.answer.formatRules
-import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.messenger.messaging.asSystemMessage
-import dev.supachain.robot.messenger.messaging.asUserMessage
 import dev.supachain.robot.provider.Feature
+import dev.supachain.robot.provider.models.TextMessage
+import dev.supachain.robot.provider.models.asSystemMessage
+import dev.supachain.robot.provider.models.asUserMessage
 import dev.supachain.utilities.KTypeSerializer
 import dev.supachain.utilities.Parameter
 import dev.supachain.utilities.toJson
@@ -29,7 +29,7 @@ class Objective(val data: Pair<Directive, Array<Any?>>) : AbstractDirective by d
      * @param directiveArguments The arguments passed to the method.
      * @return A list of messages representing the arguments.
      */
-    fun argumentMessages(usePrimer: Boolean): List<Message> =
+    fun argumentMessages(usePrimer: Boolean): List<TextMessage> =
         List(parameters.size) { index -> arguments[index] }.mapIndexed { index, arg ->
             val givenName = parameters[index].description
             val localName = parameters[index].name
@@ -51,7 +51,7 @@ interface AbstractDirective {
 
     @Serializable(with = KTypeSerializer::class)
     val returnType: KType
-    val messages: List<Message>
+    val messages: List<TextMessage>
     val feature: Feature
     val rankedConfigMessages get() = messages.sortedBy { it.role.ordinal }
 
@@ -69,7 +69,7 @@ interface AbstractDirective {
      *
      * @since 0.1.0-alpha
      */
-    fun formattingMessage(): Message {
+    fun formattingMessage(): TextMessage {
         // Extract the KClass representing the return type (handling Deferred)
         val returnClass = when (returnType.classifier) {
             Answer::class -> returnType.arguments[0].type?.classifier as? KClass<*>
@@ -114,7 +114,7 @@ interface AbstractDirective {
  * @property name The name of the method to be executed by the robot.
  * @property parameters A list of [Parameter] objects detailing the method's input parameters.
  * @property returnType The [KType] representing the expected return type of the method.
- * @property messages A list of [Message] objects containing additional information or context relevant to the directive.
+ * @property messages A list of [TextMessage] objects containing additional information or context relevant to the directive.
  * @property feature The [Feature] associated with this directive, providing context for its execution.
  *
  * @since 0.1.0-alpha
@@ -126,7 +126,7 @@ data class Directive(
     override val parameters: List<Parameter>,
     @Serializable(with = KTypeSerializer::class)
     override val returnType: KType,
-    override val messages: List<Message>,
+    override val messages: List<TextMessage>,
     override val feature: Feature,
 ) : AbstractDirective {
     override fun toString(): String = this.toJson()

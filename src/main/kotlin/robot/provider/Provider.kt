@@ -4,8 +4,8 @@ package dev.supachain.robot.provider
 
 import dev.supachain.robot.messenger.MessageFilter
 import dev.supachain.robot.messenger.Messenger
-import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.provider.models.CommonMessage
+import dev.supachain.robot.provider.models.Message
+import dev.supachain.robot.provider.models.TextMessage
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
 
@@ -21,7 +21,7 @@ import dev.supachain.robot.tool.strategies.ToolUseStrategy
  * @since 0.1.0-alpha
 
  */
-abstract class Provider<ResponseType: CommonMessage, T : Provider<ResponseType, T>> : Actions<ResponseType> {
+abstract class Provider<T : Provider<T>> : Actions {
     abstract var maxRetries: Int
     abstract var toolsAllowed: Boolean
     abstract var toolStrategy: ToolUseStrategy
@@ -31,8 +31,8 @@ abstract class Provider<ResponseType: CommonMessage, T : Provider<ResponseType, 
     var messageFilter : MessageFilter = MessageFilter.None
     var includeSeekCompletionMessage: Boolean = true
 
-    internal abstract var messenger: Messenger<ResponseType>
-    internal abstract val toolResultMessage: (result: String) -> Message
+    internal abstract var messenger: Messenger
+    internal abstract val toolResultMessage: (result: String) -> TextMessage
 
     /**
      * Executes a request to the AI provider for a specific feature.
@@ -49,7 +49,7 @@ abstract class Provider<ResponseType: CommonMessage, T : Provider<ResponseType, 
 
      */
     internal suspend inline
-    fun request(feature: Feature, tools: List<ToolConfig>): ResponseType =
+    fun request(feature: Feature, tools: List<ToolConfig>): Message =
         when (feature) {
             // Feature chat is chatting
             Feature.Chat -> chat(tools.allowed)

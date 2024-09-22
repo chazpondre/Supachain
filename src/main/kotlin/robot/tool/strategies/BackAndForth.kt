@@ -4,10 +4,9 @@ package dev.supachain.robot.tool.strategies
 import dev.supachain.robot.director.*
 import dev.supachain.robot.messenger.ToolResultAction
 import dev.supachain.robot.messenger.ToolResultMessage
-import dev.supachain.robot.messenger.messaging.Message
-import dev.supachain.robot.messenger.messaging.asSystemMessage
 import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.provider.models.CommonMessage
+import dev.supachain.robot.provider.models.Message
+import dev.supachain.robot.provider.models.asSystemMessage
 import dev.supachain.robot.tool.ToolConfig
 
 /**
@@ -43,8 +42,8 @@ data object BackAndForth : ToolUseStrategy {
     internal operator fun invoke(
         robot: RobotCore<*, *, *>,
         lastUserMessage: Message,
-        response: CommonMessage,
-        provider: Provider<*, *>, // TODO Decouple Provider
+        response: Message,
+        provider: Provider<*>, // TODO Decouple Provider
         toolResult: Result?
     ): ToolResultMessage = with(robot) {
         val result = toolResult ?: Result()
@@ -108,11 +107,9 @@ data object BackAndForth : ToolUseStrategy {
 
      */
     private fun interventionMessage(lastUserMessage: Message, callMap: MutableMap<String, String>) =
-        lastUserMessage.copy().apply {
-            content += " \nNote the following may contain the answer." +
-                    "[${callMap.map { "${it.key} has result ${it.value}." }}]. " +
-                    "If you see the answer, say it in the desired format."
-        }
+        ("${lastUserMessage.text()} \nNote the following may contain the answer." +
+                "[${callMap.map { "${it.key} has result ${it.value}." }}]. " +
+                "If you see the answer, say it in the desired format.").asSystemMessage()
 
     private val completionMessage
         get() = ("If you know the final answer after reading the result content from a function call, respond " +

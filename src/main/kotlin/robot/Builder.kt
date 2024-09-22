@@ -3,8 +3,8 @@
 package dev.supachain.robot
 
 import dev.supachain.CompileTime
-import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.director.RobotCore
+import dev.supachain.robot.provider.Provider
 
 object Robot {
     /**
@@ -27,7 +27,7 @@ object Robot {
     @JvmStatic
     @CompileTime
     inline operator
-    fun <reified RobotProvider : Provider<*, RobotProvider>, reified Interface : Any, reified Tools : Any>
+    fun <reified RobotProvider : Provider<RobotProvider>, reified Interface : Any, reified Tools : Any>
             invoke(modify: RobotCore<RobotProvider, Interface, Tools>.() -> Unit = {}): Interface {
         val provider = try {
             RobotProvider::class.java.getDeclaredConstructor().newInstance()
