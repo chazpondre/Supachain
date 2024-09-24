@@ -24,14 +24,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /*
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░░      ░░░       ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓  ▓▓       ▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-█████████████████████████████████████████  ████  ██  ████  ██  ███  ███  ███████████████████████████████████████████████
-██████████████████████████████████████████      ████      ███  ████  ██        █████████████████████████████████████████
- */
-
-
+░░░░░░░░░░░░░░░░░░░░░░░░░░       ░░░  ░░░░  ░░        ░░  ░░░░░░░░       ░░░        ░░       ░░░░░░░░░░░░░░░░░░░░░░░░░░░
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓       ▓▓▓  ▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓  ▓▓      ▓▓▓▓       ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+██████████████████████████  ████  ██  ████  █████  █████  ████████  ████  ██  ████████  ███  ███████████████████████████
+██████████████████████████       ████      ███        ██        ██       ███        ██  ████  ██████████████████████████
+*/
 /**
  * Configuration for interacting with OpenAI's API as an AI Robot.
  *
@@ -137,12 +135,59 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
 ██████████████████████████████████████████████  ████  ██  ████████        ██████████████████████████████████████████████
 */
 
-private fun List<ToolConfig>.asOpenAITools() = map { OpenAIAPI.ChatRequest.Tool(it) }
+private fun List<ToolConfig>.asOpenAITools() = map { OpenAIAPI.Tool(it) }
 
 interface OpenAIAPI {
+
+    @Serializable
+    data class OpenAIMessage(
+        val role: Role,
+        val content: String? = null,
+        val refusal: String? = null,
+        @SerialName("tool_calls")
+        val toolCalls: List<ToolCall>? = null,
+        val name: String? = null
+    ) {
+        constructor(message: Message): this(message.role(), message.text().value)
+    }
+
+    @Serializable
+    data class Tool(val type: String, val function: Function) {
+        @Serializable
+        data class Function(val name: String, val description: String?, val parameters: Parameters) {
+            @Serializable
+            data class Parameters(
+                val type: String,
+                val properties: Map<String, Property>,
+                val required: List<String>
+            ) {
+                constructor(parameters: List<Parameter>) : this(
+                    "object",
+                    parameters.toProperties(),
+                    parameters.filter { it.required }.map { it.name }
+                )
+            }
+
+            constructor(toolConfig: ToolConfig) :
+                    this(
+                        toolConfig.function.name,
+                        toolConfig.function.description.ifBlank { null },
+                        Parameters(toolConfig.function.parameters)
+                    )
+        }
+
+        constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
+    }
+    /*
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░  ░░░░  ░░░      ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+    ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓        ▓▓  ▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+    ███████████████████████████████████████  ████  ██  ████  ██        █████  ██████████████████████████████████████████
+    ████████████████████████████████████████      ███  ████  ██  ████  █████  ██████████████████████████████████████████
+    */
     @Serializable
     data class ChatRequest(
-        val messages: List<Message>,
+        val messages: List<OpenAIMessage>,
         val model: String,
         @SerialName("frequency_penalty") val frequencyPenalty: Double,
         @SerialName("logit_bias") val logitBias: Map<String, Int>?,
@@ -159,37 +204,7 @@ interface OpenAIAPI {
         val tools: List<Tool>,
         @SerialName("tool_choice") val toolChoice: ToolChoice,
         val user: String?
-    ) : CommonChatRequest {
-        @Serializable
-        data class Tool(val type: String, val function: Function) {
-            @Serializable
-            data class Function(val name: String, val description: String?, val parameters: Parameters) {
-                @Serializable
-                data class Parameters(
-                    val type: String,
-                    val properties: Map<String, Property>,
-                    val required: List<String>
-                ) {
-                    constructor(parameters: List<Parameter>) : this(
-                        "object",
-                        parameters.toProperties(),
-                        parameters.filter { it.required }.map { it.name }
-                    )
-                }
-
-                constructor(toolConfig: ToolConfig) :
-                        this(
-                            toolConfig.function.name,
-                            toolConfig.function.description.ifBlank { null },
-                            Parameters(toolConfig.function.parameters)
-                        )
-            }
-
-            constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
-        }
-    }
-
-
+    ) : CommonChatRequest
 
     @Serializable
     data class ChatResponse(
@@ -206,26 +221,19 @@ interface OpenAIAPI {
         @Serializable
         data class Choice(
             val index: Int,
-            val message: ResponseMessage,
+            val message: OpenAIMessage,
             @SerialName("finish_reason")
             private val finishReason: String,
             @SerialName("logprobs")
             val logProbability: CommonLogProbContainer? = null,
-        ) {
-            @Serializable
-            data class ResponseMessage(
-                val role: Role,
-                val content: String? = null,
-                @SerialName("tool_calls")
-                val toolCalls: List<ToolCall>? = null
-            )
-        }
+        )
 
         override fun text() = TextContent(choices[0].message.content ?: "")
         override fun role() = Role.ASSISTANT
         override fun functions(): List<FunctionCall> = with(choices[0].message) {
             (toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList())
         }
+
         override fun contents(): List<Message.Content> = listOf(text())
 
         override fun toString(): String = this.toJson()
@@ -283,8 +291,6 @@ interface OpenAIAPI {
 
 interface OpenAIModels {
 
-    val models get() = Models
-
     /**
      * Provides convenient access to OpenAI model names for various tasks.
      *
@@ -293,6 +299,9 @@ interface OpenAIModels {
      *
      * @since 0.1.0-alpha
      */
+    val models get() = Models
+
+
     object Models {
         /** Models suitable for chat completions. */
         val chat = Chat
@@ -343,6 +352,8 @@ interface OpenAIModels {
     }
 }
 
+fun List<Message>.asOpenAIMessage() = this.map { OpenAIAPI.OpenAIMessage(it) }
+
 @Suppress("unused")
 /*
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░░      ░░░        ░░        ░░░      ░░░   ░░░  ░░░      ░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -371,7 +382,7 @@ private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI
         with(self()) {
             return post(
                 "$url/v1/chat/completions", OpenAIAPI.ChatRequest(
-                    messenger.messages(), chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
+                    messenger.messages().asOpenAIMessage(), chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
                     parallelToolCalling, presencePenalty, seed, stop, network.streamable,
                     temperature, topP, tools.asOpenAITools(), toolChoice, user
                 ), headers
