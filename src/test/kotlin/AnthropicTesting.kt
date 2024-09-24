@@ -44,7 +44,12 @@ class AnthropicTesting {
                 put("messages", buildJsonArray {
                     add(buildJsonObject {
                         put("role", JsonPrimitive("user"))
-                        put("content", JsonArray(listOf(JsonPrimitive("Hello, World"))))
+                        put("content", buildJsonArray {
+                            add(buildJsonObject {
+                                put("type", "text")
+                                put("text", "Hello, World")
+                            })
+                        })
                     })
                 })
             }
@@ -122,7 +127,12 @@ class AnthropicTesting {
                             put("role", JsonPrimitive("user"))
                             put(
                                 "content",
-                                JsonArray(listOf(JsonPrimitive("What's the weather like in San Francisco?")))
+                                buildJsonArray {
+                                    add(buildJsonObject {
+                                        put("type", JsonPrimitive("text"))
+                                        put("text", JsonPrimitive("What's the weather like in San Francisco?"))
+                                    })
+                                }
                             )
                         })
                     })
@@ -228,7 +238,14 @@ class AnthropicTesting {
         put("messages", buildJsonArray {
             add(buildJsonObject {
                 put("role", JsonPrimitive("function"))
-                put("content", JsonArray(listOf(JsonPrimitive("18"))))
+                put("content", buildJsonArray {
+                    buildJsonArray {
+                        add(buildJsonObject{
+                            put("type", JsonPrimitive("text"))
+                            put("text", "18")
+                        })
+                    }
+                })
             })
         })
     }
