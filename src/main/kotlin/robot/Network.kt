@@ -371,7 +371,7 @@ internal interface NetworkOwner {
  * This function is an extension on `NetworkOwner` (which presumably has a `networkClient` property) and simplifies
  * the process of making a POST request with a JSON-serialized request body.
  *
- * @param T The type of the request object to be serialized as JSON.
+ * @param I The type of the request object to be serialized as JSON.
  * @param url The URL to make the POST request to.
  * @param request The request object to be serialized and sent in the request body.
  * @return An `HttpResponse` object representing the server's response.
@@ -379,15 +379,15 @@ internal interface NetworkOwner {
  * @since 0.1.0-alpha
 
  */
-internal suspend inline fun <reified T : CommonRequest, reified R> NetworkOwner.post(
+internal suspend inline fun <reified I : CommonRequest, reified O> NetworkOwner.post(
     url: String,
-    request: T,
+    request: I,
     postHeaders: Map<String, String> = mutableMapOf()
-): R =
+): O =
     networkClient.httpClient
         .post(url) {
             headers { postHeaders.forEach { (key, value) -> append(key, value) } }
-            jsonRequest(request.withNetworkLog<T>("POST", url))
+            jsonRequest(request.withNetworkLog<I>("POST", url))
         }.deserializeResponse()
 
 private inline fun <reified T : CommonRequest> T.withNetworkLog(type:String, url: String): T {

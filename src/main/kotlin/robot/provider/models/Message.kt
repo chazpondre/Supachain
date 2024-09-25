@@ -32,10 +32,10 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 sealed interface Message {
-    fun functions(): List<FunctionCall>
-    fun role(): Role
-    fun text(): TextContent
-    fun contents(): List<Content>
+    fun functions(): List<FunctionCall> = contents().filterIsInstance<FunctionCall>()
+    fun role(): Role = throw NotImplementedError()
+    fun text(): TextContent = throw NotImplementedError()
+    fun contents(): List<Content> = throw NotImplementedError()
 
     sealed interface Content
 }
@@ -44,6 +44,12 @@ sealed interface Message {
 @JvmInline
 value class TextContent(val value: String) : Message.Content {
     override fun toString() = value
+}
+
+@Serializable
+@JvmInline
+value class FunctionCallContent(val function: FunctionCall) : Message.Content {
+    override fun toString() = "fun ${function.name}"
 }
 
 @Serializable

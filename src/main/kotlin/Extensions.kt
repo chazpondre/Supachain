@@ -22,7 +22,7 @@ package dev.supachain
  *
  * @see Modifies
  */
-interface Extension<Self> {
+internal interface Extension<Self> {
     /**
      * A function that normally returns a reference to the current instance of the implementing class or subtype.
      *
@@ -65,7 +65,7 @@ interface Extension<Self> {
  * @since 0.1.0-alpha
  * @see Extension
  */
-interface Modifies<Self> : Extension<Self> {
+internal interface Modifies<Self> : Extension<Self> {
     /**
      * Operator function to apply a modification lambda to the object.
      *

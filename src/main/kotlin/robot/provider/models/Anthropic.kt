@@ -23,9 +23,7 @@ import kotlinx.serialization.Serializable
 ██████████████████████████  ████  ██  ████  █████  █████  ████████  ████  ██  ████████  ███  ███████████████████████████
 ██████████████████████████       ████      ███        ██        ██       ███        ██  ████  ██████████████████████████
 */
-@Suppress("unused")
-class Anthropic : Provider<Anthropic>(), AnthropicAPI, AnthropicActions, NetworkOwner,
-    AnthropicModels {
+abstract class AnthropicBuilder : Provider<AnthropicBuilder>(), NetworkOwner {
     var apiKey: String = ""
     var beta: String = ""
     var modelName: String = ""
@@ -33,32 +31,52 @@ class Anthropic : Provider<Anthropic>(), AnthropicAPI, AnthropicActions, Network
     var temperature: Double = 0.0
     var topP: Double = 0.0
     var topK: Int = 0
-    override var url: String = "https://api.anthropic.com/v1"
     var version: String = "2023-06-01"
-    override val toolResultMessage: (result: String) -> TextMessage =
-        { TextMessage(Role.FUNCTION, it) }
-
-    var chatModel: String = models.chat.claude35Sonnet_20240620
     val stream: Boolean = false
+    abstract var chatModel: String
 
-    override val name: String get() = "Anthropic"
+    // Network
+    val network: NetworkConfig = NetworkConfig()
+    override var url: String = "https://api.anthropic.com/v1"
+
+    // Provider
+    override var name: String = "Anthropic"
     override var maxRetries: Int = 3
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = FillInTheBlank
-    override var messenger: Messenger = Messenger(this)
+}
 
+@Suppress("unused")
+class Anthropic : AnthropicBuilder(), AnthropicAPI, AnthropicModels, AnthropicActions {
+    override val actions: Actions = this
+    override var chatModel: String = models.chat.claude35Sonnet_20240620
     internal val headers
         get() = mutableMapOf(
             "x-api-key" to apiKey,
             "anthropic-version" to version
-        ).apply {
-            if (beta.isNotBlank()) put("x-beta", beta)
-        }
+        ).apply { if (beta.isNotBlank()) put("x-beta", beta) }
 
-    val network: NetworkConfig = NetworkConfig()
     override val networkClient: NetworkClient by lazy { KTORClient(network) }
 
     override val self: () -> Anthropic get() = { this }
+
+    override var messenger: Messenger = Messenger(this)
+
+    override fun onReceiveMessage(message: Message) {
+        messenger.send(AnthropicAPI.AnthropicMessage(message))
+    }
+
+    override fun onToolResult(result: String) {
+        val last = messenger.lastMessage()
+        if (last is AnthropicAPI.AnthropicMessage) {
+            val lastContent = last.content!!.last()
+            val id = if (lastContent is AnthropicAPI.Content.ToolUse) lastContent.id
+            else throw IllegalStateException("Expected ToolUse but got $lastContent, result received: $result")
+
+            val content = AnthropicAPI.Content.ToolResult(id, result)
+            messenger.send(AnthropicAPI.AnthropicMessage(Role.USER, listOf(content)))
+        } else throw IllegalStateException("There is no Anthropic message matching tool call message for the tool call result of $result")
+    }
 }
 
 /*
@@ -68,22 +86,52 @@ class Anthropic : Provider<Anthropic>(), AnthropicAPI, AnthropicActions, Network
 ██████████████████████████████████████████████        ██  ███████████  █████████████████████████████████████████████████
 ██████████████████████████████████████████████  ████  ██  ████████        ██████████████████████████████████████████████
 */
-
-
-
-interface AnthropicAPI : Extension<Anthropic> {
-
-
+internal interface AnthropicAPI : Extension<Anthropic> {
     @Serializable
-    data class AnthropicMessage(val role: Role, val content: List<Content>) {
+    data class AnthropicMessage(
+        val role: Role,
+        val content: List<Content>? = null,
+    ) : Message {
         constructor(message: Message) : this(message.role(), message.contents().asAnthropicContent())
+
+        override fun text() =
+            TextContent((content?.filterIsInstance<Content.Text>())?.joinToString { it.text } ?: "")
+
+        override fun role(): Role = role
+        override fun contents(): List<Message.Content> =
+            content?.filter { it !is Content.ToolUse }?.map { it.asMessageContent() } ?: emptyList()
+
+        override fun functions(): List<FunctionCall> = content?.filterIsInstance<Content.ToolUse>()?.map {
+            FunctionCall(it.input.toJson(false), it.name)
+        } ?: emptyList()
     }
 
     @Serializable
     sealed interface Content {
+        fun asMessageContent(): Message.Content
+
         @Serializable
         @SerialName("text")
-        data class Text(val text: String) : Content
+        data class Text(val text: String) : Content {
+            override fun asMessageContent() = TextContent(text)
+        }
+
+        @Serializable
+        @SerialName("tool_use")
+        data class ToolUse(val id: String, val name: String, val input: Map<String, String>) : Content {
+            override fun asMessageContent(): Message.Content =
+                FunctionCallContent(FunctionCall(input.toJson(false),name))
+        }
+
+        @Serializable
+        @SerialName("tool_result")
+        data class ToolResult(
+            @SerialName("tool_use_id")
+            val id: String,
+            val content: String
+        ) : Content {
+            override fun asMessageContent(): Message.Content = TextContent(content)
+        }
 
         @Serializable
         @SerialName("image")
@@ -91,11 +139,15 @@ interface AnthropicAPI : Extension<Anthropic> {
             @Serializable
             data class ImageSource(
                 val type: String, // This can be "base64"
-                @SerialName("media_type") val mediaType: String, // The media type of the image (e.g., image/jpeg)
+                @SerialName("media_type")
+                val mediaType: String, // The media type of the image (e.g., image/jpeg)
                 val data: String // Base64 encoded image string
             )
+
+            override fun asMessageContent(): Message.Content = Base64ImageContent(source.data, source.type)
         }
     }
+
     /*
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░  ░░░░  ░░░      ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
     ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
@@ -103,8 +155,6 @@ interface AnthropicAPI : Extension<Anthropic> {
     ███████████████████████████████████████  ████  ██  ████  ██        █████  ██████████████████████████████████████████
     ████████████████████████████████████████      ███  ████  ██  ████  █████  ██████████████████████████████████████████
     */
-
-
     @Serializable
     data class ChatRequest(
         val model: String,
@@ -137,7 +187,6 @@ interface AnthropicAPI : Extension<Anthropic> {
         }
     }
 
-
     @Serializable
     data class ChatResponse(
         val id: String,
@@ -148,33 +197,12 @@ interface AnthropicAPI : Extension<Anthropic> {
         val type: String? = null,
         val usage: Usage? = null,
         val content: List<Content>
-    ) : Message {
-        @Serializable
-        data class Content(
-            val type: String,
-            val text: String? = null,
-            val id: String? = null,
-            val name: String? = null,
-            val input: Map<String, String>? = null
-        )
-
+    ) /*: Message*/ {
         @Serializable
         data class Usage(
             @SerialName("input_tokens") val inputTokens: Int,
             @SerialName("output_tokens") val outputTokens: Int
         )
-
-        override fun text() = TextContent(content.last().text ?: "")
-        override fun role(): Role = Role.ASSISTANT
-        override fun contents(): List<Message.Content> = listOf(text())
-        override fun functions(): List<FunctionCall> = content.mapNotNull {
-            if (it.type == "tool_use") FunctionCall(
-                it.input!!.toJson(false),
-                it.name!!
-            ) else null
-        }
-
-        override fun toString() = this.toJson()
     }
 }
 
@@ -221,7 +249,6 @@ interface AnthropicModels {
 ██████████████████████████        ██  ████  █████  ████████  █████  ████  ██  ██    ████████  ██████████████████████████
 ██████████████████████████  ████  ███      ██████  █████        ███      ███  ███   ███      ███████████████████████████
  */
-
 private fun List<ToolConfig>.asAnthropicTools() = map {
     with(it.function) {
         AnthropicAPI.ChatRequest.Tool(
@@ -230,33 +257,34 @@ private fun List<ToolConfig>.asAnthropicTools() = map {
     }
 }
 
-internal fun List<Message>.asAnthropicMessage() = this.map { AnthropicAPI.AnthropicMessage(it) }
+internal fun List<Message>.asAnthropicMessage() = this.map {
+    if (it is AnthropicAPI.AnthropicMessage) it
+    else AnthropicAPI.AnthropicMessage(it)
+}
 
 internal fun List<Message.Content>.asAnthropicContent(): List<AnthropicAPI.Content> = mapNotNull {
     when (it) {
         is Base64ImageContent -> AnthropicAPI.Content.Image(
-            AnthropicAPI.Content.Image.ImageSource(
-                "base64",
-                it.mediaType,
-                it.base64
-            )
+            AnthropicAPI.Content.Image.ImageSource("base64", it.mediaType, it.base64)
         )
 
         is TextContent -> AnthropicAPI.Content.Text(it.value)
         is DocumentContent -> null
+        is FunctionCallContent -> null
     }
 }
 
 private sealed interface AnthropicActions : NetworkOwner, Actions, Extension<Anthropic> {
-    override suspend fun chat(tools: List<ToolConfig>): AnthropicAPI.ChatResponse = with(self()) {
-        return post(
+    override suspend fun chat(tools: List<ToolConfig>): AnthropicAPI.AnthropicMessage = with(self()) {
+        val response: AnthropicAPI.ChatResponse = post(
             "$url/messages",
             AnthropicAPI.ChatRequest(
                 chatModel, maxTokens, temperature, tools.asAnthropicTools(), stream,
                 messenger.messages().asAnthropicMessage(),
-            ),
-            headers
+            ), headers
         )
+
+        return AnthropicAPI.AnthropicMessage(response.role, response.content)
     }
 }
 

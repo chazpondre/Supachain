@@ -5,7 +5,6 @@ package dev.supachain.robot.provider
 import dev.supachain.robot.messenger.MessageFilter
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.provider.models.Message
-import dev.supachain.robot.provider.models.TextMessage
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
 
@@ -21,18 +20,21 @@ import dev.supachain.robot.tool.strategies.ToolUseStrategy
  * @since 0.1.0-alpha
 
  */
-abstract class Provider<T : Provider<T>> : Actions {
-    abstract var maxRetries: Int
-    abstract var toolsAllowed: Boolean
-    abstract var toolStrategy: ToolUseStrategy
+abstract class Provider<T : Provider<T>> {
     var loopDetection: Boolean = true
     var userMessagePrimer: Boolean = true
     var useFormatMessage: Boolean = true
-    var messageFilter : MessageFilter = MessageFilter.None
+    var messageFilter: MessageFilter = MessageFilter.None
     var includeSeekCompletionMessage: Boolean = true
+    abstract var name: String
+    abstract var maxRetries: Int
+    abstract var toolsAllowed: Boolean
+    abstract var toolStrategy: ToolUseStrategy
+    internal abstract val actions: Actions
 
-    internal abstract var messenger: Messenger
-    internal abstract val toolResultMessage: (result: String) -> TextMessage
+    internal abstract val messenger: Messenger
+    internal abstract fun onToolResult(result: String)
+    internal abstract fun onReceiveMessage(message: Message)
 
     /**
      * Executes a request to the AI provider for a specific feature.
@@ -46,46 +48,45 @@ abstract class Provider<T : Provider<T>> : Actions {
      * @throws IllegalStateException If the requested feature is not supported by this AI provider.
      *
      * @since 0.1.0-alpha
-
      */
     internal suspend inline
     fun request(feature: Feature, tools: List<ToolConfig>): Message =
         when (feature) {
             // Feature chat is chatting
-            Feature.Chat -> chat(tools.allowed)
-            Feature.Embedding -> embedding()
-            Feature.Moderation -> moderation()
-            Feature.CreateSpeech -> createSpeech()
-            Feature.CreateTranscription -> createTranscription()
-            Feature.CreateTranslation -> createTranslation()
-            Feature.CreateFineTune -> createFineTune()
-            Feature.ListFineTunes -> listFineTunes()
-            Feature.ListFineTuneEvents -> listFineTuneEvents()
-            Feature.ListFineTuneCheckPoints -> listFineTuneCheckPoints()
-            Feature.FineTuneInfo -> fineTuneInfo()
-            Feature.FineTuneCancel -> fineTuneCancel()
-            Feature.CreateBatch -> createBatch()
-            Feature.GetBatch -> getBatch()
-            Feature.CancelBatch -> cancelBatch()
-            Feature.ListBatches -> listBatches()
-            Feature.UploadFile -> uploadFile()
-            Feature.ListFiles -> listFiles()
-            Feature.GetFile -> getFile()
-            Feature.DeleteFile -> deleteFile()
-            Feature.GetFileContent -> getFileContent()
-            Feature.CreateImage -> createImage()
-            Feature.ReadImage -> readImage()
-            Feature.UpdateImage -> updateImage()
-            Feature.VaryImage -> varyImage()
-            Feature.CreateAudio -> createAudio()
-            Feature.ReadAudio -> readAudio()
-            Feature.UpdateAudio -> updateAudio()
-            Feature.VaryAudio -> varyAudio()
-            Feature.CreateVideo -> createVideo()
-            Feature.ReadVideo -> readVideo()
-            Feature.UpdateVideo -> updateVideo()
-            Feature.VaryVideo -> varyVideo()
-            Feature.ListModels -> listModels()
+            Feature.Chat -> actions.chat(tools.allowed)
+            Feature.Embedding -> actions.embedding()
+            Feature.Moderation -> actions.moderation()
+            Feature.CreateSpeech -> actions.createSpeech()
+            Feature.CreateTranscription -> actions.createTranscription()
+            Feature.CreateTranslation -> actions.createTranslation()
+            Feature.CreateFineTune -> actions.createFineTune()
+            Feature.ListFineTunes -> actions.listFineTunes()
+            Feature.ListFineTuneEvents -> actions.listFineTuneEvents()
+            Feature.ListFineTuneCheckPoints -> actions.listFineTuneCheckPoints()
+            Feature.FineTuneInfo -> actions.fineTuneInfo()
+            Feature.FineTuneCancel -> actions.fineTuneCancel()
+            Feature.CreateBatch -> actions.createBatch()
+            Feature.GetBatch -> actions.getBatch()
+            Feature.CancelBatch -> actions.cancelBatch()
+            Feature.ListBatches -> actions.listBatches()
+            Feature.UploadFile -> actions.uploadFile()
+            Feature.ListFiles -> actions.listFiles()
+            Feature.GetFile -> actions.getFile()
+            Feature.DeleteFile -> actions.deleteFile()
+            Feature.GetFileContent -> actions.getFileContent()
+            Feature.CreateImage -> actions.createImage()
+            Feature.ReadImage -> actions.readImage()
+            Feature.UpdateImage -> actions.updateImage()
+            Feature.VaryImage -> actions.varyImage()
+            Feature.CreateAudio -> actions.createAudio()
+            Feature.ReadAudio -> actions.readAudio()
+            Feature.UpdateAudio -> actions.updateAudio()
+            Feature.VaryAudio -> actions.varyAudio()
+            Feature.CreateVideo -> actions.createVideo()
+            Feature.ReadVideo -> actions.readVideo()
+            Feature.UpdateVideo -> actions.updateVideo()
+            Feature.VaryVideo -> actions.varyVideo()
+            Feature.ListModels -> actions.listModels()
         }
 
     @Suppress("UNCHECKED_CAST")
@@ -94,5 +95,4 @@ abstract class Provider<T : Provider<T>> : Actions {
 
     internal val List<ToolConfig>.allowed: List<ToolConfig>
         get() = if (toolsAllowed) toolStrategy.getTools(this) else emptyList()
-
 }

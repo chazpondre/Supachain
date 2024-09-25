@@ -65,6 +65,13 @@ class Messenger internal constructor
     private val currentConversation get() = conversations[currentConversationIndex]
     private fun Message.store() = this.also { currentConversation.add(this) }.log()
     private fun Message.log() = this.also { log(this) }
+    private fun<T: List<Message>> T.filtered() = this.filter {
+        when (provider.messageFilter) {
+            MessageFilter.OnlyUserMessages -> it.role() == Role.USER
+            MessageFilter.OnlySystemMessages -> it.role() == Role.SYSTEM
+            MessageFilter.None -> true
+        }
+    }
 
     private fun log(message: Message) =
         logger.debug(Debug("Messenger"), "[Messenger]$message")
@@ -72,13 +79,18 @@ class Messenger internal constructor
     fun messages(): List<Message> = currentConversation
 
     internal suspend
-    fun send(
-        robot: RobotCore<*, *, *>,
-        objective: Objective,
-    ): Message {
+    fun send(robot: RobotCore<*, *, *>, objective: Objective): Message {
         setupMessages(robot, objective)
         return getResult(robot, objective.feature)
     }
+
+    /**
+     * Adds a single message to the current conversation.
+     *
+     * @param message The message to add.
+     * @return This `Messenger` instance for chaining.
+     */
+    internal fun send(message: Message) = message.store()
 
     private fun setupMessages(
         robot: RobotInterface,
@@ -87,25 +99,17 @@ class Messenger internal constructor
         // Get All Messages
         val messageList = mutableListOf<Message>().apply {
             // Add Config Messages
-            addAll(objective.rankedConfigMessages)
+            objective.rankedConfigMessages.also { addAll(it) }
             // Formatting Message
-            if (provider.useFormatMessage) add(objective.formattingMessage())
+            if (provider.useFormatMessage) objective.formattingMessage().also { add(it) }
             // Tool Strategy Messages
             provider.toolStrategy.onRequestMessage(robot.allTools)?.also { add(it) }
             // Argument Messages
-            addAll(objective.argumentMessages(provider.userMessagePrimer))
+            objective.argumentMessages(provider.userMessagePrimer).also { addAll(it) }
         }
 
         // Filter Messages & Store
-        messageList.filter {
-            when (provider.messageFilter) {
-                MessageFilter.OnlyUserMessages -> it.role() == Role.USER
-                MessageFilter.OnlySystemMessages -> it.role() == Role.SYSTEM
-                MessageFilter.None -> true
-            }
-        }.forEach {
-            it.store()
-        }
+        messageList.filtered().forEach { provider.onReceiveMessage(it) }
     }
 
     private tailrec suspend
@@ -114,8 +118,10 @@ class Messenger internal constructor
         val response = handleResponse(feature, robot.allTools)
         // Handle Tool Calls
         val result: ToolResultMessage = handleToolCalling(robot, response, toolResult)
-        // Store And Clear Tool Result
-        result.messages.apply { forEach { it.store() }; clear() }
+        // Send filtered messages to Provider
+        result.messages.filtered().forEach { provider.onReceiveMessage(it) }
+        // Clear
+        result.messages.clear()
 
         // Handle Action
         return when (result.action) {
@@ -177,20 +183,12 @@ class Messenger internal constructor
     fun finalResponse() = lastMessage().text()
 
     /**
-     * Adds a single message to the current conversation.
-     *
-     * @param message The message to add.
-     * @return This `Messenger` instance for chaining.
-     */
-    operator fun invoke(message: Message) = this.apply { message.store() }
-
-    /**
      * Retrieves the last message in the current conversation.
      *
      * @return The last message, or an `IllegalStateException` if the conversation is empty.
      * @throws IllegalStateException If the current conversation is empty.
      */
-    private fun lastMessage() = currentConversation.lastOrNull()
+    internal fun lastMessage() = currentConversation.lastOrNull()
         ?: throw IllegalAccessError("Last message is not available")
 
     /**
@@ -206,7 +204,7 @@ class Messenger internal constructor
      *
      * @return This `Messenger` instance for chaining.
      */
-    fun newConversation() = this.apply {
+    internal fun newConversation() = this.apply {
         conversations.add(mutableListOf())
         currentConversationIndex = conversations.size - 1
     }
@@ -218,7 +216,7 @@ class Messenger internal constructor
      * @return This `Messenger` instance for chaining.
      * @throws IllegalArgumentException If the index is invalid (out of bounds).
      */
-    fun switchConversation(index: Int) = this.apply {
+    internal fun switchConversation(index: Int) = this.apply {
         require(index >= 0 && index < conversations.size) { "Invalid conversation index" } // Validate index
         currentConversationIndex = index //
     }

@@ -57,11 +57,11 @@ data object BackAndForth : ToolUseStrategy {
                         Success -> {
                             if (
                                 index == response.functions().lastIndex &&
-                                provider.includeSeekCompletionMessage
-                            ) result.messages.add(completionMessage)
+                                provider.includeSeekCompletionMessage // TODO decouple
+                            )  result.messages.add(completionMessage)
 
                             val callResult = result.callHistory.asIterable().last().value
-                            result.messages.add(provider.toolResultMessage(callResult))
+                            provider.onToolResult(callResult) // Todo decouple
                             result.action = ToolResultAction.Update
                         }
 

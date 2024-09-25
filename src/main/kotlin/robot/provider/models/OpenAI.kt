@@ -89,7 +89,8 @@ import kotlinx.serialization.Serializable
  */
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
-    override val name: String get() = "Open AI API"
+    override val actions: Actions = this
+    override var name: String = "Open AI"
     override var url: String = "https://api.openai.com"
     override var maxRetries: Int = 3
     override val networkClient: NetworkClient by lazy { KTORClient(network) }
@@ -97,7 +98,6 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = BackAndForth
     override var messenger: Messenger = Messenger(this)
-    override val toolResultMessage: (result: String) -> TextMessage = { TextMessage(Role.FUNCTION, it) }
 
     var apiKey: String = ""
     var chatModel: String = models.chat.gpt4o
@@ -124,6 +124,14 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
     companion object : Modifiable<OpenAI>({ OpenAI() })
 
     override val self = { this }
+
+    override fun onToolResult(result: String) {
+        messenger.send(TextMessage(Role.FUNCTION, result))
+    }
+
+    override fun onReceiveMessage(message: Message) {
+        messenger.send(message)
+    }
 }
 
 @Suppress("unused")
@@ -134,7 +142,6 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
 ██████████████████████████████████████████████        ██  ███████████  █████████████████████████████████████████████████
 ██████████████████████████████████████████████  ████  ██  ████████        ██████████████████████████████████████████████
 */
-
 private fun List<ToolConfig>.asOpenAITools() = map { OpenAIAPI.Tool(it) }
 
 interface OpenAIAPI {
@@ -148,7 +155,7 @@ interface OpenAIAPI {
         val toolCalls: List<ToolCall>? = null,
         val name: String? = null
     ) {
-        constructor(message: Message): this(message.role(), message.text().value)
+        constructor(message: Message) : this(message.role(), message.text().value)
     }
 
     @Serializable
@@ -178,6 +185,7 @@ interface OpenAIAPI {
 
         constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
     }
+
     /*
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░  ░░░░  ░░░      ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
     ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
@@ -376,15 +384,29 @@ fun List<Message>.asOpenAIMessage() = this.map { OpenAIAPI.OpenAIMessage(it) }
  *
  * @since 0.1.0-alpha
  */
-private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI> {
+private sealed interface OpenAIActions : NetworkOwner, Extension<OpenAI>, Actions {
     override suspend
     fun chat(tools: List<ToolConfig>): OpenAIAPI.ChatResponse =
         with(self()) {
             return post(
                 "$url/v1/chat/completions", OpenAIAPI.ChatRequest(
-                    messenger.messages().asOpenAIMessage(), chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
-                    parallelToolCalling, presencePenalty, seed, stop, network.streamable,
-                    temperature, topP, tools.asOpenAITools(), toolChoice, user
+                    messenger.messages().asOpenAIMessage(),
+                    chatModel,
+                    frequencyPenalty,
+                    logitBias,
+                    logProbabilities,
+                    maxTokens,
+                    n,
+                    parallelToolCalling,
+                    presencePenalty,
+                    seed,
+                    stop,
+                    network.streamable,
+                    temperature,
+                    topP,
+                    tools.asOpenAITools(),
+                    toolChoice,
+                    user
                 ), headers
             )
         }
