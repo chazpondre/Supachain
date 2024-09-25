@@ -237,12 +237,13 @@ class AnthropicTesting {
     private fun expectedChatToolCallMessage() = buildJsonObject {
         put("messages", buildJsonArray {
             add(buildJsonObject {
-                put("role", JsonPrimitive("function"))
+                put("role", JsonPrimitive("user"))
                 put("content", buildJsonArray {
                     buildJsonArray {
                         add(buildJsonObject{
-                            put("type", JsonPrimitive("text"))
-                            put("text", "18")
+                            put("type", JsonPrimitive("tool_result"))
+                            put("tool_use_id", JsonPrimitive("toolu_01A09q90qw90lq917835lq9"))
+                            put("content", "18")
                         })
                     }
                 })
