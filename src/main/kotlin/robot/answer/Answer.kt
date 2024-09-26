@@ -8,12 +8,12 @@
 
 package dev.supachain.robot.answer
 
+import dev.supachain.utilities.castFormat
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.DisposableHandle
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import dev.supachain.utilities.castFormat
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -23,16 +23,17 @@ import kotlin.reflect.jvm.jvmErasure
 /**
  * Represents an asynchronous answer or response that is expected to be available in the future.
  *
- * This class wraps a [Deferred] object, providing a convenient way to handle the asynchronous result.
- * It allows for registering a callback function (`onAnswer`) that is invoked when the result is ready,
- * or explicitly waiting for the result using `await()`.
+ * This class wraps a [Deferred] object, providing a convenient way to handle asynchronous results. It allows
+ * for registering a callback function (`onAnswer`) that is invoked when the result is ready, or explicitly
+ * waiting for the result using `await()`. Additionally, it supports error handling through the `onError` function.
  *
  * @param T The type of the value that the answer is expected to hold.
  *
- * @constructor Creates an instance of `Answer` wrapping a `Deferred` object.
+ * @constructor Creates an instance of `Answer` wrapping a `Deferred` object representing the asynchronous result.
  * @param deferred The [Deferred] object representing the asynchronous result.
  *
- * @since 0.1.0-alpha
+ * @throws IllegalArgumentException If the provided type does not conform to the expected `Answer` return type.
+ * @since 0.1.0
  */
 @Suppress("unused")
 class Answer<T>(answerType: KType, private val deferred: Deferred<String>) {
@@ -56,11 +57,14 @@ class Answer<T>(answerType: KType, private val deferred: Deferred<String>) {
     /**
      * Registers a callback function to be invoked when the answer is available.
      *
-     * The callback function will be executed with the result of the asynchronous operation as its argument.
+     * The callback function is executed with the result of the asynchronous operation as its argument.
      * If an exception occurs during the operation, the callback will not be invoked.
+     * This method also attaches a handler to the [Deferred] object for managing completion events.
      *
-     * @param handler The callback function to be executed when the answer is ready.
-     * @return This `Answer` object to allow for method chaining.
+     * @param handler The callback function to execute when the answer is ready.
+     * @return This `Answer` object, allowing for method chaining.
+     *
+     * @since 0.1.0
      */
     infix fun onAnswer(handler: Answer<T>.(T) -> Unit): Answer<T> {
         this.handler = handler
@@ -86,17 +90,29 @@ class Answer<T>(answerType: KType, private val deferred: Deferred<String>) {
     }
 
     /**
-     * Registers an error handler for when an exception occurs.
+     * Registers a callback function to be invoked in case an error occurs during the asynchronous operation.
      *
-     * @param handler The error handler function.
+     * If an exception or error is encountered, the provided error handler is invoked with the exception as
+     * its argument.
+     *
+     * @param handler The error handler function to execute upon encountering an error.
+     * @return This `Answer` object for method chaining.
+     *
+     * @since 0.1.0
      */
     infix fun onError(handler: (Throwable?) -> Unit) = this.apply { errorHandler = handler }
 
     /**
-     * Waits for the answer and returns the result.
+     * Waits for the result of the asynchronous operation and returns it.
      *
-     * Suspends the coroutine until the asynchronous operation completes and the result is available. Throws an
-     * exception if one occurs.
+     * Suspends the current coroutine until the operation completes, returning the result of the operation.
+     * This method also invokes the registered callback function, if available. In the event of a failure, an
+     * exception is thrown.
+     *
+     * @return The result of the asynchronous operation.
+     *
+     * @throws IllegalStateException If the deferred operation cannot be completed.
+     * @since 0.1.0
      */
     fun await(): T {
         if (::deferredHandle.isInitialized) deferredHandle.dispose()
@@ -110,10 +126,18 @@ class Answer<T>(answerType: KType, private val deferred: Deferred<String>) {
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun getFormattedAnswer() = deferred.getCompleted().format()
 
+
     /**
-     * Formats the response based on the return type.
+     * Formats the raw response based on the expected return type [T].
      *
-     * @return The formatted response.
+     * This method converts the raw string result into the correct type, which could be a simple value,
+     * an enum, a list, or a set, based on the specified return type. It throws an exception if the
+     * return type is not supported or cannot be inferred correctly.
+     *
+     * @return The formatted response of type [T].
+     *
+     * @throws IllegalArgumentException If the response cannot be formatted to the specified type.
+     * @since 0.1.0
      */
     @Suppress("UNCHECKED_CAST")
     private fun String.format(): T {

@@ -39,7 +39,7 @@ private val logger: Logger get() = LoggerFactory.getLogger(Extensions::class.jav
  * @param T The type of the class.
  * @return A list of [Directive] objects representing the Robot methods.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  * @see Directive
  */
@@ -66,7 +66,7 @@ fun <T : Any> KClass<T>.getDirectives(): List<Directive> =
  *
  * @return A mutable list of [TextMessage] objects derived from the found annotations. If no relevant annotations are present, an empty list is returned.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 private fun KFunction<*>.messages(): MutableList<TextMessage> {
@@ -86,7 +86,7 @@ private fun KFunction<*>.messages(): MutableList<TextMessage> {
  *
  * @return The `Feature` associated with this function via the `@Use` annotation, or `Feature.Chat` if no annotation is found.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 private fun KFunction<*>.feature(): Feature =
@@ -111,7 +111,7 @@ private fun KFunction<*>.feature(): Feature =
  * @receiver The Kotlin function (`KFunction`) to analyze.
  * @return A list of `Parameter` objects representing the function's parameters, or `null` if the `@Parameters` annotation is missing.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 private fun KFunction<*>.parameters(): List<Parameter> {
@@ -150,7 +150,7 @@ private fun KFunction<*>.parameters(): List<Parameter> {
  *
  * **By using this function, you can discover and extract tool functionalities declared within a Kotlin class for integration with the Director.**
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 fun KClass<*>.getToolMethods(): List<RobotTool> {
     val exclusions = listOf("equals", "hashCode", "toString")
@@ -261,7 +261,7 @@ fun String.asVarargType(parameter: Parameter): Any {
  * @receiver The string containing the arguments to be split.
  * @return A list of strings representing the individual arguments.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 fun String.splitArguments(): List<String> {

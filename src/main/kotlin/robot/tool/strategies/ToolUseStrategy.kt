@@ -10,7 +10,7 @@ import dev.supachain.robot.tool.ToolConfig
  * within the AI system. Concrete implementations of this interface will dictate how the AI decides
  * when and how to call external tools or functions to enhance its responses or capabilities.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 sealed interface ToolUseStrategy {

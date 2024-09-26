@@ -17,8 +17,7 @@ import dev.supachain.robot.tool.strategies.ToolUseStrategy
  *
  * @param T The specific type of the `Provider` subclass, enabling fluent configuration using the `invoke` operator.
  *
- * @since 0.1.0-alpha
-
+ * @since 0.1.0
  */
 abstract class Provider<T : Provider<T>> {
     var loopDetection: Boolean = true
@@ -40,14 +39,16 @@ abstract class Provider<T : Provider<T>> {
      * Executes a request to the AI provider for a specific feature.
      *
      * This function dynamically dispatches the request to the appropriate handler
-     * based on the `featureMap`.
+     * based on the `featureMap`. It uses a suspending function to asynchronously
+     * communicate with the AI model or tool, performing various actions like
+     * chatting, generating embeddings, or managing batches.
      *
-     * @param feature The AI feature to be executed (e.g., `Feature.CHAT`, `Feature.EMBEDDING`).
-     * @param director The `Director` instance responsible for orchestrating the AI interaction.
-     * @return A `CommonResponse` object containing the result of the feature execution.
+     * @param feature The AI feature to be executed (e.g., `Feature.Chat`, `Feature.Embedding`).
+     * @param tools A list of `ToolConfig` that may be used during the request.
+     * @return A `Message` object containing the result of the feature execution.
      * @throws IllegalStateException If the requested feature is not supported by this AI provider.
      *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
      */
     internal suspend inline
     fun request(feature: Feature, tools: List<ToolConfig>): Message =
@@ -93,6 +94,14 @@ abstract class Provider<T : Provider<T>> {
     inline operator
     fun invoke(modify: T.() -> Unit) = (this as T).modify()
 
+    /**
+     * Filters the allowed tools based on the `toolsAllowed` flag.
+     *
+     * If the provider allows the use of tools, this property will return the tools
+     * that are available and allowed in the current strategy. Otherwise, it will return an empty list.
+     *
+     * @since 0.1.0
+     */
     internal val List<ToolConfig>.allowed: List<ToolConfig>
         get() = if (toolsAllowed) toolStrategy.getTools(this) else emptyList()
 }

@@ -85,7 +85,7 @@ import kotlinx.serialization.Serializable
  * @property networkClient          The client settings for making API requests.
  * @property toolsAllowed           Indicates whether the use of tools is permitted.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
@@ -305,7 +305,7 @@ interface OpenAIModels {
      * This object serves as a central repository for OpenAI model identifiers,
      * categorized by their primary functions (chat, embedding, moderation).
      *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
      */
     val models get() = Models
 
@@ -382,7 +382,7 @@ fun List<Message>.asOpenAIMessage() = this.map { OpenAIAPI.OpenAIMessage(it) }
  * Implementations of this interface are expected to provide concrete logic for executing these actions,
  * typically by making HTTP requests to the OpenAI API endpoints.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 private sealed interface OpenAIActions : NetworkOwner, Extension<OpenAI>, Actions {
     override suspend

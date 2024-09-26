@@ -23,6 +23,7 @@ import kotlinx.serialization.Serializable
 ██████████████████████████  ████  ██  ████  █████  █████  ████████  ████  ██  ████████  ███  ███████████████████████████
 ██████████████████████████       ████      ███        ██        ██       ███        ██  ████  ██████████████████████████
 */
+@Suppress("unused")
 abstract class AnthropicBuilder : Provider<AnthropicBuilder>(), NetworkOwner {
     var apiKey: String = ""
     var beta: String = ""
@@ -223,7 +224,7 @@ interface AnthropicModels {
      * This object serves as a central repository for OpenAI model identifiers,
      * categorized by their primary functions (chat, embedding, moderation).
      *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
      */
     object Models {
         /** Models suitable for chat completions. */

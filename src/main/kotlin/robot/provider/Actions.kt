@@ -17,7 +17,7 @@ import dev.supachain.robot.tool.ToolConfig
  * generating embeddings, moderating content, and more. Each action is represented by a
  * suspend function that returns a type of `CommonResponse`.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 internal interface Actions {

@@ -35,7 +35,7 @@ import kotlinx.serialization.Serializable
  * Note:  The specific roles used might vary depending on the AI application's requirements. This library provides
  * these standard roles to cover common use cases.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Suppress("unused")

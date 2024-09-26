@@ -42,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
  * This interface provides the basic structure for a network client, including the configuration
  * and the underlying HTTP client used for making requests.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 interface NetworkClient {
@@ -96,7 +96,7 @@ interface NetworkClient {
  * @param config A `NetworkConfig` instance defining the client's behavior.
  * @property httpClient The underlying `HttpClient` used for communication (lazily initialized).
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 class KTORClient(override val config: NetworkConfig) : NetworkClient {
     /**
@@ -233,7 +233,7 @@ class KTORClient(override val config: NetworkConfig) : NetworkClient {
  * proxy server. This is used when the Ktor client needs to route its requests through an intermediary server instead
  * of connecting directly to the target host.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 typealias ProxyConfig = java.net.Proxy
 
@@ -248,7 +248,7 @@ typealias ProxyConfig = java.net.Proxy
  * @property random Secure random number generator for cryptographic operations.
  * @property trustManager Custom trust manager to validate server certificates.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 class TLSConfiguration(
@@ -295,7 +295,7 @@ class TLSConfiguration(
  * @param proxyConfig Optional configuration for using a proxy server.
  * @param httpsConfig Optional configuration for HTTPS connections.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 data class NetworkConfig(
@@ -350,7 +350,7 @@ data class NetworkConfig(
  *   - Serialize the `request` object into JSON and set it as the request body.
  *   - Prints log message to output of the Json request
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 private inline fun <reified T> HttpRequestBuilder.jsonRequest(request: T) {
@@ -376,7 +376,7 @@ internal interface NetworkOwner {
  * @param request The request object to be serialized and sent in the request body.
  * @return An `HttpResponse` object representing the server's response.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 internal suspend inline fun <reified I : CommonRequest, reified O> NetworkOwner.post(
@@ -390,7 +390,7 @@ internal suspend inline fun <reified I : CommonRequest, reified O> NetworkOwner.
             jsonRequest(request.withNetworkLog<I>("POST", url))
         }.deserializeResponse()
 
-private inline fun <reified T : CommonRequest> T.withNetworkLog(type:String, url: String): T {
+private inline fun <reified T : CommonRequest> T.withNetworkLog(type: String, url: String): T {
     logger.debug(Debug("Network"), "[Network/Request]\n@[$url] ${toJson()}")
     return this
 }
@@ -404,7 +404,11 @@ fun <reified T> HttpResponse.deserializeResponse(): T {
     }
     return try {
         capturedString = bodyAsText()
-        logger.debug(Debug("Network"), "[Network/Received]\n@[status:${this.status}, from: ${this.request.url}]\n$capturedString")
+        logger.debug(
+            Debug("Network"),
+            "[Network/Received]\n@[status:{}, from: {}]\n{}",
+            status, request.url, capturedString
+        )
         json.decodeFromString(capturedString)
     } catch (e: RedirectResponseException) {
         // Handle redirect (3xx status codes)
@@ -423,8 +427,10 @@ fun <reified T> HttpResponse.deserializeResponse(): T {
         throw Exception("Server error: ${e.response.status.description}", e)
     } catch (e: Exception) {
         // Handle other exceptions (e.g., network errors, serialization issues)
-        logger.error("Unexpected error formatting common response. Provider message:\n " +
-                "$capturedString. \n\nError -> $e")
+        logger.error(
+            "Unexpected error formatting common response. Provider message:\n " +
+                    "$capturedString. \n\nError -> $e"
+        )
 
         throw e
     }

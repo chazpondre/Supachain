@@ -34,7 +34,7 @@ interface FunctionHandling<T> {
      *    - `Recalled`: Function call already executed previously.
      *    - `Error`: An exception occurred during function execution.
      *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
      */
     operator fun FunctionCall.invoke(callHistory: MutableMap<String, String>): CallStatus {
         val (function, arguments, callString) = this.info()
@@ -99,7 +99,7 @@ interface FunctionHandling<T> {
      * @throws IllegalStateException If the tool or its function definition is not found.
      * @throws IllegalArgumentException If any argument conversion fails or an unsupported argument type is encountered.
      *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
 
      */
     operator fun FunctionCall.invoke(): Any? {
@@ -144,7 +144,7 @@ interface FunctionHandling<T> {
      * **Throws:**
      *  - `IllegalStateException`: If the requested tool or its function definition is not found in the `toolMap`.
      *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
      */
     fun FunctionCall.info(argFormatter: String.(ParamMap) -> Array<Any?> = { formatArgumentsFromJson(it) }): Triple<KFunction<*>, Array<Any?>, String> {
         val tool = toolMap[name]?.function ?: throw IllegalStateException("Unknown tool call $name")

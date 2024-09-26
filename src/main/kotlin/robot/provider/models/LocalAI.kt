@@ -44,7 +44,7 @@ import kotlinx.serialization.Serializable
  * @property network Configuration for network communication settings.
  * @property networkClient The Ktor client for making API requests to the local model.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
     override val actions: Actions = this

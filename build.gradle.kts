@@ -1,3 +1,6 @@
+group = "dev.supachain"
+version = "0.1.0"
+
 val ktorVersion: String = "2.3.11"
 val logbackVersion: String = "1.5.6"
 val kotlinVersion: String = "2.0.0"
@@ -10,9 +13,6 @@ plugins {
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
 }
-
-group = "dev.supachain"
-version = "0.1.0-alpha"
 
 repositories {
     mavenCentral()

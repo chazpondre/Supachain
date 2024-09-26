@@ -15,7 +15,21 @@ import kotlin.reflect.KType
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.jvmErasure
 
-
+/**
+ * Represents an objective for the robot, combining a directive and its arguments.
+ *
+ * The `Objective` class encapsulates a [Directive] and the corresponding method arguments as a pair.
+ * It provides utility functions to transform the method arguments into a list of messages and to
+ * retrieve relevant information about the directive being executed.
+ *
+ * @property data A pair consisting of the [Directive] and the arguments used to execute it.
+ * @property directive The directive that is being executed.
+ * @property arguments The arguments passed to the method corresponding to the directive.
+ *
+ * @constructor Creates an objective from a [Directive] and an array of arguments.
+ *
+ * @since 0.1.0
+ */
 class Objective(val data: Pair<Directive, Array<Any?>>) : AbstractDirective by data.first {
     constructor(directive: Directive, arguments: Array<Any?>) : this(Pair(directive, arguments))
 
@@ -24,10 +38,15 @@ class Objective(val data: Pair<Directive, Array<Any?>>) : AbstractDirective by d
 
 
     /**
-     * Converts method arguments of a method into a list of messages.
+     * Converts method arguments into a list of user messages for the robot.
      *
-     * @param directiveArguments The arguments passed to the method.
-     * @return A list of messages representing the arguments.
+     * This function takes the provided arguments and transforms them into [TextMessage] objects.
+     * These messages represent the arguments as instructions for the robot to execute the directive.
+     * If `usePrimer` is true, the message will provide context for the robot's task, otherwise it simply
+     * displays the argument values.
+     *
+     * @param usePrimer Whether to include a primer or task description in the message.
+     * @return A list of [TextMessage] objects representing the arguments.
      */
     fun argumentMessages(usePrimer: Boolean): List<TextMessage> =
         List(parameters.size) { index -> arguments[index] }.mapIndexed { index, arg ->
@@ -45,6 +64,22 @@ class Objective(val data: Pair<Directive, Array<Any?>>) : AbstractDirective by d
     }
 }
 
+/**
+ * Represents an abstraction for directives.
+ *
+ * This interface defines the structure of a directive, which is a command or task for the robot.
+ * It provides metadata about the directive, such as its name, the parameters it accepts, its expected return type,
+ * and associated messages. The `AbstractDirective` interface is implemented by classes that represent
+ * specific directives for the robot.
+ *
+ * @property name The name of the directive.
+ * @property parameters A list of [Parameter] objects representing the input parameters for the directive.
+ * @property returnType The [KType] indicating the return type of the directive.
+ * @property messages A list of [TextMessage] objects that provide context or information related to the directive.
+ * @property feature The [Feature] associated with this directive.
+ *
+ * @since 0.1.0
+ */
 interface AbstractDirective {
     val name: String
     val parameters: List<Parameter>
@@ -57,17 +92,14 @@ interface AbstractDirective {
 
 
     /**
-     * Determines the expected output format based on a method's return type.
+     * Generates a message describing the expected output format for the directive's return type.
      *
-     * This function analyzes the return-type of a given `Directive` to provide instructions on how the Robot model
-     * should format its response.
-     * It supports common types like numbers, booleans, collections, dates, and enums. If an unsupported type is
-     * encountered, an exception is thrown.
+     * This function analyzes the return type of the directive and generates instructions on how the
+     * robot should format its response. It supports various types including collections, enums,
+     * and basic types.
      *
-     * @return A string containing instructions on how to format the output.
-     * @throws IllegalArgumentException If the return type is `Unit` or unsupported.
-     *
-     * @since 0.1.0-alpha
+     * @return A [TextMessage] containing the expected format for the directive's output.
+     * @throws IllegalArgumentException If the return type is unsupported or missing.
      */
     fun formattingMessage(): TextMessage {
         // Extract the KClass representing the return type (handling Deferred)
@@ -87,15 +119,16 @@ interface AbstractDirective {
     }
 
     /**
-     * Determines the format rules for collections based on the method's return type.
+     * Determines the formatting rules for collection types such as List or Set.
      *
-     * This function provides specific instructions for formatting collection types such as List or Set.
-     * The response is in a CSV-like format with each item separated by a newline character.
+     * This method provides specific instructions for how the robot should format responses when the
+     * return type is a collection. The output is formatted similarly to a CSV, where each item is
+     * separated by a newline.
      *
-     * @receiver The MethodAPI instance containing the return type information.
-     * @return A string containing the format rules for the collection.
-     * @throws IllegalArgumentException If the expected generic type for the collection is not found.
+     * @return A string representing the format rules for collections.
+     * @throws IllegalStateException If the return type is not properly defined for collections.
      */
+
     fun collectionFormatRules(): String {
         val subClass = returnType.arguments.firstOrNull()?.type?.arguments?.firstOrNull()?.type?.jvmErasure
             ?: throw IllegalStateException("Expected a Answer type for Directive to be Collection type, received $this")
@@ -106,19 +139,22 @@ interface AbstractDirective {
 }
 
 /**
- * Represents a directive for a robot, encapsulating method details and associated information.
+ * Represents a directive containing method details and related information for execution.
  *
- * This data class describes a command or instruction to be executed by a robot. It includes the
- * method's name, its parameters, the expected return type, any relevant messages, and the associated feature.
+ * The `Directive` class encapsulates the essential components needed to describe and execute a method.
+ * It includes the method's name, the parameters it accepts, its return type, any associated messages,
+ * and the feature within which it operates. The directive provides context for the robot's decision-making
+ * and action-taking.
  *
- * @property name The name of the method to be executed by the robot.
- * @property parameters A list of [Parameter] objects detailing the method's input parameters.
+ * @property name The name of the method represented by this directive.
+ * @property parameters A list of [Parameter] objects representing the method's input parameters.
  * @property returnType The [KType] representing the expected return type of the method.
- * @property messages A list of [TextMessage] objects containing additional information or context relevant to the directive.
+ * @property messages A list of [TextMessage] objects containing additional information or context about the directive.
  * @property feature The [Feature] associated with this directive, providing context for its execution.
  *
- * @since 0.1.0-alpha
-
+ * @constructor Creates a `Directive` instance with the specified name, parameters, return type, messages, and feature.
+ *
+ * @since 0.1.0
  */
 @Serializable
 data class Directive(

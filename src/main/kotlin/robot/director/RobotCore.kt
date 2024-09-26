@@ -40,14 +40,14 @@ internal interface RobotInterface {
  * and the available tools. It handles the following key responsibilities:
  *
  * - **Directive Management:** Stores a collection of `Directive` objects that define the possible
- *    actions or operations the AI can perform based on user requests.
+ *   actions or operations the AI can perform based on user requests.
  * - **Tool Integration:** Maintains a `ToolMap` that associates tool names with their
- *    configurations (`ToolConfig`), allowing for dynamic tool execution.
- * - **Message Handling:** Utilizes a `Messenger` to store and manage the conversation history
- *   between the user and the AI, including system instructions, user prompts, AI responses, and tool outputs.
- * - **Provider Interaction:**  Communicates with the AI provider using the `defaultProvider`,
+ *   configurations, allowing dynamic tool execution.
+ * - **Message Handling:** Utilizes a `Messenger` to manage the conversation history between
+ *   the user and the AI, including system instructions, user prompts, AI responses, and tool outputs.
+ * - **Provider Interaction:** Communicates with the AI provider using the `defaultProvider`,
  *   sending requests and receiving responses.
- * - **Tool Execution:**  Provides a `toolProxy` object to facilitate the execution of tool functions
+ * - **Tool Execution:** Provides a `toolProxy` object for facilitating the execution of tool functions
  *   when requested by the AI.
  *
  * @param P The type of the AI provider used for generating responses and potentially executing tool calls.
@@ -59,10 +59,9 @@ internal interface RobotInterface {
  * @property directives A map of directive names to their corresponding `Directive` objects.
  * @property toolProxy A proxy object for executing tool functions.
  * @property toolProxyObject A lazy-initialized function that creates an instance of the `ToolType` class
- *                           containing the tool functions.
+ *   containing the tool functions.
  *
- * @since 0.1.0-alpha
-
+ * @since 0.1.0
  */
 data class RobotCore<P : Provider<*>, API : Any, ToolType : Any>(
     override var defaultProvider: P,
@@ -78,33 +77,22 @@ data class RobotCore<P : Provider<*>, API : Any, ToolType : Any>(
     val logger: Logger by lazy { LoggerFactory.getLogger(RobotCore::class.java) }
 
     /**
-     * Registers a tool interface within the director, enabling access to its functionalities.
+     * Registers a tool interface within the RobotCore, enabling access to its functionalities.
      *
-     * This function integrates a tool interface into the director instance by analyzing its methods and their annotations.
+     * This function integrates a tool interface into the RobotCore by analyzing its methods and annotations.
+     * It supports method chaining by returning the RobotCore instance itself.
      *
      * **Parameters:**
-     *  - `ToolInterface`: The type of the tool interface to be registered. This interface should be public and contain
-     *  methods annotated with `@Tool` and `@Parameters` or class labelled `@Toolset`.
+     * - `ToolInterface`: The tool interface to register. This should contain methods annotated with `@Tool`
+     *   and/or `@Parameters` or be a class labeled `@Toolset`.
      *
      * **Returns:**
-     *  An instance of `ExtendedClient<CLIENT, API>`, allowing for method chaining for further configuration.
+     * - A reference to the current `RobotCore` instance for method chaining.
      *
      * **Throws:**
-     *  - `IllegalArgumentException` if the provided `ToolInterface` is not publicly accessible.
+     * - `IllegalArgumentException` if the `ToolInterface` is not publicly accessible.
      *
-     * **Process:**
-     * 1. **Visibility Check:** Ensures the provided tool interface is public (not private).
-     * 2. **Tool Instance Creation:** Attempts to create an instance of the tool interface using a no-argument constructor.
-     * 3. **Tool Configuration Extraction:** Analyzes methods within the interface decorated with `@Tool` annotations and extracts their corresponding configurations.
-     * 4. **Logging:** Logs information about the registered toolset and its configurations for debugging purposes.
-     * 5. **Configuration Storage:** Stores the extracted tool configurations for later use by the director.
-     *
-     * **Preconditions:**
-     *  - The `defaultProvider.toolsAllowed` flag must be enabled to allow tool registration.
-     *
-     * **By registering a tool interface, you provide the director with access to its functionalities for use within your application.**
-     *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
      */
     inline fun <reified ToolInterface : ToolType> setUpToolset(): RobotCore<P, API, *> = this.also {
         toolProxyObject = {
@@ -124,18 +112,16 @@ data class RobotCore<P : Provider<*>, API : Any, ToolType : Any>(
     }
 
     /**
-     * Creates a proxy instance of the specified API interface.
+     * Sets up directives by mapping the methods of the API interface to their corresponding `Directive` objects.
      *
-     * This function maps the methods of the API interface to their corresponding [Directive]
-     * objects and creates a proxy that intercepts method calls and handles them using the provided
-     * toolset and configurations.
+     * Creates a proxy instance of the specified API interface that intercepts method calls, which are
+     * then handled using the registered directives and tool configurations.
      *
      * @param API The type of the API interface.
      * @return A proxy instance implementing the specified API interface.
      *
-     * @since 0.1.0-alpha
-
-     * */
+     * @since 0.1.0
+     */
     inline fun <reified API : Any> setUpDirectives(): API {
         val directiveInterface = API::class
         directives.putAll(directiveInterface.getDirectives().associateBy { it.name })
@@ -145,27 +131,24 @@ data class RobotCore<P : Provider<*>, API : Any, ToolType : Any>(
         }
     }
 
+
     /**
-     * Processes a directive request, handles the provider's response, and returns the final message content.
+     * Processes a directive request, sends it to the provider, and returns the result.
      *
-     * This function is responsible for the core logic of handling directives within the `RobotCore`.
-     * It performs the following key steps:
+     * This method handles core logic for directive execution:
+     * 1. Directive Retrieval: Retrieves the directive by name from the `directives` map.
+     * 2. Objective Formation: Forms an `Objective` from the directive and arguments.
+     * 3. Send Message: Sends the request to the provider's `messenger`.
+     * 4. Extract Result: Extracts and returns the final response.
      *
-     * 1. **Directive Retrieval:** Fetches the `RobotDirective` associated with the given proxied `name` from the `directives` map.
-     *    If the directive is not found, an `IllegalStateException` is thrown.
-     * 2. **Provider Interaction:** Sends the provided arguments to the default provider's `messenger`, along with the directive.
-     * 3. **Result Extraction:** Retrieves the final response from the `messenger`.
-     * 4. **Error Handling:** Catches any exceptions during processing, logs an error message with context,
-     *    and rethrows the exception for further handling by the caller.
+     * @param parent The parent context initiating the request (used for logging).
+     * @param name The directive name to execute.
+     * @param args The arguments to pass to the directive function.
+     * @return The final message content representing the AI's response.
+     * @throws IllegalStateException If the directive is not found.
+     * @throws Exception If any error occurs during processing.
      *
-     * @param parent The name of the parent or context initiating this directive request (used for logging purposes).
-     * @param name The name of the directive to be executed.
-     * @param args An array of arguments to be passed to the underlying function associated with the directive.
-     * @return The content of the final message in the `Messenger`, representing the response or result.
-     * @throws IllegalStateException If the specified directive is not found in the `directives` map.
-     * @throws Exception If any other error occurs during the processing of the directive.
-     *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
      */
     suspend
     fun handleDirectiveRequest(parent: String, name: String, args: Array<Any?>): String {

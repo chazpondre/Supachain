@@ -25,12 +25,35 @@ typealias Conversation = MutableList<Message>
 typealias ConversationHistory = MutableList<Conversation>
 typealias ConversationKey = Int
 
+/**
+ * Enum representing filters that can be applied to messages in a conversation.
+ *
+ * This filter helps determine which messages to include when processing or displaying conversations.
+ * It can filter for only user messages, only system messages, or include all messages.
+ *
+ * - `OnlyUserMessages`: Includes only messages sent by the user.
+ * - `OnlySystemMessages`: Includes only messages sent by the system.
+ * - `None`: Includes all messages without filtering.
+ *
+ * @since 0.1.0
+ */
 enum class MessageFilter {
     OnlyUserMessages,
     OnlySystemMessages,
     None
 }
 
+/**
+ * Enum representing the possible actions that can be taken after processing a tool result.
+ *
+ * The actions dictate how the conversation should proceed or be updated after the tool has completed its operation.
+ * - `Retry`: Indicates that the tool should be retried with the same or updated input.
+ * - `Update`: Indicates that the current result should be updated and reprocessed.
+ * - `Complete`: Indicates that the current result is final and no further processing is needed.
+ * - `ReplaceAndComplete`: Indicates that the last result should be replaced and marked as final.
+ *
+ * @since 0.1.0
+ */
 enum class ToolResultAction {
     Retry,
     Update,
@@ -52,8 +75,7 @@ interface ToolResultMessage {
  *
  * @property conversations A list of conversation histories, each being a list of `Message` objects.
  *
- * @since 0.1.0-alpha
-
+ * @since 0.1.0
  */
 class Messenger internal constructor
     (private val provider: Provider<*>, maxMessages: Int = 10) {
@@ -74,10 +96,22 @@ class Messenger internal constructor
     }
 
     private fun log(message: Message) =
-        logger.debug(Debug("Messenger"), "[Messenger]$message")
+        logger.debug(Debug("Messenger"), "[Messenger]{}", message)
 
     fun messages(): List<Message> = currentConversation
 
+    /**
+     * Sends a message to a Provider using the provided objective.
+     *
+     * This function initiates the message exchange by setting up the appropriate
+     * messages (including configurations, formatting, and strategies) and then obtaining
+     * the response through the provider's tool strategies. The response is processed and filtered.
+     *
+     * @param robot The `RobotCore` instance that can do requested tasks.
+     * @param objective The objective containing the directives and configuration for the message.
+     * @return The final response `Message` obtained after processing.
+     * @since 0.1.0
+     */
     internal suspend
     fun send(robot: RobotCore<*, *, *>, objective: Objective): Message {
         setupMessages(robot, objective)
@@ -92,6 +126,18 @@ class Messenger internal constructor
      */
     internal fun send(message: Message) = message.store()
 
+    /**
+     * Prepares and sets up all the messages to be sent based on the given objective and robot context.
+     *
+     * This method collects and organizes various types of messages, including configuration, formatting, tool strategy,
+     * and argument messages, before sending them for further processing. The messages are filtered before being passed
+     * to the provider for additional handling.
+     *
+     * @param robot The `RobotInterface` instance containing tools and configurations used to handle the request.
+     * @param objective The `Objective` representing the goal or task, which contains relevant messages and settings.
+     *
+     * @since 0.1.0
+     */
     private fun setupMessages(
         robot: RobotInterface,
         objective: Objective
@@ -112,6 +158,24 @@ class Messenger internal constructor
         messageList.filtered().forEach { provider.onReceiveMessage(it) }
     }
 
+    /**
+     * Recursively processes and retrieves the final message result for a given objective, feature, and tool result.
+     *
+     * This function manages the flow of conversation by:
+     * 1. Handling responses from the provider.
+     * 2. Invoking tools and processing their results through a defined tool strategy.
+     * 3. Filtering messages and sending them to the provider for further handling.
+     * 4. Recursively determining the appropriate action to take based on the result's action (Retry, Update, Complete, etc.).
+     *
+     * The function operates recursively when a `Retry` or `Update` action is returned until a final message is reached.
+     *
+     * @param robot The `RobotCore` instance that contains the tools and context for processing the request.
+     * @param feature The `Feature` representing the current task or functionality being executed.
+     * @param toolResult Optional. A previous `ToolResultMessage` that may influence the current state of the conversation.
+     * @return The final `Message` after processing all relevant actions.
+     *
+     * @since 0.1.0
+     */
     private tailrec suspend
     fun getResult(robot: RobotCore<*, *, *>, feature: Feature, toolResult: ToolResultMessage? = null): Message {
         // Handle Response
@@ -137,25 +201,14 @@ class Messenger internal constructor
     /**
      * Handles the response from the default language model provider and delegates further processing based on the tool strategy.
      *
-     * This function processes the response received from the default LLM provider. It performs the following steps:
+     * This function processes the response received from the default LLM provider.
+
+     * @param feature The AI feature to be executed (e.g., `Feature.Chat`, `Feature.Embedding`).
+     * @param tools A list of `ToolConfig` that may be used by the Provider during the request.
      *
-     * 1. **Request and Message Handling:** Sends a request to the default provider based on the `directive`'s feature
-     *    and adds the received response messages to the `messenger`.
-     * 2. **Tool Strategy Delegation:**
-     *    - Determines the tool strategy configured for the default provider (`defaultProvider.toolStrategy`).
-     *    - Based on the strategy, delegates further processing to either:
-     *        - `BackAndForth`:  Handles function calls and potential loops, possibly making additional requests to the provider.
-     *        - `FillInTheBlank`:  Processes the response directly without any tool interactions.
-     * 3. **Implicit Return:** If no specific tool strategy is matched, the function implicitly returns without taking any
-     *    further action.
-     *
-     * @param directive The `RobotDirective` object containing instructions and restrictions for the AI's actions.
-     * @param name The name of the current function being executed (for logging purposes).
-     * @param args The arguments passed to the function.
-     * @param callHistory A mutable map to track the history of function calls and their results (used by the `BackAndForth` strategy).
+     * @return A `Message` object containing the response from the provider.
      *
      * @since 0.1.0-alpha
-
      */
     private suspend fun handleResponse(feature: Feature, tools: List<ToolConfig>): Message {
         val response = provider.request(feature, tools)
@@ -164,6 +217,18 @@ class Messenger internal constructor
         return response
     }
 
+    /**
+     * Handles tool interaction logic and processes the results.
+     *
+     * Based on the current tool strategy (e.g., `BackAndForth` or `FillInTheBlank`), this method either
+     * handles the tool calls and retries, or processes the response directly.
+     *
+     * @param robot The `RobotCore` instance managing the tools.
+     * @param response The message response from the provider.
+     * @param toolResult Optionally, the result of the previous tool interaction.
+     * @return A `ToolResultMessage` with the processed result.
+     * @since 0.1.0
+     */
     private fun Messenger.handleToolCalling(
         robot: RobotCore<*, *, *>,
         response: Message,
@@ -180,6 +245,15 @@ class Messenger internal constructor
         is FillInTheBlank -> FillInTheBlank(robot, response)
     }
 
+
+    /**
+     * Retrieves the final response text of the current conversation.
+     *
+     * This method returns the final message text in the current conversation.
+     *
+     * @return The text of the final response message.
+     * @since 0.1.0
+     */
     fun finalResponse() = lastMessage().text()
 
     /**

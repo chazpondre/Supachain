@@ -26,7 +26,7 @@ import kotlin.reflect.jvm.javaMethod
  *
  * @throws IllegalStateException If a called method is not found in the interface definition.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  *
  * @sample
  * ```kotlin

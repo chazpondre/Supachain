@@ -13,29 +13,42 @@ import dev.supachain.robot.tool.asKFunctionString
 import dev.supachain.utilities.templates
 
 /**
- * Represents a tool-use strategy where the AI fills in placeholders within a template response.
- * It allows the AI to combine or chain multiple tool calls to achieve a complex task.
+ * Represents a tool-use strategy where the Provider fills in placeholders within a template response.
+ * It allows the Provider to combine or chain multiple tool calls to achieve a complex task.
  *
  * This data object implements the `ToolUseStrategy` interface. It handles responses that contain
  * placeholders for function calls. The strategy directly processes these placeholders by executing the corresponding
  * functions and inserting their results into the response template.
  *
- * @since 0.1.0-alpha
-
+ * @since 0.1.0
  */
 data object FillInTheBlank : ToolUseStrategy {
+    /**
+     * Internal class representing the result of the tool execution within the fill-in-the-blank strategy.
+     *
+     * This class holds the action to be taken after the tool's execution and the list of messages generated
+     * from filling the placeholders in the template.
+     *
+     * @property action Defines the action to take, such as completing the interaction or replacing the content.
+     * @property messages A mutable list of messages generated during the placeholder filling.
+     *
+     * @since 0.1.0
+     */
     internal class Result(
         override var action: ToolResultAction = ToolResultAction.Complete,
         override val messages: MutableList<Message> = mutableListOf(),
     ) : ToolResultMessage
+
     /**
      * Constructs a system message listing available functions and providing usage instructions.
      *
-     * This function generates a system message that informs the AI about the available functions
+     * This function generates a system message that informs the Provider about the available functions
      * and how to use them within response templates.
      *
-     * @param director The `Director` instance containing the list of available tools.
-     * @return A `Message` object representing the system message.
+     * @param toolSet The list of available tools in the current session.
+     * @return A `TextMessage` object representing the system message with detailed instructions.
+     *
+     * @since 0.1.0
      */
     override fun onRequestMessage(toolSet: List<ToolConfig>): TextMessage =
         if (toolSet.isEmpty()) "Answer to the best of your ability".asSystemMessage()
@@ -100,8 +113,11 @@ data object FillInTheBlank : ToolUseStrategy {
      * This function processes a response from the AI provider by executing any function calls
      * embedded within the response template and replacing them with their results.
      *
-     * @param robot The `Director` instance responsible for managing the AI interaction.
-     * @param response The `CommonResponse` received from the AI provider.
+     * @param robot The `RobotCore` instance responsible for managing the AI interaction.
+     * @param response The `Message` received from the AI provider, potentially containing function calls.
+     * @return A `ToolResultMessage` object containing the processed result after template evaluation.
+     *
+     * @since 0.1.0
      */
     operator fun invoke(robot: RobotCore<*, *, *>, response: Message): ToolResultMessage = with(robot) {
         val template = response.text().toString().templates()

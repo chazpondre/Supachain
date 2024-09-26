@@ -18,7 +18,7 @@ package dev.supachain
  *  certain responsibilities.
  *
  * @param Self The type of the implementing class or subtype of higher self.
- * @since 0.1.0-alpha
+ * @since 0.1.0
  *
  * @see Modifies
  */
@@ -62,7 +62,7 @@ internal interface Extension<Self> {
  * println(example.value) // Prints: 42
  * ```
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  * @see Extension
  */
 internal interface Modifies<Self> : Extension<Self> {
@@ -90,7 +90,7 @@ internal interface Modifies<Self> : Extension<Self> {
  *
  * @see Modifies
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 abstract class Modifiable<T>(override val self: () -> T) : Modifies<T>
 
