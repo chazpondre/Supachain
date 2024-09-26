@@ -55,7 +55,7 @@ package dev.supachain.robot.provider
  * - **Models:**
  *   - `ListModels`: List available models.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 enum class Feature {

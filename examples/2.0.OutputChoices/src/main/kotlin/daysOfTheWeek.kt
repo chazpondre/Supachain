@@ -19,7 +19,7 @@ fun main() {
         defaultProvider {
             url = "http://localhost:8888"
             temperature = 0.0
-            chatModel = "LocalAI-llama3-8b-function-call-v0.2"
+            chatModel = "meta-llama-3.1-8b-instruct"
         }
     }
 

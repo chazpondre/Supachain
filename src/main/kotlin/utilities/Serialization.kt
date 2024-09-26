@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package dev.supachain.utilities
 
 import kotlinx.serialization.KSerializer
@@ -23,10 +25,10 @@ import kotlin.reflect.KType
  * @receiver The object to serialize.
  * @return A JSON string representation of the object.
  */
-inline fun <reified T> T.toJson(): String {
+inline fun <reified T> T.toJson(pretty: Boolean = true): String {
     val json = Json {
         encodeDefaults = false // Don't include default values in JSON
-        prettyPrint = true     // Format the JSON for readability (optional)
+        prettyPrint = pretty     // Format the JSON for readability (optional)
     }
 
     return try {
@@ -45,7 +47,7 @@ inline fun <reified T> T.toJson(): String {
  *
  * @param T The type of object to be serialized.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 interface SerializeWrite<T> : KSerializer<T> {
     override fun deserialize(decoder: Decoder): T =
@@ -83,7 +85,7 @@ interface SerializeWrite<T> : KSerializer<T> {
  *  val jsonSchemaType = typeString.toJSONSchemaType() // "integer"
  *  ```
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 fun KType.toJSONSchemaType(): String = with(this.toString().substringAfterLast('.')) {
     when (removeSuffix("?")) {
@@ -120,7 +122,7 @@ fun KType.toJSONSchemaType(): String = with(this.toString().substringAfterLast('
  * @throws IllegalArgumentException If an unknown parameter is provided, a parameter has an illegal type,
  *                                  a required parameter is missing, or the JSON value type is not a primitive.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 fun String.formatArgumentsFromJson(keyRankParameterMap: Map<String, Pair<Int, Parameter>>): Array<Any?> {
     // 1. Parse JSON: parse the arguments string into a JsonElement.

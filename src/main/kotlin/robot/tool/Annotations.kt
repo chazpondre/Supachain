@@ -4,7 +4,7 @@ package dev.supachain.robot.tool
  * Annotation to describe a tool method.
  *
  * @property description A brief description of the tool method.
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Target(AnnotationTarget.FUNCTION)
@@ -17,7 +17,7 @@ annotation class Tool(val description: String = "")
  * This annotation designates a class as a container for multiple tool functions, often used in conjunction with
  * the `@Tool` annotation on individual methods within the class.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Target(AnnotationTarget.CLASS)
@@ -28,7 +28,7 @@ annotation class ToolSet
  * Annotation to specify parameter names for a method.
  *
  * @property description An array of parameter names.
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Target(AnnotationTarget.FUNCTION)

@@ -13,7 +13,7 @@ package dev.supachain.utilities
  *
  * @property data A Pair containing the list of expressions and the modified string.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 @JvmInline
 value class TemplateString(private val data: Pair<List<String>, String>) {

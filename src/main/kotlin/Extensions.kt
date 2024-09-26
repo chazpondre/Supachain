@@ -18,11 +18,11 @@ package dev.supachain
  *  certain responsibilities.
  *
  * @param Self The type of the implementing class or subtype of higher self.
- * @since 0.1.0-alpha
+ * @since 0.1.0
  *
  * @see Modifies
  */
-interface Extension<Self> {
+internal interface Extension<Self> {
     /**
      * A function that normally returns a reference to the current instance of the implementing class or subtype.
      *
@@ -62,10 +62,10 @@ interface Extension<Self> {
  * println(example.value) // Prints: 42
  * ```
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  * @see Extension
  */
-interface Modifies<Self> : Extension<Self> {
+internal interface Modifies<Self> : Extension<Self> {
     /**
      * Operator function to apply a modification lambda to the object.
      *
@@ -90,7 +90,7 @@ interface Modifies<Self> : Extension<Self> {
  *
  * @see Modifies
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 abstract class Modifiable<T>(override val self: () -> T) : Modifies<T>
 

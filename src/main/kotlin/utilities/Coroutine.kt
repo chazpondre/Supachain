@@ -15,7 +15,7 @@ import kotlin.coroutines.CoroutineContext
  * @property coroutineContext The `CoroutineContext` used to define the dispatcher and job for the coroutine scope.
  * @property scope The coroutine scope created with the provided `backgroundContext`.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 interface RunsInBackground {
     val job: CompletableJob
@@ -28,7 +28,7 @@ interface RunsInBackground {
      * This function cancels the `CompletableJob` and all associated coroutines, ensuring that
      * resources are properly released.
      *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
      */
     @Suppress("unused")
     fun cancel() {

@@ -5,18 +5,19 @@
 ██████████████████████████  ██    ██  ███████████  █████   ██   ██  ████  ██  ███  ███  ███  ███████████████████████████
 ██████████████████████████  ███   ██        █████  █████  ████  ███      ███  ████  ██  ████  ██████████████████████████
  */
-@file:Suppress("unused")
+@file:Suppress("unused", "UNUSED_PARAMETER")
 
 package dev.supachain.robot
 
 import dev.supachain.Modifiable
 import dev.supachain.Modifies
-import dev.supachain.robot.provider.CommonRequest
 import dev.supachain.robot.messenger.messaging.ErrorResponse
+import dev.supachain.robot.provider.CommonRequest
 import dev.supachain.utilities.Debug
 import dev.supachain.utilities.toJson
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.engine.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -41,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
  * This interface provides the basic structure for a network client, including the configuration
  * and the underlying HTTP client used for making requests.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 interface NetworkClient {
@@ -53,7 +54,7 @@ interface NetworkClient {
     /**
      * The underlying Ktor HttpClient instance used for network requests.
      */
-    val http: HttpClient
+    val httpClient: HttpClient
 }
 
 /**
@@ -93,18 +94,43 @@ interface NetworkClient {
  * ```
  *
  * @param config A `NetworkConfig` instance defining the client's behavior.
- * @property http The underlying `HttpClient` used for communication (lazily initialized).
+ * @property httpClient The underlying `HttpClient` used for communication (lazily initialized).
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 class KTORClient(override val config: NetworkConfig) : NetworkClient {
     /**
      * Lazily initialized HttpClient instance with configurations from ClientConfig,
      * supporting both HTTP and WebSocket communication.
      */
-    override val http by lazy {
-        HttpClient(CIO) { // Use the CIO engine
+    override val httpClient by lazy {
+        if (config.engine != null) HttpClient(config.engine!!.invoke()) {
+            defaultRequest {
+                // Set up default headers
+                config.headers.forEach { (key, value) -> header(key, value) }
+            }
 
+            engine {
+                // Enables pipelining, allowing multiple requests to be sent over a single connection without
+                // waiting for responses to improve performance in specific scenarios.
+                pipelining = config.pipelining
+
+                // Optional proxy configuration for routing requests through an intermediary server.
+                config.proxyConfig?.let { proxy = it }
+            }
+
+            // Installs content negotiation with JSON support for pretty-printed output.
+            install(ContentNegotiation) {
+                json(Json {
+                    prettyPrint = true
+                    isLenient = true
+                })
+            }
+
+            // Install WebSocket plugin to enable WebSocket support
+            install(WebSockets)
+        }
+        else HttpClient(CIO) { // Use the CIO engine
             defaultRequest {
                 // Set up default headers
                 config.headers.forEach { (key, value) -> header(key, value) }
@@ -189,7 +215,7 @@ class KTORClient(override val config: NetworkConfig) : NetworkClient {
      * @param uri The URI to connect to (e.g., "wss://your-websocket-server").
      */
     suspend fun webSocketSession(uri: URI, block: suspend DefaultClientWebSocketSession.() -> Unit) {
-        http.webSocket(
+        httpClient.webSocket(
             method = HttpMethod.Get,
             host = uri.host,
             port = uri.port,
@@ -207,7 +233,7 @@ class KTORClient(override val config: NetworkConfig) : NetworkClient {
  * proxy server. This is used when the Ktor client needs to route its requests through an intermediary server instead
  * of connecting directly to the target host.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 typealias ProxyConfig = java.net.Proxy
 
@@ -222,7 +248,7 @@ typealias ProxyConfig = java.net.Proxy
  * @property random Secure random number generator for cryptographic operations.
  * @property trustManager Custom trust manager to validate server certificates.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 class TLSConfiguration(
@@ -269,7 +295,7 @@ class TLSConfiguration(
  * @param proxyConfig Optional configuration for using a proxy server.
  * @param httpsConfig Optional configuration for HTTPS connections.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 data class NetworkConfig(
@@ -285,7 +311,8 @@ data class NetworkConfig(
     var pipelining: Boolean = false,
     var proxyConfig: ProxyConfig? = null,
     var httpsConfig: ((TLSConfiguration).() -> Unit)? = null,
-    val streamable: Boolean = false
+    val streamable: Boolean = false,
+    var engine: (() -> HttpClientEngine)? = null
 ) : Modifies<NetworkConfig> {
     /**
      * Sets all timeout durations to the specified value.
@@ -323,10 +350,10 @@ data class NetworkConfig(
  *   - Serialize the `request` object into JSON and set it as the request body.
  *   - Prints log message to output of the Json request
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
-private inline fun <reified T> jsonRequest(request: T): HttpRequestBuilder.() -> Unit = {
+private inline fun <reified T> HttpRequestBuilder.jsonRequest(request: T) {
     contentType(ContentType.Application.Json)
     setBody(request)
 }
@@ -344,32 +371,45 @@ internal interface NetworkOwner {
  * This function is an extension on `NetworkOwner` (which presumably has a `networkClient` property) and simplifies
  * the process of making a POST request with a JSON-serialized request body.
  *
- * @param T The type of the request object to be serialized as JSON.
+ * @param I The type of the request object to be serialized as JSON.
  * @param url The URL to make the POST request to.
  * @param request The request object to be serialized and sent in the request body.
  * @return An `HttpResponse` object representing the server's response.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
-internal suspend inline fun<reified T: CommonRequest, reified R> NetworkOwner.post(url: String, request: T): R =
-    networkClient.http
-        .post(url, jsonRequest(request.apply { logger.debug(Debug("Network"), "[Network/Request]\nPost.Request[$url] ${toJson()}") }))
-        .formatAndCheckResponse()
+internal suspend inline fun <reified I : CommonRequest, reified O> NetworkOwner.post(
+    url: String,
+    request: I,
+    postHeaders: Map<String, String> = mutableMapOf()
+): O =
+    networkClient.httpClient
+        .post(url) {
+            headers { postHeaders.forEach { (key, value) -> append(key, value) } }
+            jsonRequest(request.withNetworkLog<I>("POST", url))
+        }.deserializeResponse()
+
+private inline fun <reified T : CommonRequest> T.withNetworkLog(type: String, url: String): T {
+    logger.debug(Debug("Network"), "[Network/Request]\n@[$url] ${toJson()}")
+    return this
+}
 
 // Error handling function
 internal suspend inline
-fun <reified T> HttpResponse.formatAndCheckResponse(): T {
+fun <reified T> HttpResponse.deserializeResponse(): T {
     var capturedString = ""
     val json = Json {
         ignoreUnknownKeys = true
-        prettyPrint = true
     }
     return try {
         capturedString = bodyAsText()
-        json.decodeFromString<T>(capturedString).also {
-            logger.debug(Debug("Network"), "[Network/Response]\n${it.toJson()}")
-        }
+        logger.debug(
+            Debug("Network"),
+            "[Network/Received]\n@[status:{}, from: {}]\n{}",
+            status, request.url, capturedString
+        )
+        json.decodeFromString(capturedString)
     } catch (e: RedirectResponseException) {
         // Handle redirect (3xx status codes)
         throw Exception("Unexpected redirect: ${e.response.status.description}", e)
@@ -387,8 +427,10 @@ fun <reified T> HttpResponse.formatAndCheckResponse(): T {
         throw Exception("Server error: ${e.response.status.description}", e)
     } catch (e: Exception) {
         // Handle other exceptions (e.g., network errors, serialization issues)
-        logger.error("Unexpected error formatting common response. Provider message:\n " +
-                "$capturedString. \n\nError -> $e")
+        logger.error(
+            "Unexpected error formatting common response. Provider message:\n " +
+                    "$capturedString. \n\nError -> $e"
+        )
 
         throw e
     }

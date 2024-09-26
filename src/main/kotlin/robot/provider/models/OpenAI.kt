@@ -1,100 +1,137 @@
+@file:Suppress("unused")
+
 package dev.supachain.robot.provider.models
 
-import dev.supachain.Modifiable
+import dev.supachain.ExperimentalAPI
 import dev.supachain.Extension
-
-import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.provider.Actions
-
+import dev.supachain.Modifiable
 import dev.supachain.robot.*
-import dev.supachain.robot.director.DirectorCore
+import dev.supachain.robot.messenger.Messenger
+import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.CommonLogProbContainer
 import dev.supachain.robot.messenger.messaging.FunctionCall
-import dev.supachain.robot.messenger.messaging.Message
+import dev.supachain.robot.messenger.messaging.ToolCall
 import dev.supachain.robot.messenger.messaging.Usage
-import dev.supachain.robot.provider.CommonAudioRequest
-import dev.supachain.robot.provider.CommonChatRequest
-import dev.supachain.robot.provider.CommonEmbedRequest
-import dev.supachain.robot.provider.CommonImageRequest
-import dev.supachain.robot.provider.CommonModRequest
-import dev.supachain.robot.post
+import dev.supachain.robot.provider.*
 import dev.supachain.robot.tool.ToolChoice
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
+import dev.supachain.utilities.Parameter
 import dev.supachain.utilities.toJson
+import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /*
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░░      ░░░       ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓  ▓▓       ▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-█████████████████████████████████████████  ████  ██  ████  ██  ███  ███  ███████████████████████████████████████████████
-██████████████████████████████████████████      ████      ███  ████  ██        █████████████████████████████████████████
- */
-
+░░░░░░░░░░░░░░░░░░░░░░░░░░       ░░░  ░░░░  ░░        ░░  ░░░░░░░░       ░░░        ░░       ░░░░░░░░░░░░░░░░░░░░░░░░░░░
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓       ▓▓▓  ▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓  ▓▓      ▓▓▓▓       ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+██████████████████████████  ████  ██  ████  █████  █████  ████████  ████  ██  ████████  ███  ███████████████████████████
+██████████████████████████       ████      ███        ██        ██       ███        ██  ████  ██████████████████████████
+*/
 /**
  * Configuration for interacting with OpenAI's API as an AI Robot.
  *
  * This class provides settings to control how the robot communicates with OpenAI's language models and services.
  * It includes parameters for customizing the model's behavior, network communication, and tool usage.
  *
- * @property name The name of this configuration ("Open AI API").
- * @property models A reference to the available OpenAI models.
- * @property chatModel The default chat model to use (e.g., "gpt-4o").
- * @property temperature  Sampling temperature (0.0 to 2.0) to control randomness.
- *   Higher values make output more creative, lower values make it more deterministic.
- * @property topP Nucleus sampling threshold (0.0 to 1.0).
- *   Controls the diversity of output by selecting from the most likely tokens.
- * @property maxTokens Maximum number of tokens to generate in a response.
- * @property maxRetries Maximum retry attempts for failed requests.
- * @property maxToolExecutions Maximum number of tool calls allowed.
- * @property logProbabilities Whether to include log probabilities of tokens in responses.
- * @property parallelToolCalling Whether to execute multiple tool calls concurrently.
- * @property n Number of responses to generate for each request.
- * @property presencePenalty Controls the model's tendency to repeat phrases.
- * @property frequencyPenalty Controls the model's tendency to repeat the same tokens.
- * @property stop List of strings that signal the model to stop generating further tokens.
- * @property logitBias Modifies the likelihood of specific tokens appearing in the response.
- * @property defaultUser A default identifier for the end-user.
- * @property url Base URL for the OpenAI API.
- * @property network Configuration for network communication settings.
- * @property networkClient The Ktor client for making API requests.
- * @property toolsAllowed Indicates whether the use of tools is permitted.
+ * @property chatModel              The chat model to use (e.g., "gpt-4o"). ID of the model to use. See OpenAI the model
+ *                                  endpoint compatibility table for details on which models work with the Chat API.
+ * @property frequencyPenalty       Number between -2.0 and 2.0. Positive values penalize new tokens based on their
+ *                                  existing frequency in the text so far, decreasing the model's likelihood to repeat
+ *                                  the same line verbatim.
+ * @property logitBias              Modify the likelihood of specified tokens appearing in the completion. Accepts a
+ *                                  JSON object that maps tokens (specified by their token ID in the tokenizer) to an
+ *                                  associated bias value from -100 to 100. Mathematically, the bias is added to the
+ *                                  logits generated by the model prior to sampling. The exact effect will vary per
+ *                                  model, but values between -1 and 1 should decrease or increase likelihood of
+ *                                  selection; values like -100 or 100 should result in a ban or exclusive selection of
+ *                                  the relevant token.
+ * @property logProbabilities       Whether to return log probabilities of the output tokens or not. If true, returns
+ *                                  the log probabilities of each output token returned in the content of message
+ * @property maxRetries             Maximum retry attempts for failed requests.
+ * @property maxTokens              The maximum number of tokens that can be generated in the chat completion. The total
+ *                                  length of input tokens and generated tokens is limited by the model's context length
+ * @property maxToolExecutions      Maximum number of tool calls allowed.
+ * @property models                 A reference to the available OpenAI models.
+ * @property n                      How many chat completion choices to generate for each input message. Note that you
+ *                                  will be charged based on the number of generated tokens across all choices.
+ *                                  Keep n as 1 to minimize costs.
+ * @property parallelToolCalling    Whether to execute multiple tool calls concurrently.
+ * @property presencePenalty        Number between -2.0 and 2.0. Positive values penalize new tokens based on whether
+ *                                  they appear in the text so far, increasing the model's likelihood to talk about
+ *                                  new topics.
+ * @property seed                   This feature is in Beta. If specified, our system will make the best effort to sample
+ *                                  deterministically, such that repeated requests with the same seed and parameters
+ *                                  should return the same result. Determinism is not guaranteed, and you should refer
+ *                                  to the system_fingerprint response parameter to monitor changes in the backend.
+ * @property stop                   Up to 4 sequences where the API will stop generating further tokens.
+ * @property temperature            What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make
+ *                                  the output more random, while lower values like 0.2 will make it more focused and
+ *                                  deterministic. We generally recommend altering this or top_p but not both.
+ * @property topP                   An alternative to sampling with temperature, called nucleus sampling, where the
+ *                                  model considers the results of the tokens with top_p probability mass. So 0.1 means
+ *                                  only the tokens comprising the top 10% probability mass are considered. We generally
+ *                                  recommend altering this or temperature but not both.
+ * @property toolChoice             Controls which (if any) tool is called by the model. none means the model will not
+ *                                  call any tool and instead generates a message. auto means the model can pick between
+ *                                  generating a message or calling one or more tools. required means the model must
+ *                                  call one or more tools
+ * @property user                   A unique identifier representing your end-user, which can help OpenAI to monitor and
+ *                                  detect abuse
+ * @property url                    Base URL for the OpenAI API.
+ * @property network                Configuration for network communication settings.
+ * @property networkClient          The client settings for making API requests.
+ * @property toolsAllowed           Indicates whether the use of tools is permitted.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
-@Suppress("unused")
-class OpenAI : Provider<OpenAI>(), OpenAIActions {
-    override val name: String get() = "Open AI API"
-    val models = OpenAIModels
-
-    var chatModel: String = ChatModels.gpt4o
-    var temperature: Double = 0.5
-    var topP: Double = 0.0
-    var maxTokens: Int = 0
-    var maxToolExecutions: Int = 4
-    var logProbabilities: Boolean = true
-    var parallelToolCalling: Boolean = true
-    var n: Int = 1
-    var presencePenalty = 1.0
-    var frequencyPenalty = 1.0
-    var stop: List<String> = emptyList()
-    var logitBias: Map<String, Int> = emptyMap()
-    var defaultUser: String = ""
-    val network: NetworkConfig = NetworkConfig()
-
+@Suppress("unused", "MemberVisibilityCanBePrivate")
+class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
+    override val actions: Actions = this
+    override var name: String = "Open AI"
+    override var url: String = "https://api.openai.com"
     override var maxRetries: Int = 3
-    override var url: String = "http://localhost:$8080"
     override val networkClient: NetworkClient by lazy { KTORClient(network) }
+    val network: NetworkConfig = NetworkConfig()
     override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = BackAndForth
+    override var messenger: Messenger = Messenger(this)
 
-    // #Modifiable, #Extended
-    override val self = { this }
+    var apiKey: String = ""
+    var chatModel: String = models.chat.gpt4o
+    var frequencyPenalty = 0.0
+    var logProbabilities: Boolean = false
+    var logitBias: Map<String, Int> = emptyMap()
+    var maxTokens: Int = 2048
+    var maxToolExecutions: Int = 4
+    var n: Int = 1
+    var parallelToolCalling: Boolean = true
+    var presencePenalty = 0.0
+    val seed: Int? = null
+    var stop: List<String> = emptyList()
+    var temperature: Double = 0.5
+    var topP: Double = 0.0
+    val toolChoice = ToolChoice.AUTO
+    val user: String? = null
+
+    internal val headers
+        get() = mutableMapOf(
+            HttpHeaders.Authorization to "Bearer $apiKey"
+        )
 
     companion object : Modifiable<OpenAI>({ OpenAI() })
+
+    override val self = { this }
+
+    override fun onToolResult(result: String) {
+        messenger.send(TextMessage(Role.FUNCTION, result))
+    }
+
+    override fun onReceiveMessage(message: Message) {
+        messenger.send(message)
+    }
 }
 
 @Suppress("unused")
@@ -105,84 +142,113 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions {
 ██████████████████████████████████████████████        ██  ███████████  █████████████████████████████████████████████████
 ██████████████████████████████████████████████  ████  ██  ████████        ██████████████████████████████████████████████
 */
-private interface OpenAIAPI {
-    /**
-     * Data class representing a chat completion request with additional parameters.
-     *
-     * This class builds upon the `CommonChatRequest` by providing a richer set of options
-     * to control the behavior of the AI model's response generation.
-     *
-     * @property messages The list of messages in the conversation history.
-     * @property model The name or identifier of the model to use.
-     * @property frequencyPenalty Number between -2.0 and 2.0. Positive values penalize new tokens based on their
-     * existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
-     * @property logitBias Modifies the likelihood of specified tokens appearing in the completion.
-     *   Accepts a map of token IDs to bias values (-100 to 100).
-     * @property logProbabilities If `true`, includes the log probabilities of the most likely tokens.
-     * @property maxTokens The maximum number of tokens to generate in the completion.
-     * @property n How many completions to generate for each prompt.
-     * @property parallelToolCalls Whether to execute multiple tool calls in parallel.
-     * @property presencePenalty Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they
-     *   appear in the text so far, increasing the model's likelihood to talk about new topics.
-     * @property seed An optional integer to use as a seed for the random number generator.
-     * @property stop Up to 4 sequences where the API will stop generating further tokens.
-     * @property stream If `true`, partial progress will be streamed back as it's generated.
-     * @property temperature What sampling temperature to use, between 0 and 2.
-     *   Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused
-     *   and deterministic.
-     * @property topP An alternative to sampling with temperature, called nucleus sampling, where the model considers
-     * the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10%
-     * probability mass are considered.
-     * @property tools List of tools the model can use.
-     * @property toolChoice Controls which tool the model can use.
-     *   Can be "none", "auto", "required", or a specific function name.
-     * @property user A unique identifier representing your end-user
-     *
-     * @since 0.1.0-alpha
-     */
+private fun List<ToolConfig>.asOpenAITools() = map { OpenAIAPI.Tool(it) }
+
+interface OpenAIAPI {
+
+    @Serializable
+    data class OpenAIMessage(
+        val role: Role,
+        val content: String? = null,
+        val refusal: String? = null,
+        @SerialName("tool_calls")
+        val toolCalls: List<ToolCall>? = null,
+        val name: String? = null
+    ) {
+        constructor(message: Message) : this(message.role(), message.text().value)
+    }
+
+    @Serializable
+    data class Tool(val type: String, val function: Function) {
+        @Serializable
+        data class Function(val name: String, val description: String?, val parameters: Parameters) {
+            @Serializable
+            data class Parameters(
+                val type: String,
+                val properties: Map<String, Property>,
+                val required: List<String>
+            ) {
+                constructor(parameters: List<Parameter>) : this(
+                    "object",
+                    parameters.toProperties(),
+                    parameters.filter { it.required }.map { it.name }
+                )
+            }
+
+            constructor(toolConfig: ToolConfig) :
+                    this(
+                        toolConfig.function.name,
+                        toolConfig.function.description.ifBlank { null },
+                        Parameters(toolConfig.function.parameters)
+                    )
+        }
+
+        constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
+    }
+
+    /*
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░  ░░░░  ░░░      ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+    ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓        ▓▓  ▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+    ███████████████████████████████████████  ████  ██  ████  ██        █████  ██████████████████████████████████████████
+    ████████████████████████████████████████      ███  ████  ██  ████  █████  ██████████████████████████████████████████
+    */
     @Serializable
     data class ChatRequest(
-        val messages: List<Message>,
+        val messages: List<OpenAIMessage>,
         val model: String,
-        @SerialName("frequency_penalty") val frequencyPenalty: Double = 0.0,
-        @SerialName("logit_bias") val logitBias: Map<String, Int>? = null,
-        @SerialName("logprobs") val logProbabilities: Boolean = false,
-        @SerialName("max_tokens") val maxTokens: Int? = null,
-        val n: Int = 1,
-        @SerialName("parallel_tool_calls") val parallelToolCalls: Boolean = true,
-        @SerialName("presence_penalty") val presencePenalty: Double = 0.0,
-        val seed: Int? = null,
-        val stop: List<String>? = null,
-        val stream: Boolean = false,
-        val temperature: Double = 1.0,
-        @SerialName("top_p") val topP: Double = 1.0,
-        val tools: List<ToolConfig> = emptyList(),
-        @SerialName("tool_choice") val toolChoice: ToolChoice = ToolChoice.AUTO,
-        val user: String? = null
+        @SerialName("frequency_penalty") val frequencyPenalty: Double,
+        @SerialName("logit_bias") val logitBias: Map<String, Int>?,
+        @SerialName("logprobs") val logProbabilities: Boolean,
+        @SerialName("max_tokens") val maxTokens: Int?,
+        val n: Int,
+        @SerialName("parallel_tool_calls") val parallelToolCalls: Boolean,
+        @SerialName("presence_penalty") val presencePenalty: Double,
+        val seed: Int?,
+        val stop: List<String>?,
+        val stream: Boolean,
+        val temperature: Double,
+        @SerialName("top_p") val topP: Double,
+        val tools: List<Tool>,
+        @SerialName("tool_choice") val toolChoice: ToolChoice,
+        val user: String?
     ) : CommonChatRequest
 
-    /**
-     * Represents a request to generate text embeddings.
-     *
-     * This data class encapsulates the parameters required for an embedding request. Embeddings are dense vector
-     * representations of text that capture semantic meaning.
-     *
-     * @param model The ID of the embedding model to use. This determines how the text will be converted into an
-     * embedding.
-     *
-     * @param input A list of strings representing the text input for which to generate embeddings. Each string in the
-     * list is processed as a separate input.
-     *
-     * @param dimensions (Optional) The number of dimensions the resulting output embeddings should have.
-     *
-     * @param returnFormat (Optional) The format for the returned embeddings.
-     *
-     * @param user (Optional) A unique identifier representing the end-user.
-     *
-     * @since 0.1.0-alpha
-     * @version 1.0.0
-     */
     @Serializable
+    data class ChatResponse(
+        val id: String,
+        @SerialName("object") val type: String,
+        val created: Int,
+        val model: String,
+        val choices: List<Choice>,
+        val usage: Usage,
+        @SerialName("service_tier")
+        val serviceTier: String? = null,
+        val systemFingerprint: String? = null
+    ) : Message {
+        @Serializable
+        data class Choice(
+            val index: Int,
+            val message: OpenAIMessage,
+            @SerialName("finish_reason")
+            private val finishReason: String,
+            @SerialName("logprobs")
+            val logProbability: CommonLogProbContainer? = null,
+        )
+
+        override fun text() = TextContent(choices[0].message.content ?: "")
+        override fun role() = Role.ASSISTANT
+        override fun functions(): List<FunctionCall> = with(choices[0].message) {
+            (toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList())
+        }
+
+        override fun contents(): List<Message.Content> = listOf(text())
+
+        override fun toString(): String = this.toJson()
+    }
+
+    @Serializable
+    @ExperimentalAPI
     data class EmbedRequest(
         val model: String,
         val input: List<String>,
@@ -191,34 +257,15 @@ private interface OpenAIAPI {
         val user: String? = null
     ) : CommonEmbedRequest
 
-
-    /**
-     * Data class representing a moderation request for
-     *
-     * @param input The input text to classify
-     * @param model The model to use for moderation. Defaults to "text-moderation-latest"
-     *
-     * @since 0.1.0-alpha
-     */
     @Serializable
+    @ExperimentalAPI
     data class ModerationRequest(
         val input: String,
         val model: String
     ) : CommonModRequest
 
-    /**
-     * Data class representing an audio transcription request.
-     *
-     * @param model The model to use for transcription. Defaults to "whisper-1"
-     * @param file The audio file to transcribe, in one of these formats: mp3, mp4, mpeg, mpga, m4a, wav, or webm.
-     * @param responseFormat The format of the transcript output, in one of these formats: json, text, srt, verbose_json, or vtt.
-     * @param temperature The sampling temperature, between 0 and 1. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
-     * @param language The language of the input audio. Supplying the input language in ISO-639-1 format will improve accuracy and latency.
-     * @param prompt An optional text to guide the model's style or continue a previous audio segment. The prompt should match the audio language.
-     *
-     * @since 0.1.0-alpha
-     */
     @Serializable
+    @ExperimentalAPI
     data class WriteAudioRequest(
         val model: String = "whisper-1",
         val input: String,
@@ -229,18 +276,8 @@ private interface OpenAIAPI {
         val prompt: String? = null
     ) : CommonAudioRequest
 
-    /**
-     * Data class representing an image generation request.
-     *
-     * @param prompt A text description of the desired image(s). The maximum length is 1000 characters.
-     * @param n The number of images to generate. Must be between 1 and 10.
-     * @param size The size of the generated images. Must be one of "256x256", "512x512", or "1024x1024".
-     * @param responseFormat The format in which the generated images are returned. Must be one of "url" or "b64_json".
-     * @param user A unique identifier representing your end-user, which can help to monitor and detect abuse
-     *
-     * @since 0.1.0-alpha
-     */
     @Serializable
+    @ExperimentalAPI
     data class WriteImageRequest(
         val prompt: String,
         val n: Int = 1,
@@ -250,7 +287,6 @@ private interface OpenAIAPI {
     ) : CommonImageRequest
 }
 
-@Suppress("unused")
 /*
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  ░░░░  ░░░      ░░░       ░░░        ░░  ░░░░░░░░░      ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒   ▒▒   ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
@@ -258,62 +294,73 @@ private interface OpenAIAPI {
 ███████████████████████████████  █  █  ██  ████  ██  ████  ██  ████████  ██████████████  ███████████████████████████████
 ███████████████████████████████  ████  ███      ███       ███        ██        ███      ████████████████████████████████
  */
-/**
- * Provides convenient access to OpenAI model names for various tasks.
- *
- * This object serves as a central repository for OpenAI model identifiers,
- * categorized by their primary functions (chat, embedding, moderation).
- *
- * @since 0.1.0-alpha
- */
-object OpenAIModels {
-    /** Models suitable for chat completions. */
-    val chat = ChatModels
 
-    /** Models designed for generating text embeddings. */
-    val embedding = EmbedModels
-
-    /** Models specializing in content moderation. */
-    val moderation = ModerationModels
-}
-
-/**
- * Object containing names for OpenAI's chat models.
- */
 @Suppress("unused")
-object ChatModels {
-    val gpt4o get() = "gpt-4o"
-    val gpt4Turbo get() = "gpt-4-turbo"
-    val gpt4TurboPreview get() = "gpt-4-turbo-preview"
-    val gpt4V0125Preview get() = "gpt-4-0125-preview"
-    val gpt4V1106Preview get() = "gpt-4-1106-preview"
-    val gpt4 get() = "gpt-4"
-    val gpt4V0613 get() = "gpt-4-0613"
-    val gpt35Turbo get() = "gpt-3.5-turbo"
-    val gpt35TurboV0125 get() = "gpt-3.5-turbo-0125"
-    val gpt35TurboV1106 get() = "gpt-3.5-turbo-1106"
-    val gpt35TurboInstruct get() = "gpt-3.5-turbo-instruct"
+
+interface OpenAIModels {
+
+    /**
+     * Provides convenient access to OpenAI model names for various tasks.
+     *
+     * This object serves as a central repository for OpenAI model identifiers,
+     * categorized by their primary functions (chat, embedding, moderation).
+     *
+     * @since 0.1.0
+     */
+    val models get() = Models
+
+
+    object Models {
+        /** Models suitable for chat completions. */
+        val chat = Chat
+
+        /** Models designed for generating text embeddings. */
+        val embedding = Embed
+
+        /** Models specializing in content moderation. */
+        val moderation = Moderation
+    }
+
+    /**
+     * Object containing names for OpenAI's chat models.
+     */
+    @Suppress("unused")
+    object Chat {
+        val gpt4o get() = "gpt-4o"
+        val gpt4Turbo get() = "gpt-4-turbo"
+        val gpt4TurboPreview get() = "gpt-4-turbo-preview"
+        val gpt4V0125Preview get() = "gpt-4-0125-preview"
+        val gpt4V1106Preview get() = "gpt-4-1106-preview"
+        val gpt4 get() = "gpt-4"
+        val gpt4V0613 get() = "gpt-4-0613"
+        val gpt35Turbo get() = "gpt-3.5-turbo"
+        val gpt35TurboV0125 get() = "gpt-3.5-turbo-0125"
+        val gpt35TurboV1106 get() = "gpt-3.5-turbo-1106"
+        val gpt35TurboInstruct get() = "gpt-3.5-turbo-instruct"
+    }
+
+    /**
+     * Object containing names for OpenAI's text embedding models.
+     */
+    @Suppress("unused")
+    object Embed {
+        val textEmbedding3Large get() = "text-embed-3-large"
+        val textEmbedding3Small get() = "text-embed-3-small"
+        val textEmbeddingAda002 get() = "text-embed-3-ada-002"
+    }
+
+    /**
+     * Object containing names for OpenAI's moderation models.
+     */
+    @Suppress("unused")
+    object Moderation {
+        val textModerationLatest get() = "text-moderation-latest"
+        val textModerationStable get() = "text-moderation-stable"
+        val textModeration007 get() = "text-moderation-007"
+    }
 }
 
-/**
- * Object containing names for OpenAI's text embedding models.
- */
-@Suppress("unused")
-object EmbedModels {
-    val textEmbedding3Large get() = "text-embed-3-large"
-    val textEmbedding3Small get() = "text-embed-3-small"
-    val textEmbeddingAda002 get() = "text-embed-3-ada-002"
-}
-
-/**
- * Object containing names for OpenAI's moderation models.
- */
-@Suppress("unused")
-object ModerationModels {
-    val textModerationLatest get() = "text-moderation-latest"
-    val textModerationStable get() = "text-moderation-stable"
-    val textModeration007 get() = "text-moderation-007"
-}
+fun List<Message>.asOpenAIMessage() = this.map { OpenAIAPI.OpenAIMessage(it) }
 
 @Suppress("unused")
 /*
@@ -335,114 +382,33 @@ object ModerationModels {
  * Implementations of this interface are expected to provide concrete logic for executing these actions,
  * typically by making HTTP requests to the OpenAI API endpoints.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
-private sealed interface OpenAIActions : NetworkOwner, Actions, Extension<OpenAI> {
-    // private extension OpenAi.Actions : NetworkOwner, Transactions
+private sealed interface OpenAIActions : NetworkOwner, Extension<OpenAI>, Actions {
     override suspend
-    fun chat(director: DirectorCore): OpenAIChatResponse =
+    fun chat(tools: List<ToolConfig>): OpenAIAPI.ChatResponse =
         with(self()) {
             return post(
                 "$url/v1/chat/completions", OpenAIAPI.ChatRequest(
-                    director.messages, chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
-                    parallelToolCalling, presencePenalty, director.defaultSeed, stop, network.streamable,
-                    temperature, topP, director.tools
-                )
-            )
-        }
-
-    override suspend
-    fun embedding(director: DirectorCore): CommonResponse =
-        with(self()) {
-            return post(
-                "$url/v1/chat/completions", OpenAIAPI.ChatRequest(
-                    director.messages, chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
-                    parallelToolCalling, presencePenalty, director.defaultSeed, stop, network.streamable,
-                    temperature, topP, director.tools
-                )
-            )
-        }
-
-    override suspend
-    fun moderation(director: DirectorCore): CommonResponse =
-        with(self()) {
-            return post(
-                "$url/v1/chat/completions", OpenAIAPI.ChatRequest(
-                    director.messages, chatModel, frequencyPenalty, logitBias, logProbabilities, maxTokens, n,
-                    parallelToolCalling, presencePenalty, director.defaultSeed, stop, network.streamable,
-                    temperature, topP, director.tools
-                )
+                    messenger.messages().asOpenAIMessage(),
+                    chatModel,
+                    frequencyPenalty,
+                    logitBias,
+                    logProbabilities,
+                    maxTokens,
+                    n,
+                    parallelToolCalling,
+                    presencePenalty,
+                    seed,
+                    stop,
+                    network.streamable,
+                    temperature,
+                    topP,
+                    tools.asOpenAITools(),
+                    toolChoice,
+                    user
+                ), headers
             )
         }
 }
 
-/**
- * Represents a response from an AI provider in a chat-based interaction.
- *
- * This class encapsulates the data returned by an AI provider after processing a chat request. It provides a
- * structured representation of the provider's output, including potential responses and metadata about the generation process.
- *
- * @property id A unique identifier for this specific response, useful for tracking and referencing.
- * @property type The type of object returned, typically "chat.completion" for chat responses.
- * @property created The Unix timestamp (in seconds) indicating when the response was generated by the provider.
- * @property model The identifier of the language model or system used by the provider to produce the response.
- * @property choices A list of `CommonChatChoice` objects, each representing a potential response from the provider.
- * @property usage A `Usage` object providing details about token usage for the request and response, helpful for cost tracking.
- * @property serviceTier (Optional) The service tier or plan used for the request, if applicable.
- * @property systemFingerprint (Optional) A unique identifier for the system configuration used to generate the response,
- *                             useful for debugging and reproducibility.
- *
- * @since 0.1.0-alpha
-
- */
-@Serializable
-data class OpenAIChatResponse(
-    val id: String,
-    @SerialName("object") val type: String,
-    val created: Int,
-    val model: String,
-    val choices: List<OpenAIChatChoice>,
-    val usage: Usage,
-    @SerialName("service_tier")
-    val serviceTier: String? = null,
-    val systemFingerprint: String? = null
-) : CommonResponse {
-    private var currentChatChoice = 0
-
-    override val rankMessages: List<Message.FromAssistant> get() = choices.map { it.message }
-    override val requestedFunctions: List<FunctionCall>
-        get() = (rankMessages[0].toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList()) +
-                // This is for backwards compatibility of the deprecated OpenAI function call
-                listOfNotNull(rankMessages[0].functionCall)
-    override fun toString(): String = this.toJson()
-}
-
-/**
- * Represents a single choice within a response from an AI provider.
- *
- * This data class encapsulates one possible response generated by an AI provider
- * as part of a larger `CommonResponse`.
- *
- * @property index The position or rank of this choice within the list of choices in the response.
- *                 Lower indices often indicate higher relevance or probability.
- * @property message The actual content of the response, represented as a `Message.FromAssistant` object.
- * @property finishReason A string explaining why the AI provider stopped generating this response. Common reasons
- *                        include reaching a maximum token limit, encountering a stop sequence, or
- *                        completing a natural stopping point in the text.
- * @property logProbability (Optional) A `CommonLogProbContainer` object containing log probabilities for the tokens
- *                          in the generated response. This can be useful for analyzing the model's decision-making process.
- *
- * @since 0.1.0-alpha
-
- */
-@Serializable
-data class OpenAIChatChoice(
-    val index: Int,
-    val message: Message.FromAssistant,
-    @SerialName("finish_reason")
-    private val finishReason: String,
-    @SerialName("logprobs")
-    val logProbability: CommonLogProbContainer? = null,
-) {
-    override fun toString(): String = this.toJson()
-}

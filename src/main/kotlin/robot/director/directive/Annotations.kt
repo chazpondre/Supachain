@@ -9,7 +9,7 @@ import dev.supachain.robot.provider.Feature
  * using the function arguments and added as a USER message to the conversation history.
  *
  * @property message The template for the user message.
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE)
@@ -24,7 +24,7 @@ annotation class FromUser(val message: String)
  * while `Feature.CreateImage` could trigger image generation based on the function's input.
  *
  * @property feature The feature to be used for this function.
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Target(AnnotationTarget.FUNCTION)
@@ -39,7 +39,7 @@ annotation class Use(val feature: Feature)
  * instructions or context to guide the AI's behavior.
  *
  * @property message The content of the system message.
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE)

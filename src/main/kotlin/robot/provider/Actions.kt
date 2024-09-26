@@ -7,8 +7,8 @@
  */
 package dev.supachain.robot.provider
 
-import dev.supachain.robot.director.DirectorCore
-import dev.supachain.robot.provider.models.CommonResponse
+import dev.supachain.robot.provider.models.Message
+import dev.supachain.robot.tool.ToolConfig
 
 /**
  * Interface defining the actions that a robot can perform.
@@ -17,220 +17,220 @@ import dev.supachain.robot.provider.models.CommonResponse
  * generating embeddings, moderating content, and more. Each action is represented by a
  * suspend function that returns a type of `CommonResponse`.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 internal interface Actions {
     val name: String
 
     suspend
-    fun chat(director: DirectorCore): CommonResponse =
+    fun chat(tools: List<ToolConfig>): Message =
         throw NotImplementedError(
             "$name does not currently support chat, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun embedding(director: DirectorCore): CommonResponse =
+    fun embedding(): Message =
         throw NotImplementedError(
             "$name does not currently support embedding, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun moderation(director: DirectorCore): CommonResponse =
+    fun moderation(): Message =
         throw NotImplementedError(
             "$name does not currently support moderation, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createSpeech(director: DirectorCore): CommonResponse =
+    fun createSpeech(): Message =
         throw NotImplementedError(
             "$name does not currently support createSpeech, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createTranscription(director: DirectorCore)
-            : CommonResponse =
+    fun createTranscription()
+            : Message =
         throw NotImplementedError(
             "$name does not currently support createTranscription, try updating the project if $name supports this " +
                     "feature"
         )
 
     suspend
-    fun createTranslation(director: DirectorCore)
-            : CommonResponse =
+    fun createTranslation()
+            : Message =
         throw NotImplementedError(
             "$name does not currently support createTranslation, try updating the project if $name supports this " +
                     "feature"
         )
 
     suspend
-    fun createFineTune(director: DirectorCore): CommonResponse =
+    fun createFineTune(): Message =
         throw NotImplementedError(
             "$name does not currently support createFineTune, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun listFineTunes(director: DirectorCore): CommonResponse =
+    fun listFineTunes(): Message =
         throw NotImplementedError(
             "$name does not currently support listFineTunes, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun listFineTuneEvents(director: DirectorCore)
-            : CommonResponse =
+    fun listFineTuneEvents()
+            : Message =
         throw NotImplementedError(
             "$name does not currently support listFineTuneEvents, try updating the project if $name supports this " +
                     "feature"
         )
 
     suspend
-    fun listFineTuneCheckPoints(director: DirectorCore)
-            : CommonResponse =
+    fun listFineTuneCheckPoints()
+            : Message =
         throw NotImplementedError(
             "$name does not currently support listFineTuneCheckPoints, try updating the project if $name supports this" +
                     " feature"
         )
 
     suspend
-    fun fineTuneInfo(director: DirectorCore): CommonResponse =
+    fun fineTuneInfo(): Message =
         throw NotImplementedError(
             "$name does not currently support fineTuneInfo, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun fineTuneCancel(director: DirectorCore): CommonResponse =
+    fun fineTuneCancel(): Message =
         throw NotImplementedError(
             "$name does not currently support fineTuneCancel, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createBatch(director: DirectorCore): CommonResponse =
+    fun createBatch(): Message =
         throw NotImplementedError(
             "$name does not currently support createBatch, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun getBatch(director: DirectorCore): CommonResponse =
+    fun getBatch(): Message =
         throw NotImplementedError(
             "$name does not currently support getBatch, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun cancelBatch(director: DirectorCore): CommonResponse =
+    fun cancelBatch(): Message =
         throw NotImplementedError(
             "$name does not currently support cancelBatch, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun listBatches(director: DirectorCore): CommonResponse =
+    fun listBatches(): Message =
         throw NotImplementedError(
             "$name does not currently support listBatches, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun uploadFile(director: DirectorCore): CommonResponse =
+    fun uploadFile(): Message =
         throw NotImplementedError(
             "$name does not currently support uploadFile, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun listFiles(director: DirectorCore): CommonResponse =
+    fun listFiles(): Message =
         throw NotImplementedError(
             "$name does not currently support listFiles, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun getFile(director: DirectorCore): CommonResponse =
+    fun getFile(): Message =
         throw NotImplementedError(
             "$name does not currently support getFile, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun deleteFile(director: DirectorCore): CommonResponse =
+    fun deleteFile(): Message =
         throw NotImplementedError(
             "$name does not currently support deleteFile, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun getFileContent(director: DirectorCore): CommonResponse =
+    fun getFileContent(): Message =
         throw NotImplementedError(
             "$name does not currently support getFileContent, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createImage(director: DirectorCore): CommonResponse =
+    fun createImage(): Message =
         throw NotImplementedError(
             "$name does not currently support createImage, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun readImage(director: DirectorCore): CommonResponse =
+    fun readImage(): Message =
         throw NotImplementedError(
             "$name does not currently support readImage, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun updateImage(director: DirectorCore): CommonResponse =
+    fun updateImage(): Message =
         throw NotImplementedError(
             "$name does not currently support updateImage, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun varyImage(director: DirectorCore): CommonResponse =
+    fun varyImage(): Message =
         throw NotImplementedError(
             "$name does not currently support varyImage, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createAudio(director: DirectorCore): CommonResponse =
+    fun createAudio(): Message =
         throw NotImplementedError(
             "$name does not currently support createAudio, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun readAudio(director: DirectorCore): CommonResponse =
+    fun readAudio(): Message =
         throw NotImplementedError(
             "$name does not currently support readAudio, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun updateAudio(director: DirectorCore): CommonResponse =
+    fun updateAudio(): Message =
         throw NotImplementedError(
             "$name does not currently support updateAudio, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun varyAudio(director: DirectorCore): CommonResponse =
+    fun varyAudio(): Message =
         throw NotImplementedError(
             "$name does not currently support varyAudio, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun createVideo(director: DirectorCore): CommonResponse =
+    fun createVideo(): Message =
         throw NotImplementedError(
             "$name does not currently support createVideo, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun readVideo(director: DirectorCore): CommonResponse =
+    fun readVideo(): Message =
         throw NotImplementedError(
             "$name does not currently support readVideo, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun updateVideo(director: DirectorCore): CommonResponse =
+    fun updateVideo(): Message =
         throw NotImplementedError(
             "$name does not currently support updateVideo, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun varyVideo(director: DirectorCore): CommonResponse =
+    fun varyVideo(): Message =
         throw NotImplementedError(
             "$name does not currently support varyVideo, try updating the project if $name supports this feature"
         )
 
     suspend
-    fun listModels(director: DirectorCore): CommonResponse =
+    fun listModels(): Message =
         throw NotImplementedError(
             "$name does not currently support listModels, try updating the project if $name supports this feature"
         )

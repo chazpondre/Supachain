@@ -10,7 +10,7 @@ typealias Coordinates = Array<Int>
 @ToolSet
 class Tools {
     fun getLongLat(city: String): Coordinates = arrayOf(0, 0)
-    fun getWeather(coordinates: Coordinates): Double =27.0
+    fun getWeather(coordinates: Coordinates): Double = 27.0
 }
 
 fun main() {
@@ -21,7 +21,7 @@ fun main() {
             url = "http://localhost:8888"
             temperature = 0.0
             chatModel = "meta-llama-3.1-8b-instruct"
-            toolStrategy = FillInTheBlank
+            toolStrategy = FillInTheBlank // This is the default strategy
         }
     }
 

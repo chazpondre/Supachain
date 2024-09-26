@@ -17,7 +17,7 @@ import kotlinx.serialization.Serializable
  * especially those that charge based on token usage. This class helps you monitor and optimize your application's
  * interactions with the AI provider.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Serializable

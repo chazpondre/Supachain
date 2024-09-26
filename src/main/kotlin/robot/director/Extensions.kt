@@ -4,11 +4,11 @@ import dev.supachain.robot.director.directive.Directive
 import dev.supachain.robot.director.directive.FromSystem
 import dev.supachain.robot.director.directive.FromUser
 import dev.supachain.robot.director.directive.Use
-import dev.supachain.robot.messenger.asSystemMessage
-import dev.supachain.robot.messenger.asUserMessage
 import dev.supachain.robot.messenger.messaging.FunctionCall
-import dev.supachain.robot.messenger.messaging.Message
 import dev.supachain.robot.provider.Feature
+import dev.supachain.robot.provider.models.TextMessage
+import dev.supachain.robot.provider.models.asSystemMessage
+import dev.supachain.robot.provider.models.asUserMessage
 import dev.supachain.robot.tool.Parameters
 import dev.supachain.robot.tool.RobotTool
 import dev.supachain.robot.tool.Tool
@@ -39,7 +39,7 @@ private val logger: Logger get() = LoggerFactory.getLogger(Extensions::class.jav
  * @param T The type of the class.
  * @return A list of [Directive] objects representing the Robot methods.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  * @see Directive
  */
@@ -64,13 +64,13 @@ fun <T : Any> KClass<T>.getDirectives(): List<Directive> =
  * * **[FromSystem]:** Added as a system message (Role.SYSTEM).
  * * **[FromUser]:**  Added as a user message (Role.USER).
  *
- * @return A mutable list of [Message] objects derived from the found annotations. If no relevant annotations are present, an empty list is returned.
+ * @return A mutable list of [TextMessage] objects derived from the found annotations. If no relevant annotations are present, an empty list is returned.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
-private fun KFunction<*>.messages(): MutableList<Message> {
-    val messages = mutableListOf<Message>().apply {
+private fun KFunction<*>.messages(): MutableList<TextMessage> {
+    val messages = mutableListOf<TextMessage>().apply {
         findAnnotation<FromSystem>()?.apply { add(message.asSystemMessage()) }
         findAnnotation<FromUser>()?.apply { add(message.asUserMessage()) }
     }
@@ -86,7 +86,7 @@ private fun KFunction<*>.messages(): MutableList<Message> {
  *
  * @return The `Feature` associated with this function via the `@Use` annotation, or `Feature.Chat` if no annotation is found.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 private fun KFunction<*>.feature(): Feature =
@@ -111,7 +111,7 @@ private fun KFunction<*>.feature(): Feature =
  * @receiver The Kotlin function (`KFunction`) to analyze.
  * @return A list of `Parameter` objects representing the function's parameters, or `null` if the `@Parameters` annotation is missing.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 private fun KFunction<*>.parameters(): List<Parameter> {
@@ -119,10 +119,10 @@ private fun KFunction<*>.parameters(): List<Parameter> {
     return valueParameters.mapIndexed { index, param ->
         val description = parametersAnnotation.getOrNull(index) ?: ""
         val typeName = param.type
-        Parameter(param, description, typeName, param.name!!)
+        val isRequired = !param.isOptional && !param.type.isMarkedNullable
+        Parameter(param, description, typeName, param.name!!, isRequired)
     }
 }
-//}
 
 /**
  * Extracts a list of `RobotTool` objects representing the configuration of tool-annotated functions within the provided Kotlin class.
@@ -150,14 +150,13 @@ private fun KFunction<*>.parameters(): List<Parameter> {
  *
  * **By using this function, you can discover and extract tool functionalities declared within a Kotlin class for integration with the Director.**
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 fun KClass<*>.getToolMethods(): List<RobotTool> {
     val exclusions = listOf("equals", "hashCode", "toString")
     val isToolSet = this.findAnnotation<ToolSet>() != null
     return getFunctions().mapNotNull { function ->
-        val toolAnnotation: Tool? =
-            function.findAnnotation<Tool>() ?: if (isToolSet) null else return@mapNotNull null
+        val toolAnnotation: Tool? = function.findAnnotation<Tool>() ?: if (isToolSet) null else return@mapNotNull null
         if (function.name in exclusions) return@mapNotNull null
         val functionParameters: List<Parameter> = function.parameters()
         val otherAnnotations: List<String> =
@@ -262,7 +261,7 @@ fun String.asVarargType(parameter: Parameter): Any {
  * @receiver The string containing the arguments to be split.
  * @return A list of strings representing the individual arguments.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 fun String.splitArguments(): List<String> {

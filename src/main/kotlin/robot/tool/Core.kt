@@ -25,7 +25,7 @@ import kotlin.reflect.KFunction
  *
  * @constructor Creates a new `RobotTool` instance.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Serializable
@@ -37,6 +37,20 @@ data class RobotTool(
     @Transient val kFunction: KFunction<*>? = null
 ) {
     fun toToolConfig() = ToolConfig( this)
+    /**
+     * Generates a Kotlin-like function signature string from the tool configuration.
+     *
+     * This function constructs a string representation of the tool function's signature,
+     * including its name, parameter types, and return type (if available).
+     *
+     * @return A string resembling a Kotlin function declaration for the tool.
+     */
+    fun asKFunctionString() =
+        "fun ${name}(${
+            parameters.joinToString(", ") {
+                "${it.name}: ${it.type.getShortName()}"
+            }
+        })" + ":${kFunction?.returnType?.getShortName()}"
 }
 /**
  * A type alias representing a set of tool configurations.
@@ -44,7 +58,7 @@ data class RobotTool(
  * Tool configurations describe the capabilities and parameters of tools
  * that can be used by the AI model to perform actions or access external information.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 typealias ToolMap = MutableMap<String, ToolConfig>
@@ -59,7 +73,7 @@ typealias ToolMap = MutableMap<String, ToolConfig>
  * @property function The configuration details of the tool's function, including its name, description,
  * parameters, and other metadata.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Serializable
@@ -72,12 +86,7 @@ data class ToolConfig(val function: RobotTool, val type: ToolType = ToolType.FUN
      *
      * @return A string resembling a Kotlin function declaration for the tool.
      */
-    fun asKFunctionString() =
-        "fun ${function.name}(${
-            function.parameters.joinToString(", ") {
-                "${it.name}: ${it.type.getShortName()}"
-            }
-        })" + ":${function.kFunction?.returnType?.getShortName()}"
+    fun asKFunctionString() = function.asKFunctionString()
 }
 
 /**
@@ -90,7 +99,7 @@ data class ToolConfig(val function: RobotTool, val type: ToolType = ToolType.FUN
  * @receiver A list of `ToolConfig` objects.
  * @return A comma-separated string containing Kotlin-like function signatures for each tool in the list.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 fun List<ToolConfig>.asKFunctionString() = joinToString(", ") { it.asKFunctionString() }
@@ -101,7 +110,7 @@ fun List<ToolConfig>.asKFunctionString() = joinToString(", ") { it.asKFunctionSt
  * Currently, only the `FUNCTION` tool type is supported.
  * This indicates a tool that executes a specific function based on its configuration.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
 @Serializable
@@ -117,9 +126,10 @@ enum class ToolType {
  * - `NONE`: The model will not use any tools.
  * - `REQUIRED`: The model is required to use at least one tool.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
 
  */
+@Serializable
 enum class ToolChoice {
     @SerialName("auto")
     AUTO,

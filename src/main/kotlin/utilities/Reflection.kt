@@ -71,7 +71,7 @@ fun <T : Any> KClass<T>.castFormat(value: String): T = when {
  * @receiver MutableList<KFunction<*>> The list to collect functions into.
  * @return The receiver list, populated with functions from the class and its superinterfaces.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 fun KClass<*>.getFunctions(result: MutableList<KFunction<*>> = mutableListOf()): MutableList<KFunction<*>> {
     result.addAll(declaredMemberFunctions)
@@ -171,7 +171,7 @@ fun KType.getShortName(): String {
  * @property name The name of the parameter.
  * @property required Whether the parameter is required (default: true).
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  * @version 1.0.0
  */
 @Serializable
@@ -209,8 +209,16 @@ object KTypeSerializer : KSerializer<KType> {
  * @param excluding A variable number of annotation simple names (Strings) to exclude from the result.
  * @return A list of annotation simple names (Strings) applied to the function, excluding the specified annotations.
  *
- * @since 0.1.0-alpha
+ * @since 0.1.0
  */
 fun KFunction<*>.getAnnotationsByNameExcluding(vararg excluding: String) =
     annotations.mapNotNull { it.annotationClass.simpleName }.filterNot { it in excluding.toSet() }
+
+fun KType.isEnumType(): Boolean {
+    val kClass = classifier as? KClass<*> ?: return false
+    return kClass.isSubclassOf(Enum::class)
+}
+
+fun KType.enumConstants(): List<String> =
+    (classifier as? KClass<*>)?.java?.enumConstants?.map { it.toString() } ?: emptyList()
 

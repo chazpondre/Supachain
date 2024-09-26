@@ -8,6 +8,10 @@ import dev.supachain.robot.answer.Answer
 interface Defaults {
     interface NoTools
 
+    interface PlainChat {
+        fun chat(prompt: String): Answer<String>
+    }
+
     interface Chat {
         @FromSystem("You are an helpful assistant. If you guess the answer, you should always use the tool if available." +
                 " If you are uncertain about the answer, state that.\n")

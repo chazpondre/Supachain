@@ -1,16 +1,16 @@
 package dev.supachain.robot.director
 
-import dev.supachain.robot.messenger.Messenger
-import dev.supachain.robot.messenger.asFunctionMessage
 import dev.supachain.robot.messenger.messaging.FunctionCall
 import dev.supachain.robot.tool.ToolMap
 import dev.supachain.utilities.*
 import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
+import kotlin.reflect.full.instanceParameter
+import kotlin.reflect.full.valueParameters
 
 @Suppress("EmptyMethod")
 interface FunctionHandling<T> {
     val toolMap: ToolMap
-    val messenger: Messenger
     val toolProxy: T
 
     /**
@@ -34,22 +34,43 @@ interface FunctionHandling<T> {
      *    - `Recalled`: Function call already executed previously.
      *    - `Error`: An exception occurred during function execution.
      *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
      */
-    operator fun FunctionCall.invoke(callHistory: MutableMap<String, String>): CallResult {
+    operator fun FunctionCall.invoke(callHistory: MutableMap<String, String>): CallStatus {
         val (function, arguments, callString) = this.info()
 
         return if (callString in callHistory) Recalled
         else try {
-            function(toolProxy, * arguments).let {
-                // Add Function Call message to Messenger
-                this@FunctionHandling.messenger(it.asFunctionMessage(name))
+            invokeFunctionWithDefaults(function, toolProxy, arguments.mapNotNull { it }.toTypedArray()).let {
                 // Register Call
                 callHistory[callString] = it.toString()
                 Success
             }
         } catch (e: Exception) {
             Error(e)
+        }
+    }
+
+    // Helper function to handle function invocation with defaults
+    fun <T> invokeFunctionWithDefaults(function: KFunction<*>, toolProxy: T, arguments: Array<Any>): Any? {
+        // If the number of parameters exceeds the arguments (default parameter case)
+        return if (function.parameters.size - 1 > arguments.size) { // +1 for the instance parameter
+            val paramsMap = mutableMapOf<KParameter, Any?>()
+
+            // Assign instance parameter (for member functions, if applicable)
+            function.instanceParameter?.let { paramsMap[it] = toolProxy }
+
+            // Assign provided arguments to value parameters
+            function.valueParameters.forEachIndexed { index, parameter ->
+                if (index < arguments.size) paramsMap[parameter] = arguments[index]
+            }
+
+            // Use callBy to handle the default parameters and invoke the function
+            function.callBy(paramsMap)
+        } else {
+            if (function.instanceParameter != null) function.call(toolProxy, *arguments)
+            // If no default parameters are involved, invoke the function normally
+            else function.call(*arguments)
         }
     }
 
@@ -78,7 +99,7 @@ interface FunctionHandling<T> {
      * @throws IllegalStateException If the tool or its function definition is not found.
      * @throws IllegalArgumentException If any argument conversion fails or an unsupported argument type is encountered.
      *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
 
      */
     operator fun FunctionCall.invoke(): Any? {
@@ -123,7 +144,7 @@ interface FunctionHandling<T> {
      * **Throws:**
      *  - `IllegalStateException`: If the requested tool or its function definition is not found in the `toolMap`.
      *
-     * @since 0.1.0-alpha
+     * @since 0.1.0
      */
     fun FunctionCall.info(argFormatter: String.(ParamMap) -> Array<Any?> = { formatArgumentsFromJson(it) }): Triple<KFunction<*>, Array<Any?>, String> {
         val tool = toolMap[name]?.function ?: throw IllegalStateException("Unknown tool call $name")
@@ -148,22 +169,22 @@ private typealias ParamMap = Map<String, Pair<Int, Parameter>>
  *  - `Recalled`: The function call has already been made with the same arguments and was not re-executed.
  *  - `Error`: The function call failed due to an exception.
  */
-sealed interface CallResult
+sealed interface CallStatus
 
 /**
  * Indicates that a function call was executed successfully.
  */
-internal data object Success : CallResult
+internal data object Success : CallStatus
 
 /**
  * Indicates that a function call was not executed because it has already been made with the same arguments.
  */
-internal data object Recalled : CallResult
+internal data object Recalled : CallStatus
 
 /**
  * Indicates that a function call failed due to an exception.
  *
  * @property exception The exception that occurred during the function call.
  */
-internal class Error(val exception: Exception) : CallResult
+internal class Error(val exception: Exception) : CallStatus
 
