@@ -2,13 +2,16 @@ package dev.supachain.robot.provider.models
 
 import dev.supachain.Extension
 import dev.supachain.robot.NetworkOwner
+import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.provider.models.AnthropicAPI.AnthropicMessage
 import dev.supachain.robot.provider.models.AnthropicAPI.ChatRequest.Tool
 import dev.supachain.robot.tool.ToolChoice
+import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.FillInTheBlank
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
+import dev.supachain.utilities.Parameter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -25,7 +28,61 @@ abstract class GroqBuilder : Provider<GroqBuilder>(), NetworkOwner {
 }
 
 internal interface GroqAPI : Extension<Groq> {
+    @Serializable
+    data class GroqMessage(
+        val role: Role,
+        val content: String? = null
+    ) {
+        constructor(message: Message) : this(message.role(), message.text().value)
+    }
 
+    @Serializable
+    data class Tool(val type: String, val function: Function) {
+        @Serializable
+        data class Function(val name: String, val description: String?, val parameters: Parameters) {
+            @Serializable
+            data class Parameters(
+                val type: String,
+                val properties: Map<String, Property>,
+                val required: List<String>
+            ) {
+                constructor(parameters: List<Parameter>) : this(
+                    "object",
+                    parameters.toProperties(),
+                    parameters.filter { it.required }.map { it.name }
+                )
+            }
+
+            constructor(toolConfig: ToolConfig) :
+                    this(
+                        toolConfig.function.name,
+                        toolConfig.function.description.ifBlank { null },
+                        Parameters(toolConfig.function.parameters)
+                    )
+        }
+
+        constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
+    }
+
+    @Serializable
+    data class ChatRequest(
+        @SerialName("frequency_penalty")
+        val frequencyPenalty: Double,
+        val model: String,
+        val messages: List<GroqMessage>,
+        @SerialName("max_tokens")
+        val maxTokens: Int,
+        @SerialName("presence_penalty")
+        val presencePenalty: Double,
+        val stream: Boolean? = null,
+        val stop: List<String>?,
+        val temperature: Double,
+        @SerialName("top_p")
+        var topP: Double = 1.0,
+        @SerialName("tool_choice")
+        val tools: List<Tool> = emptyList(),
+        val toolChoice: ToolChoice
+    )
 }
 
 
