@@ -4,9 +4,24 @@ import dev.supachain.Extension
 import dev.supachain.robot.NetworkOwner
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.Provider
+import dev.supachain.robot.provider.models.AnthropicAPI.AnthropicMessage
+import dev.supachain.robot.provider.models.AnthropicAPI.ChatRequest.Tool
+import dev.supachain.robot.tool.ToolChoice
+import dev.supachain.robot.tool.strategies.FillInTheBlank
+import dev.supachain.robot.tool.strategies.ToolUseStrategy
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 abstract class GroqBuilder : Provider<GroqBuilder>(), NetworkOwner {
-
+    var apiKey: String = ""
+    var modelName: String = ""
+    var maxTokens: Int = 2048
+    var temperature: Double = 0.0
+    var topP: Double = 0.0
+    val stream: Boolean = false
+    var stop: List<String>? = null
+    val toolChoice = ToolChoice.AUTO
+    override var toolStrategy: ToolUseStrategy = FillInTheBlank
 }
 
 internal interface GroqAPI : Extension<Groq> {
