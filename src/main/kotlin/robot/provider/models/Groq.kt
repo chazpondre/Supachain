@@ -15,7 +15,6 @@ import dev.supachain.utilities.Parameter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-
 /*
 ░░░░░░░░░░░░░░░░░░░░░░░░░░       ░░░  ░░░░  ░░        ░░  ░░░░░░░░       ░░░        ░░       ░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
@@ -28,7 +27,6 @@ abstract class GroqBuilder : Provider<GroqBuilder>(), NetworkOwner, GroqModels {
     abstract val model: String
     var apiKey: String = ""
     var frequencyPenalty = 0.0
-    var modelName: String = ""
     var maxTokens: Int = 2048
     val presencePenalty: Double = 0.0
     val stream: Boolean = false
@@ -36,6 +34,15 @@ abstract class GroqBuilder : Provider<GroqBuilder>(), NetworkOwner, GroqModels {
     var temperature: Double = 0.0
     var topP: Double = 0.0
     val toolChoice = ToolChoice.AUTO
+
+    // Network
+    val network: NetworkConfig = NetworkConfig()
+    override var url: String = "https://api.groq.com/openai/v1"
+
+    // Provider
+    override var name: String = "Groq"
+    override var maxRetries: Int = 3
+    override var toolsAllowed: Boolean = true
     override var toolStrategy: ToolUseStrategy = FillInTheBlank
 }
 
