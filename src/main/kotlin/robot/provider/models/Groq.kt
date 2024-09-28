@@ -209,8 +209,27 @@ interface GroqModels {
     }
 }
 
-private sealed interface GroqActions : NetworkOwner, Actions, Extension<Groq> {
+/*
+░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░░      ░░░        ░░        ░░░      ░░░   ░░░  ░░░      ░░░░░░░░░░░░░░░░░░░░░░░░░░░
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒  ▒▒    ▒▒  ▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓  ▓▓  ▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓  ▓▓  ▓  ▓  ▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+██████████████████████████        ██  ████  █████  ████████  █████  ████  ██  ██    ████████  ██████████████████████████
+██████████████████████████  ████  ███      ██████  █████        ███      ███  ███   ███      ███████████████████████████
+ */
+private fun List<ToolConfig>.asGroqTools() = map { GroqAPI.Tool(it) }
+private fun List<Message>.asGroqAIMessage() = this.map { GroqAPI.GroqMessage(it) }
 
+@Suppress("unused")
+private sealed interface GroqActions : NetworkOwner, Actions, Extension<Groq> {
+    override suspend fun chat(tools: List<ToolConfig>): GroqAPI.ChatResponse = with(self()) {
+        post(
+            url, GroqAPI.ChatRequest(
+                frequencyPenalty, model, messenger.messages().asGroqAIMessage(),
+                maxTokens, presencePenalty, stream, stop, temperature, topP,
+                tools.asGroqTools(), toolChoice
+            ), headers
+        )
+    }
 }
 
 /*

@@ -116,10 +116,7 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
     val toolChoice = ToolChoice.AUTO
     val user: String? = null
 
-    internal val headers
-        get() = mutableMapOf(
-            HttpHeaders.Authorization to "Bearer $apiKey"
-        )
+    internal val headers get() = mutableMapOf(HttpHeaders.Authorization to "Bearer $apiKey")
 
     companion object : Modifiable<OpenAI>({ OpenAI() })
 
