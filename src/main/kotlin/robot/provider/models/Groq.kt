@@ -93,7 +93,6 @@ internal interface GroqAPI : Extension<Groq> {
     ███████████████████████████████████████  ████  ██  ████  ██        █████  ██████████████████████████████████████████
     ████████████████████████████████████████      ███  ████  ██  ████  █████  ██████████████████████████████████████████
     */
-
     @Serializable
     data class ChatRequest(
         @SerialName("frequency_penalty")
@@ -112,7 +111,7 @@ internal interface GroqAPI : Extension<Groq> {
         @SerialName("tool_choice")
         val tools: List<Tool> = emptyList(),
         val toolChoice: ToolChoice
-    )
+    ) : CommonChatRequest
 
     @Serializable
     data class ChatResponse(
@@ -144,7 +143,6 @@ internal interface GroqAPI : Extension<Groq> {
         )
     }
 }
-
 
 /*
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  ░░░░  ░░░      ░░░       ░░░        ░░  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
