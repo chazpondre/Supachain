@@ -3,10 +3,10 @@ package dev.supachain.robot.provider.models
 import dev.supachain.Extension
 import dev.supachain.robot.NetworkOwner
 import dev.supachain.robot.messenger.Role
+import dev.supachain.robot.messenger.messaging.Usage
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.provider.models.AnthropicAPI.AnthropicMessage
-import dev.supachain.robot.provider.models.AnthropicAPI.ChatRequest.Tool
+
 import dev.supachain.robot.tool.ToolChoice
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.FillInTheBlank
@@ -83,6 +83,36 @@ internal interface GroqAPI : Extension<Groq> {
         val tools: List<Tool> = emptyList(),
         val toolChoice: ToolChoice
     )
+
+    @Serializable
+    data class ChatResponse(
+        val id: String,
+        @SerialName("object")
+        val type: String,
+        val created: Int,
+        val model: String,
+        val choices: List<Choice>,
+        val usage: Usage,
+        @SerialName("service_tier")
+        val serviceTier: String? = null,
+        val systemFingerprint: String? = null,
+        val completion: Boolean? = null,
+        val error: Error? = null
+    ) : Message {
+        @Serializable
+        data class Choice(
+            val index: Int,
+            val message: GroqMessage
+        )
+
+        @Serializable
+        data class Error(
+            val code: Int,
+            val message: String,
+            val type: String,
+            val param: String
+        )
+    }
 }
 
 
