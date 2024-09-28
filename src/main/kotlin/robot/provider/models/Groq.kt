@@ -15,18 +15,31 @@ import dev.supachain.utilities.Parameter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-abstract class GroqBuilder : Provider<GroqBuilder>(), NetworkOwner {
+
+/*
+░░░░░░░░░░░░░░░░░░░░░░░░░░       ░░░  ░░░░  ░░        ░░  ░░░░░░░░       ░░░        ░░       ░░░░░░░░░░░░░░░░░░░░░░░░░░░
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓       ▓▓▓  ▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓  ▓▓      ▓▓▓▓       ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+██████████████████████████  ████  ██  ████  █████  █████  ████████  ████  ██  ████████  ███  ███████████████████████████
+██████████████████████████       ████      ███        ██        ██       ███        ██  ████  ██████████████████████████
+*/
+@Suppress("unused")
+abstract class GroqBuilder : Provider<GroqBuilder>(), NetworkOwner, GroqModels {
+    abstract val model: String
     var apiKey: String = ""
+    var frequencyPenalty = 0.0
     var modelName: String = ""
     var maxTokens: Int = 2048
-    var temperature: Double = 0.0
-    var topP: Double = 0.0
+    val presencePenalty: Double = 0.0
     val stream: Boolean = false
     var stop: List<String>? = null
+    var temperature: Double = 0.0
+    var topP: Double = 0.0
     val toolChoice = ToolChoice.AUTO
     override var toolStrategy: ToolUseStrategy = FillInTheBlank
 }
 
+@Suppress("unused")
 internal interface GroqAPI : Extension<Groq> {
     @Serializable
     data class GroqMessage(
@@ -63,6 +76,14 @@ internal interface GroqAPI : Extension<Groq> {
 
         constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
     }
+
+    /*
+    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░  ░░░░  ░░░      ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+    ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓        ▓▓  ▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+    ███████████████████████████████████████  ████  ██  ████  ██        █████  ██████████████████████████████████████████
+    ████████████████████████████████████████      ███  ████  ██  ████  █████  ██████████████████████████████████████████
+    */
 
     @Serializable
     data class ChatRequest(
@@ -181,7 +202,9 @@ interface GroqModels {
     }
 }
 
-private sealed interface GroqActions : NetworkOwner, Actions, Extension<Groq>
+private sealed interface GroqActions : NetworkOwner, Actions, Extension<Groq> {
+
+}
 
 
 class Groq {
