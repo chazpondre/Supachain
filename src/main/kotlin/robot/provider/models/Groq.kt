@@ -1,17 +1,19 @@
 package dev.supachain.robot.provider.models
 
 import dev.supachain.Extension
-import dev.supachain.robot.NetworkOwner
+import dev.supachain.robot.*
+import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.Usage
 import dev.supachain.robot.provider.Actions
+import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.Provider
-
 import dev.supachain.robot.tool.ToolChoice
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.FillInTheBlank
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
 import dev.supachain.utilities.Parameter
+import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -213,7 +215,28 @@ private sealed interface GroqActions : NetworkOwner, Actions, Extension<Groq> {
 
 }
 
+/*
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░░      ░░░       ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓  ▓▓       ▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+█████████████████████████████████████████  ████  ██  ████  ██  ███  ███  ███████████████████████████████████████████████
+██████████████████████████████████████████      ████      ███  ████  ██        █████████████████████████████████████████
+ */
+class Groq : GroqBuilder(), Actions, Extension<Groq> {
+    override val actions: Actions = this
+    override var messenger: Messenger = Messenger(this)
+    internal val headers get() = mutableMapOf(HttpHeaders.Authorization to "Bearer $apiKey")
 
-class Groq {
+    override fun onToolResult(result: String) {
+        messenger.send(TextMessage(Role.FUNCTION, result))
+    }
+
+    override fun onReceiveMessage(message: Message) {
+        messenger.send(message)
+    }
+
+    override val networkClient: NetworkClient by lazy { KTORClient(network) }
+    override val model: String get() = models.chat.llama31_70BPreview
+    override val self: () -> Groq get() = { this }
 }
 
