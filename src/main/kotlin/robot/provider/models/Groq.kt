@@ -12,7 +12,6 @@ import dev.supachain.robot.tool.ToolChoice
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.FillInTheBlank
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
-import dev.supachain.utilities.Parameter
 import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -58,34 +57,6 @@ internal interface GroqAPI : Extension<Groq> {
         constructor(message: Message) : this(message.role(), message.text().value)
     }
 
-    @Serializable
-    data class Tool(val type: String, val function: Function) {
-        @Serializable
-        data class Function(val name: String, val description: String?, val parameters: Parameters) {
-            @Serializable
-            data class Parameters(
-                val type: String,
-                val properties: Map<String, Property>,
-                val required: List<String>
-            ) {
-                constructor(parameters: List<Parameter>) : this(
-                    "object",
-                    parameters.toProperties(),
-                    parameters.filter { it.required }.map { it.name }
-                )
-            }
-
-            constructor(toolConfig: ToolConfig) :
-                    this(
-                        toolConfig.function.name,
-                        toolConfig.function.description.ifBlank { null },
-                        Parameters(toolConfig.function.parameters)
-                    )
-        }
-
-        constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
-    }
-
     /*
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░  ░░░░  ░░░      ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
     ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
@@ -109,7 +80,7 @@ internal interface GroqAPI : Extension<Groq> {
         @SerialName("top_p")
         var topP: Double = 1.0,
         @SerialName("tool_choice")
-        val tools: List<Tool> = emptyList(),
+        val tools: List<CommonTool.OpenAI> = emptyList(),
         val toolChoice: ToolChoice
     ) : CommonChatRequest
 
@@ -216,7 +187,7 @@ interface GroqModels {
 ██████████████████████████        ██  ████  █████  ████████  █████  ████  ██  ██    ████████  ██████████████████████████
 ██████████████████████████  ████  ███      ██████  █████        ███      ███  ███   ███      ███████████████████████████
  */
-private fun List<ToolConfig>.asGroqTools() = map { GroqAPI.Tool(it) }
+
 private fun List<Message>.asGroqAIMessage() = this.map { GroqAPI.GroqMessage(it) }
 
 @Suppress("unused")
@@ -226,7 +197,7 @@ private sealed interface GroqActions : NetworkOwner, Actions, Extension<Groq> {
             url, GroqAPI.ChatRequest(
                 frequencyPenalty, model, messenger.messages().asGroqAIMessage(),
                 maxTokens, presencePenalty, stream, stop, temperature, topP,
-                tools.asGroqTools(), toolChoice
+                tools.asOpenAITools(), toolChoice
             ), headers
         )
     }
