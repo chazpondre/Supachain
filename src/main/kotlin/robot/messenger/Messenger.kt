@@ -14,14 +14,14 @@ import dev.supachain.robot.director.RobotInterface
 import dev.supachain.robot.director.directive.Objective
 import dev.supachain.robot.provider.Feature
 import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.provider.models.Message
+import dev.supachain.robot.provider.models.CommonMessage
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.FillInTheBlank
 import dev.supachain.utilities.Debug
 import org.slf4j.LoggerFactory
 
-typealias Conversation = MutableList<Message>
+typealias Conversation = MutableList<CommonMessage>
 typealias ConversationHistory = MutableList<Conversation>
 typealias ConversationKey = Int
 
@@ -63,7 +63,7 @@ enum class ToolResultAction {
 
 interface ToolResultMessage {
     var action: ToolResultAction
-    val messages: MutableList<Message>
+    val messages: MutableList<CommonMessage>
 }
 
 /**
@@ -85,20 +85,20 @@ class Messenger internal constructor
 
     private var currentConversationIndex: ConversationKey = 0
     private val currentConversation get() = conversations[currentConversationIndex]
-    private fun Message.store() = this.also { currentConversation.add(this) }.log()
-    private fun Message.log() = this.also { log(this) }
-    private fun<T: List<Message>> T.filtered() = this.filter {
+    private fun CommonMessage.store() = this.also { currentConversation.add(this) }.log()
+    private fun CommonMessage.log() = this.also { log(this) }
+    private fun<T: List<CommonMessage>> T.filtered() = this.filter {
         when (provider.messageFilter) {
             MessageFilter.OnlyUserMessages -> it.role() == Role.USER
             MessageFilter.OnlySystemMessages -> it.role() == Role.SYSTEM
             MessageFilter.None -> true
-        }
+        } || it.role() == Role.ASSISTANT
     }
 
-    private fun log(message: Message) =
+    private fun log(message: CommonMessage) =
         logger.debug(Debug("Messenger"), "[Messenger]{}", message)
 
-    fun messages(): List<Message> = currentConversation
+    fun messages(): List<CommonMessage> = currentConversation
 
     /**
      * Sends a message to a Provider using the provided objective.
@@ -113,7 +113,7 @@ class Messenger internal constructor
      * @since 0.1.0
      */
     internal suspend
-    fun send(robot: RobotCore<*, *, *>, objective: Objective): Message {
+    fun send(robot: RobotCore<*, *, *>, objective: Objective): CommonMessage {
         setupMessages(robot, objective)
         return getResult(robot, objective.feature)
     }
@@ -124,7 +124,7 @@ class Messenger internal constructor
      * @param message The message to add.
      * @return This `Messenger` instance for chaining.
      */
-    internal fun send(message: Message) = message.store()
+    internal fun send(message: CommonMessage) = message.store()
 
     /**
      * Prepares and sets up all the messages to be sent based on the given objective and robot context.
@@ -143,7 +143,7 @@ class Messenger internal constructor
         objective: Objective
     ) {
         // Get All Messages
-        val messageList = mutableListOf<Message>().apply {
+        val messageList = mutableListOf<CommonMessage>().apply {
             // Add Config Messages
             objective.rankedConfigMessages.also { addAll(it) }
             // Formatting Message
@@ -177,7 +177,7 @@ class Messenger internal constructor
      * @since 0.1.0
      */
     private tailrec suspend
-    fun getResult(robot: RobotCore<*, *, *>, feature: Feature, toolResult: ToolResultMessage? = null): Message {
+    fun getResult(robot: RobotCore<*, *, *>, feature: Feature, toolResult: ToolResultMessage? = null): CommonMessage {
         // Handle Response
         val response = handleResponse(feature, robot.allTools)
         // Handle Tool Calls
@@ -186,7 +186,6 @@ class Messenger internal constructor
         result.messages.filtered().forEach { provider.onReceiveMessage(it) }
         // Clear
         result.messages.clear()
-
         // Handle Action
         return when (result.action) {
             ToolResultAction.Retry -> getResult(robot, feature, result)
@@ -210,7 +209,7 @@ class Messenger internal constructor
      *
      * @since 0.1.0-alpha
      */
-    private suspend fun handleResponse(feature: Feature, tools: List<ToolConfig>): Message {
+    private suspend fun handleResponse(feature: Feature, tools: List<ToolConfig>): CommonMessage {
         val response = provider.request(feature, tools)
         response.store()
         logger.debug(Debug("Messenger"), "Response: \n{}", response)
@@ -231,7 +230,7 @@ class Messenger internal constructor
      */
     private fun Messenger.handleToolCalling(
         robot: RobotCore<*, *, *>,
-        response: Message,
+        response: CommonMessage,
         toolResult: ToolResultMessage?
     ): ToolResultMessage = when (provider.toolStrategy) {
         is BackAndForth -> BackAndForth(
@@ -271,7 +270,7 @@ class Messenger internal constructor
      * @return The last user message, or throws `NoSuchElementException` if no user message is found.
      * @throws NoSuchElementException If no user message is found in the current conversation.
      */
-    private fun lastUserMessage(): Message = currentConversation.findLast { it.role() == Role.USER }!!
+    private fun lastUserMessage(): CommonMessage = currentConversation.findLast { it.role() == Role.USER }!!
 
     /**
      * Creates a new conversation and switches to it.

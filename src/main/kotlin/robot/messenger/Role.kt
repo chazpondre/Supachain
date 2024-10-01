@@ -51,5 +51,8 @@ enum class Role {
     ASSISTANT,
 
     @SerialName("function")
-    FUNCTION
+    FUNCTION,
+
+    @SerialName("tool")
+    TOOL
 }

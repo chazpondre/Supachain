@@ -5,6 +5,7 @@ import dev.supachain.robot.*
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.FunctionCall
+import dev.supachain.robot.messenger.messaging.ToolCall
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.Provider
@@ -63,11 +64,11 @@ class Anthropic : AnthropicBuilder(), AnthropicAPI, AnthropicModels, AnthropicAc
 
     override var messenger: Messenger = Messenger(this)
 
-    override fun onReceiveMessage(message: Message) {
+    override fun onReceiveMessage(message: CommonMessage) {
         messenger.send(AnthropicAPI.AnthropicMessage(message))
     }
 
-    override fun onToolResult(result: String) {
+    override fun onToolResult(toolCall: ToolCall, result: String) {
         val last = messenger.lastMessage()
         if (last is AnthropicAPI.AnthropicMessage) {
             val lastContent = last.content!!.last()
@@ -92,24 +93,24 @@ internal interface AnthropicAPI : Extension<Anthropic> {
     data class AnthropicMessage(
         val role: Role,
         val content: List<Content>? = null,
-    ) : Message {
-        constructor(message: Message) : this(message.role(), message.contents().asAnthropicContent())
+    ) : CommonMessage {
+        constructor(message: CommonMessage) : this(message.role(), message.contents().asAnthropicContent())
 
         override fun text() =
             TextContent((content?.filterIsInstance<Content.Text>())?.joinToString { it.text } ?: "")
 
         override fun role(): Role = role
-        override fun contents(): List<Message.Content> =
+        override fun contents(): List<CommonMessage.Content> =
             content?.filter { it !is Content.ToolUse }?.map { it.asMessageContent() } ?: emptyList()
 
-        override fun functions(): List<FunctionCall> = content?.filterIsInstance<Content.ToolUse>()?.map {
-            FunctionCall(it.input.toJson(false), it.name)
+        override fun calls(): List<ToolCall> = content?.filterIsInstance<Content.ToolUse>()?.map {
+            ToolCall(it.id, "function", FunctionCall(it.input.toJson(false), it.name))
         } ?: emptyList()
     }
 
     @Serializable
     sealed interface Content {
-        fun asMessageContent(): Message.Content
+        fun asMessageContent(): CommonMessage.Content
 
         @Serializable
         @SerialName("text")
@@ -120,7 +121,7 @@ internal interface AnthropicAPI : Extension<Anthropic> {
         @Serializable
         @SerialName("tool_use")
         data class ToolUse(val id: String, val name: String, val input: Map<String, String>) : Content {
-            override fun asMessageContent(): Message.Content =
+            override fun asMessageContent(): CommonMessage.Content =
                 FunctionCallContent(FunctionCall(input.toJson(false),name))
         }
 
@@ -131,7 +132,7 @@ internal interface AnthropicAPI : Extension<Anthropic> {
             val id: String,
             val content: String
         ) : Content {
-            override fun asMessageContent(): Message.Content = TextContent(content)
+            override fun asMessageContent(): CommonMessage.Content = TextContent(content)
         }
 
         @Serializable
@@ -145,7 +146,7 @@ internal interface AnthropicAPI : Extension<Anthropic> {
                 val data: String // Base64 encoded image string
             )
 
-            override fun asMessageContent(): Message.Content = Base64ImageContent(source.data, source.type)
+            override fun asMessageContent(): CommonMessage.Content = Base64ImageContent(source.data, source.type)
         }
     }
 
@@ -258,12 +259,12 @@ private fun List<ToolConfig>.asAnthropicTools() = map {
     }
 }
 
-internal fun List<Message>.asAnthropicMessage() = this.map {
+internal fun List<CommonMessage>.asAnthropicMessage() = this.map {
     if (it is AnthropicAPI.AnthropicMessage) it
     else AnthropicAPI.AnthropicMessage(it)
 }
 
-internal fun List<Message.Content>.asAnthropicContent(): List<AnthropicAPI.Content> = mapNotNull {
+internal fun List<CommonMessage.Content>.asAnthropicContent(): List<AnthropicAPI.Content> = mapNotNull {
     when (it) {
         is Base64ImageContent -> AnthropicAPI.Content.Image(
             AnthropicAPI.Content.Image.ImageSource("base64", it.mediaType, it.base64)

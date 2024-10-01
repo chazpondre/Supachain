@@ -5,6 +5,7 @@ import dev.supachain.robot.*
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.FunctionCall
+import dev.supachain.robot.messenger.messaging.ToolCall
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.Provider
@@ -43,11 +44,11 @@ class Ollama : Provider<Ollama>(), OllamaActions, NetworkOwner {
 
     override val self: () -> Ollama get() = { this }
 
-    override fun onToolResult(result: String) {
+    override fun onToolResult(toolCall: ToolCall, result: String) {
         messenger.send(TextMessage(Role.FUNCTION, result))
     }
 
-    override fun onReceiveMessage(message: Message) {
+    override fun onReceiveMessage(message: CommonMessage) {
         messenger.send(message)
     }
 
@@ -114,7 +115,7 @@ class Ollama : Provider<Ollama>(), OllamaActions, NetworkOwner {
         @Serializable
         data class ChatRequest(
             val model: String,
-            val messages: List<Message>,
+            val messages: List<CommonMessage>,
             val tools: List<Tool> = emptyList(),
             val stream: Boolean
         ) : CommonChatRequest
@@ -140,13 +141,14 @@ class Ollama : Provider<Ollama>(), OllamaActions, NetworkOwner {
             val evalDuration: Long,
             @SerialName("done_reason")
             val doneReason: String?
-        ) : Message {
+        ) : CommonMessage {
 
-            override fun contents(): List<Message.Content> = listOf(text())
+            override fun contents(): List<CommonMessage.Content> = listOf(text())
             override fun text() = TextContent(message.content)
             override fun role() = Role.ASSISTANT
-            override fun functions(): List<FunctionCall> =
-                message.toolCalls?.map { FunctionCall(it.function.arguments.mapToFunctionCall(), it.function.name) }
+            override fun calls(): List<ToolCall> =
+                message.toolCalls?.map {
+                    ToolCall("", "", FunctionCall(it.function.arguments.mapToFunctionCall(), it.function.name)) }
                     ?: emptyList()
 
             override fun toString() = this.toJson()

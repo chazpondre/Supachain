@@ -7,6 +7,7 @@ import dev.supachain.Modifiable
 import dev.supachain.robot.*
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
+import dev.supachain.robot.messenger.messaging.ToolCall
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.Provider
@@ -72,11 +73,11 @@ class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
 
     override val self: () -> LocalAI get() = { this }
 
-    override fun onToolResult(result: String) {
+    override fun onToolResult(toolCall: ToolCall, result: String) {
         messenger.send(TextMessage(Role.FUNCTION, result))
     }
 
-    override fun onReceiveMessage(message: Message) {
+    override fun onReceiveMessage(message: CommonMessage) {
         messenger.send(message)
     }
 
@@ -92,7 +93,7 @@ class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
         @Serializable
         data class ChatRequest(
             val model: String,
-            val messages: List<Message>,
+            val messages: List<CommonMessage>,
             val temperature: Double,
             @SerialName("top_p")
             val topP: Double,

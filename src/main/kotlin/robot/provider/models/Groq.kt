@@ -4,14 +4,17 @@ import dev.supachain.Extension
 import dev.supachain.robot.*
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
+import dev.supachain.robot.messenger.messaging.ToolCall
 import dev.supachain.robot.messenger.messaging.Usage
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.Provider
+import dev.supachain.robot.provider.models.GroqAPI.ChatResponse.Error
 import dev.supachain.robot.tool.ToolChoice
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.FillInTheBlank
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
+import dev.supachain.utilities.toJson
 import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -25,16 +28,22 @@ import kotlinx.serialization.Serializable
 */
 @Suppress("unused")
 abstract class GroqBuilder : Provider<GroqBuilder>(), NetworkOwner, GroqModels {
-    abstract val model: String
+    abstract var model: String
     var apiKey: String = ""
     var frequencyPenalty = 0.0
+    var logitBias: Map<String, Int>? = null
+    var logProbabilities: Boolean? = null
     var maxTokens: Int = 2048
-    val presencePenalty: Double = 0.0
-    val stream: Boolean = false
+    var numberOfChoices: Int? = null
+    var presencePenalty: Double = 0.0
+    var responseFormat: GroqResponseFormat? = null
+    var seed: Int? = null
+    var stream: Boolean = false
     var stop: List<String>? = null
     var temperature: Double = 0.0
     var topP: Double = 0.0
-    val toolChoice = ToolChoice.AUTO
+    var toolChoice = ToolChoice.AUTO
+    var user: String? = null
 
     // Network
     val network: NetworkConfig = NetworkConfig()
@@ -47,14 +56,32 @@ abstract class GroqBuilder : Provider<GroqBuilder>(), NetworkOwner, GroqModels {
     override var toolStrategy: ToolUseStrategy = FillInTheBlank
 }
 
+@SerialName("type")
+enum class GroqResponseFormat {
+    @SerialName("text")
+    TEXT,
+
+    @SerialName("json_object")
+    JSON
+}
+
 @Suppress("unused")
 internal interface GroqAPI : Extension<Groq> {
     @Serializable
-    data class GroqMessage(
+    data class Message(
         val role: Role,
-        val content: String? = null
-    ) {
-        constructor(message: Message) : this(message.role(), message.text().value)
+        val content: String? = null,
+        @SerialName("tool_calls")
+        val toolCalls: List<ToolCall>? = null,
+        val name: String? = null,
+        @SerialName("tool_call_id")
+        val toolCallID: String? = null,
+    ) : CommonMessage {
+        constructor(message: CommonMessage) : this(message.role(), message.text().value)
+
+        override fun role(): Role = role
+        override fun text(): TextContent = TextContent(content ?: "")
+        override fun calls(): List<ToolCall> = toolCalls ?: emptyList()
     }
 
     /*
@@ -68,20 +95,27 @@ internal interface GroqAPI : Extension<Groq> {
     data class ChatRequest(
         @SerialName("frequency_penalty")
         val frequencyPenalty: Double,
+        @SerialName("logit_bias")
+        val logitBias: Map<String, Int>?,
+        val logProbabilities: Boolean?,
         val model: String,
-        val messages: List<GroqMessage>,
+        val messages: List<Message>,
         @SerialName("max_tokens")
         val maxTokens: Int,
+        val n: Int? = null,
         @SerialName("presence_penalty")
         val presencePenalty: Double,
+        val responseFormat: GroqResponseFormat?,
+        val seed: Int? = null,
         val stream: Boolean? = null,
         val stop: List<String>?,
         val temperature: Double,
         @SerialName("top_p")
         var topP: Double = 1.0,
-        @SerialName("tool_choice")
         val tools: List<CommonTool.OpenAI> = emptyList(),
-        val toolChoice: ToolChoice
+        @SerialName("tool_choice")
+        val toolChoice: ToolChoice,
+        val user: String? = null
     ) : CommonChatRequest
 
     @Serializable
@@ -98,21 +132,26 @@ internal interface GroqAPI : Extension<Groq> {
         val systemFingerprint: String? = null,
         val completion: Boolean? = null,
         val error: Error? = null
-    ) : Message {
+    ) {
         @Serializable
         data class Choice(
             val index: Int,
-            val message: GroqMessage
+            val message: Message
         )
 
         @Serializable
         data class Error(
-            val code: Int,
+            val code: Int? = null,
             val message: String,
             val type: String,
-            val param: String
+            val param: String? = null
         )
     }
+
+    @Serializable
+    data class ErrorResponse(
+        val error: Error? = null
+    )
 }
 
 /*
@@ -139,8 +178,8 @@ interface GroqModels {
         val llama3Groq8BToolUsePreview: String get() = "llama3-groq-8b-8192-tool-use-preview"
 
         // Meta Llama 3.1 Preview Models
-        val llama31_70BPreview: String get() = "llama-3.1-70b-versatile"
-        val llama31_8BPreview: String get() = "llama-3.1-8b-instant"
+        val llama31_70BVersatile: String get() = "llama-3.1-70b-versatile"
+        val llama31_8BInstant: String get() = "llama-3.1-8b-instant"
 
         // Meta Llama 3.2 Preview Models
         val llama32_1BTextPreview: String get() = "llama-3.2-1b-preview"
@@ -187,19 +226,30 @@ interface GroqModels {
 ██████████████████████████        ██  ████  █████  ████████  █████  ████  ██  ██    ████████  ██████████████████████████
 ██████████████████████████  ████  ███      ██████  █████        ███      ███  ███   ███      ███████████████████████████
  */
-
-private fun List<Message>.asGroqAIMessage() = this.map { GroqAPI.GroqMessage(it) }
+private fun List<CommonMessage>.asGroqAIMessage() = this.map {
+    if (it is GroqAPI.Message) it
+    else GroqAPI.Message(it)
+}
 
 @Suppress("unused")
 private sealed interface GroqActions : NetworkOwner, Actions, Extension<Groq> {
-    override suspend fun chat(tools: List<ToolConfig>): GroqAPI.ChatResponse = with(self()) {
-        post(
-            url, GroqAPI.ChatRequest(
-                frequencyPenalty, model, messenger.messages().asGroqAIMessage(),
-                maxTokens, presencePenalty, stream, stop, temperature, topP,
-                tools.asOpenAITools(), toolChoice
-            ), headers
-        )
+    override suspend fun chat(tools: List<ToolConfig>): GroqAPI.Message = with(self()) {
+
+
+        val response: GroqAPI.ChatResponse =
+            try {
+                post(
+                    "$url/chat/completions", GroqAPI.ChatRequest(
+                        frequencyPenalty, logitBias, logProbabilities, model, messenger.messages().asGroqAIMessage(),
+                        maxTokens, numberOfChoices, presencePenalty, responseFormat, seed, stream, stop, temperature,
+                        topP, tools.asOpenAITools(), toolChoice, user
+                    ), headers
+                )
+            } catch (e: UnexpectedMessage) {
+                throw GroqException().apply { error = e.readMessage<GroqAPI.ErrorResponse>() }
+            }
+
+        response.choices[0].message
     }
 }
 
@@ -210,21 +260,25 @@ private sealed interface GroqActions : NetworkOwner, Actions, Extension<Groq> {
 █████████████████████████████████████████  ████  ██  ████  ██  ███  ███  ███████████████████████████████████████████████
 ██████████████████████████████████████████      ████      ███  ████  ██        █████████████████████████████████████████
  */
-class Groq : GroqBuilder(), Actions, Extension<Groq> {
+class Groq : GroqBuilder(), GroqActions {
     override val actions: Actions = this
     override var messenger: Messenger = Messenger(this)
     internal val headers get() = mutableMapOf(HttpHeaders.Authorization to "Bearer $apiKey")
 
-    override fun onToolResult(result: String) {
-        messenger.send(TextMessage(Role.FUNCTION, result))
+    override fun onToolResult(toolCall: ToolCall, result: String) {
+        messenger.send(GroqAPI.Message(Role.TOOL, result, toolCallID = toolCall.id))
     }
 
-    override fun onReceiveMessage(message: Message) {
+    override fun onReceiveMessage(message: CommonMessage) {
         messenger.send(message)
     }
 
     override val networkClient: NetworkClient by lazy { KTORClient(network) }
-    override val model: String get() = models.chat.llama31_70BPreview
+    override var model: String = models.chat.llama31_70BVersatile
     override val self: () -> Groq get() = { this }
 }
 
+class GroqException : Exception() {
+    override val message: String get() = "Groq Error: ${error.toJson()}"
+    internal lateinit var error: GroqAPI.ErrorResponse
+}

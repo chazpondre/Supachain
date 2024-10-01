@@ -5,7 +5,7 @@ import dev.supachain.robot.director.*
 import dev.supachain.robot.messenger.ToolResultAction
 import dev.supachain.robot.messenger.ToolResultMessage
 import dev.supachain.robot.provider.Provider
-import dev.supachain.robot.provider.models.Message
+import dev.supachain.robot.provider.models.CommonMessage
 import dev.supachain.robot.provider.models.asSystemMessage
 import dev.supachain.robot.tool.ToolConfig
 
@@ -36,7 +36,7 @@ data object BackAndForth : ToolUseStrategy {
      */
     internal class Result(
         override var action: ToolResultAction = ToolResultAction.Complete,
-        override val messages: MutableList<Message> = mutableListOf(),
+        override val messages: MutableList<CommonMessage> = mutableListOf(),
         val callHistory: MutableMap<String, String> = mutableMapOf()
     ) : ToolResultMessage
 
@@ -59,27 +59,22 @@ data object BackAndForth : ToolUseStrategy {
      */
     internal operator fun invoke(
         robot: RobotCore<*, *, *>,
-        lastUserMessage: Message,
-        response: Message,
+        lastUserMessage: CommonMessage,
+        response: CommonMessage,
         provider: Provider<*>, // TODO Decouple Provider
         toolResult: Result?
     ): ToolResultMessage = with(robot) {
         val result = toolResult ?: Result()
-        if (response.functions().isNotEmpty()) {
+        if (response.calls().isNotEmpty()) {
 
             var callStatus: CallStatus
-            for ((index, call) in response.functions().withIndex()) {
+            for (call in response.calls()) {
                 try {
-                    callStatus = call(result.callHistory)
+                    callStatus = call.function(result.callHistory)
                     when (callStatus) {
                         Success -> {
-                            if (
-                                index == response.functions().lastIndex &&
-                                provider.includeSeekCompletionMessage // TODO decouple
-                            )  result.messages.add(completionMessage)
-
                             val callResult = result.callHistory.asIterable().last().value
-                            provider.onToolResult(callResult) // Todo decouple
+                            provider.onToolResult(call, callResult) // Todo decouple
                             result.action = ToolResultAction.Update
                         }
 
@@ -97,7 +92,7 @@ data object BackAndForth : ToolUseStrategy {
                         }
                     }
                 } catch (e: Exception) {
-                    logger.error("Illegal call: $call in ${response.functions()}")
+                    logger.error("Illegal call: $call in ${response.calls()}")
                     throw e
                 }
             }
@@ -119,7 +114,7 @@ data object BackAndForth : ToolUseStrategy {
      *
      * @since 0.1.0
      */
-    private fun interventionMessage(lastUserMessage: Message, callMap: MutableMap<String, String>) =
+    private fun interventionMessage(lastUserMessage: CommonMessage, callMap: MutableMap<String, String>) =
         ("${lastUserMessage.text()} \nNote the following may contain the answer." +
                 "[${callMap.map { "${it.key} has result ${it.value}." }}]. " +
                 "If you see the answer, say it in the desired format.").asSystemMessage()
@@ -132,6 +127,6 @@ data object BackAndForth : ToolUseStrategy {
     private val toolRecallMessage
         get() = "You must find the answer in the user message and format it to the required format.".asSystemMessage()
 
-    override fun onRequestMessage(toolSet: List<ToolConfig>): Message? = null
+    override fun onRequestMessage(toolSet: List<ToolConfig>): CommonMessage? = null
     override fun getTools(tools: List<ToolConfig>): List<ToolConfig> = tools
 }
