@@ -9,7 +9,6 @@ import dev.supachain.robot.*
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.CommonLogProbContainer
-import dev.supachain.robot.messenger.messaging.FunctionCall
 import dev.supachain.robot.messenger.messaging.ToolCall
 import dev.supachain.robot.messenger.messaging.Usage
 import dev.supachain.robot.provider.*
@@ -17,7 +16,6 @@ import dev.supachain.robot.tool.ToolChoice
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
-import dev.supachain.utilities.Parameter
 import dev.supachain.utilities.toJson
 import io.ktor.http.*
 import kotlinx.serialization.SerialName
@@ -116,20 +114,17 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
     val toolChoice = ToolChoice.AUTO
     val user: String? = null
 
-    internal val headers
-        get() = mutableMapOf(
-            HttpHeaders.Authorization to "Bearer $apiKey"
-        )
+    internal val headers get() = mutableMapOf(HttpHeaders.Authorization to "Bearer $apiKey")
 
     companion object : Modifiable<OpenAI>({ OpenAI() })
 
     override val self = { this }
 
-    override fun onToolResult(result: String) {
+    override fun onToolResult(toolCall: ToolCall, result: String) {
         messenger.send(TextMessage(Role.FUNCTION, result))
     }
 
-    override fun onReceiveMessage(message: Message) {
+    override fun onReceiveMessage(message: CommonMessage) {
         messenger.send(message)
     }
 }
@@ -142,7 +137,6 @@ class OpenAI : Provider<OpenAI>(), OpenAIActions, OpenAIModels {
 ██████████████████████████████████████████████        ██  ███████████  █████████████████████████████████████████████████
 ██████████████████████████████████████████████  ████  ██  ████████        ██████████████████████████████████████████████
 */
-private fun List<ToolConfig>.asOpenAITools() = map { OpenAIAPI.Tool(it) }
 
 interface OpenAIAPI {
 
@@ -155,36 +149,9 @@ interface OpenAIAPI {
         val toolCalls: List<ToolCall>? = null,
         val name: String? = null
     ) {
-        constructor(message: Message) : this(message.role(), message.text().value)
+        constructor(message: CommonMessage) : this(message.role(), message.text().value)
     }
 
-    @Serializable
-    data class Tool(val type: String, val function: Function) {
-        @Serializable
-        data class Function(val name: String, val description: String?, val parameters: Parameters) {
-            @Serializable
-            data class Parameters(
-                val type: String,
-                val properties: Map<String, Property>,
-                val required: List<String>
-            ) {
-                constructor(parameters: List<Parameter>) : this(
-                    "object",
-                    parameters.toProperties(),
-                    parameters.filter { it.required }.map { it.name }
-                )
-            }
-
-            constructor(toolConfig: ToolConfig) :
-                    this(
-                        toolConfig.function.name,
-                        toolConfig.function.description.ifBlank { null },
-                        Parameters(toolConfig.function.parameters)
-                    )
-        }
-
-        constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
-    }
 
     /*
     ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░  ░░░░  ░░░      ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -209,7 +176,7 @@ interface OpenAIAPI {
         val stream: Boolean,
         val temperature: Double,
         @SerialName("top_p") val topP: Double,
-        val tools: List<Tool>,
+        val tools: List<CommonTool.OpenAI>,
         @SerialName("tool_choice") val toolChoice: ToolChoice,
         val user: String?
     ) : CommonChatRequest
@@ -225,7 +192,7 @@ interface OpenAIAPI {
         @SerialName("service_tier")
         val serviceTier: String? = null,
         val systemFingerprint: String? = null
-    ) : Message {
+    ) : CommonMessage {
         @Serializable
         data class Choice(
             val index: Int,
@@ -238,11 +205,8 @@ interface OpenAIAPI {
 
         override fun text() = TextContent(choices[0].message.content ?: "")
         override fun role() = Role.ASSISTANT
-        override fun functions(): List<FunctionCall> = with(choices[0].message) {
-            (toolCalls?.filter { it.type == "function" }?.map { it.function } ?: emptyList())
-        }
-
-        override fun contents(): List<Message.Content> = listOf(text())
+        override fun calls(): List<ToolCall> = choices[0].message.toolCalls ?: emptyList()
+        override fun contents(): List<CommonMessage.Content> = listOf(text())
 
         override fun toString(): String = this.toJson()
     }
@@ -360,7 +324,7 @@ interface OpenAIModels {
     }
 }
 
-fun List<Message>.asOpenAIMessage() = this.map { OpenAIAPI.OpenAIMessage(it) }
+fun List<CommonMessage>.asOpenAIMessage() = this.map { OpenAIAPI.OpenAIMessage(it) }
 
 @Suppress("unused")
 /*

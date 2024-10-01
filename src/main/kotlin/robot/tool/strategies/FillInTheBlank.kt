@@ -4,7 +4,7 @@ import dev.supachain.robot.director.RobotCore
 import dev.supachain.robot.director.asFunctionCall
 import dev.supachain.robot.messenger.ToolResultAction
 import dev.supachain.robot.messenger.ToolResultMessage
-import dev.supachain.robot.provider.models.Message
+import dev.supachain.robot.provider.models.CommonMessage
 import dev.supachain.robot.provider.models.TextMessage
 import dev.supachain.robot.provider.models.asAssistantMessage
 import dev.supachain.robot.provider.models.asSystemMessage
@@ -36,7 +36,7 @@ data object FillInTheBlank : ToolUseStrategy {
      */
     internal class Result(
         override var action: ToolResultAction = ToolResultAction.Complete,
-        override val messages: MutableList<Message> = mutableListOf(),
+        override val messages: MutableList<CommonMessage> = mutableListOf(),
     ) : ToolResultMessage
 
     /**
@@ -119,7 +119,7 @@ data object FillInTheBlank : ToolUseStrategy {
      *
      * @since 0.1.0
      */
-    operator fun invoke(robot: RobotCore<*, *, *>, response: Message): ToolResultMessage = with(robot) {
+    operator fun invoke(robot: RobotCore<*, *, *>, response: CommonMessage): ToolResultMessage = with(robot) {
         val template = response.text().toString().templates()
         val results = template.expressions.map { it.asFunctionCall()().toString() }
         Result(ToolResultAction.ReplaceAndComplete).apply {

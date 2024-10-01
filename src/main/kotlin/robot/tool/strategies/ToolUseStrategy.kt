@@ -1,6 +1,6 @@
 package dev.supachain.robot.tool.strategies
 
-import dev.supachain.robot.provider.models.Message
+import dev.supachain.robot.provider.models.CommonMessage
 import dev.supachain.robot.tool.ToolConfig
 
 /**
@@ -14,6 +14,6 @@ import dev.supachain.robot.tool.ToolConfig
 
  */
 sealed interface ToolUseStrategy {
-    fun onRequestMessage(toolSet: List<ToolConfig>): Message?
+    fun onRequestMessage(toolSet: List<ToolConfig>): CommonMessage?
     fun getTools(tools: List<ToolConfig>): List<ToolConfig>
 }

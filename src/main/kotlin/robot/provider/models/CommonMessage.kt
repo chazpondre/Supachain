@@ -12,6 +12,7 @@ package dev.supachain.robot.provider.models
 
 import dev.supachain.robot.messenger.Role
 import dev.supachain.robot.messenger.messaging.FunctionCall
+import dev.supachain.robot.messenger.messaging.ToolCall
 import dev.supachain.utilities.toJson
 import kotlinx.serialization.Serializable
 
@@ -22,7 +23,7 @@ import kotlinx.serialization.Serializable
  * This interface serves as a base for different types of responses that different AI providers
  * might provide. It encapsulates the core elements of a response.
  *
- * @property functions Returns a list of FunctionCall objects requested by the provider.
+ * @property calls Returns a list of FunctionCall objects requested by the provider.
  * @property role Returns the role of the message sender.
  * @property text Returns the text content of the message.
  * @property contents Returns a list of contents in the message.
@@ -30,8 +31,8 @@ import kotlinx.serialization.Serializable
  * @since 0.1.0
  */
 @Serializable
-sealed interface Message {
-    fun functions(): List<FunctionCall> = contents().filterIsInstance<FunctionCall>()
+sealed interface CommonMessage {
+    fun calls(): List<ToolCall> = contents().filterIsInstance<ToolCall>()
     fun role(): Role = throw NotImplementedError()
     fun text(): TextContent = throw NotImplementedError()
     fun contents(): List<Content> = throw NotImplementedError()
@@ -45,25 +46,25 @@ sealed interface Message {
 /** Represents a text content in a message from an AI provider */
 @Serializable
 @JvmInline
-value class TextContent(val value: String) : Message.Content {
+value class TextContent(val value: String) : CommonMessage.Content {
     override fun toString() = value
 }
 
 /** Represents a function call in a message from an AI provider */
 @Serializable
 @JvmInline
-value class FunctionCallContent(val function: FunctionCall) : Message.Content {
+value class FunctionCallContent(val function: FunctionCall) : CommonMessage.Content {
     override fun toString() = "fun ${function.name}"
 }
 
 /** Represents Image in a message from an AI provider */
 @Serializable
-data class Base64ImageContent(val base64: String, val mediaType: String) : Message.Content
+data class Base64ImageContent(val base64: String, val mediaType: String) : CommonMessage.Content
 
 /** Represents Document in a message from an AI provider */
 @Serializable
 @JvmInline
-value class DocumentContent(val location: String) : Message.Content
+value class DocumentContent(val location: String) : CommonMessage.Content
 
 /**
  * Represents a text message exchanged within a conversation.
@@ -79,12 +80,12 @@ value class DocumentContent(val location: String) : Message.Content
 data class TextMessage(
     var role: Role,
     var content: String?,
-) : Message {
+) : CommonMessage {
     override fun toString() = this.toJson()
-    override fun functions(): List<FunctionCall> = emptyList()
+    override fun calls(): List<ToolCall> = emptyList()
     override fun role(): Role = this.role
     override fun text() = TextContent(content ?: "")
-    override fun contents(): List<Message.Content> = listOf(text())
+    override fun contents(): List<CommonMessage.Content> = listOf(text())
 }
 
 /** Converts any object into a system message for an AI conversation. */

@@ -28,6 +28,8 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.network.tls.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -395,13 +397,15 @@ private inline fun <reified T : CommonRequest> T.withNetworkLog(type: String, ur
     return this
 }
 
+val networkJSON = Json {
+    ignoreUnknownKeys = true
+}
 // Error handling function
+@OptIn(ExperimentalSerializationApi::class)
 internal suspend inline
 fun <reified T> HttpResponse.deserializeResponse(): T {
     var capturedString = ""
-    val json = Json {
-        ignoreUnknownKeys = true
-    }
+
     return try {
         capturedString = bodyAsText()
         logger.debug(
@@ -409,7 +413,7 @@ fun <reified T> HttpResponse.deserializeResponse(): T {
             "[Network/Received]\n@[status:{}, from: {}]\n{}",
             status, request.url, capturedString
         )
-        json.decodeFromString(capturedString)
+        networkJSON.decodeFromString(capturedString)
     } catch (e: RedirectResponseException) {
         // Handle redirect (3xx status codes)
         throw Exception("Unexpected redirect: ${e.response.status.description}", e)
@@ -425,14 +429,20 @@ fun <reified T> HttpResponse.deserializeResponse(): T {
     } catch (e: ServerResponseException) {
         // Handle server errors (5xx status codes)
         throw Exception("Server error: ${e.response.status.description}", e)
+    } catch (e: MissingFieldException) {
+
+        throw UnexpectedMessage(capturedString)
     } catch (e: Exception) {
         // Handle other exceptions (e.g., network errors, serialization issues)
         logger.error(
             "Unexpected error formatting common response. Provider message:\n " +
                     "$capturedString. \n\nError -> $e"
         )
-
         throw e
     }
+}
+
+class UnexpectedMessage(val capturedString: String) : Exception() {
+    inline fun <reified T> readMessage() = networkJSON.decodeFromString<T>(capturedString)
 }
 

@@ -7,13 +7,13 @@ import dev.supachain.Modifiable
 import dev.supachain.robot.*
 import dev.supachain.robot.messenger.Messenger
 import dev.supachain.robot.messenger.Role
+import dev.supachain.robot.messenger.messaging.ToolCall
 import dev.supachain.robot.provider.Actions
 import dev.supachain.robot.provider.CommonChatRequest
 import dev.supachain.robot.provider.Provider
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.BackAndForth
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
-import dev.supachain.utilities.Parameter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -73,34 +73,27 @@ class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
 
     override val self: () -> LocalAI get() = { this }
 
-    override fun onToolResult(result: String) {
+    override fun onToolResult(toolCall: ToolCall, result: String) {
         messenger.send(TextMessage(Role.FUNCTION, result))
     }
 
-    override fun onReceiveMessage(message: Message) {
+    override fun onReceiveMessage(message: CommonMessage) {
         messenger.send(message)
     }
 
-    /*
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░       ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-    ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓  ▓▓       ▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-    ████████████████████████████████████████████        ██  ███████████  ███████████████████████████████████████████████
-    ████████████████████████████████████████████  ████  ██  ████████        ████████████████████████████████████████████
-    */
-    interface API {
 
+    interface API {
         /*
-       ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░  ░░░░  ░░░      ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-       ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-       ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓        ▓▓  ▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-       █████████████████████████████████████  ████  ██  ████  ██        █████  ████████████████████████████████████████
-       ██████████████████████████████████████      ███  ████  ██  ████  █████  ████████████████████████████████████████
-       */
+        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░  ░░░░  ░░░      ░░░        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+        ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+        ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓        ▓▓  ▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+        █████████████████████████████████████  ████  ██  ████  ██        █████  ████████████████████████████████████████
+        ██████████████████████████████████████      ███  ████  ██  ████  █████  ████████████████████████████████████████
+        */
         @Serializable
         data class ChatRequest(
             val model: String,
-            val messages: List<Message>,
+            val messages: List<CommonMessage>,
             val temperature: Double,
             @SerialName("top_p")
             val topP: Double,
@@ -108,40 +101,10 @@ class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
             val topK: Int,
             @SerialName("max_tokens")
             val maxTokens: Int,
-            val tools: List<Tool> = emptyList(),
-        ) : CommonChatRequest {
-            @Serializable
-            data class Tool(val type: String, val function: Function) {
-                @Serializable
-                data class Function(val name: String, val description: String?, val parameters: Parameters) {
-                    @Serializable
-                    data class Parameters(
-                        val type: String,
-                        val properties: Map<String, Property>,
-                        val required: List<String>
-                    ) {
-                        constructor(parameters: List<Parameter>) : this(
-                            "object",
-                            parameters.toProperties(),
-                            parameters.filter { it.required }.map { it.name }
-                        )
-                    }
-
-                    constructor(toolConfig: ToolConfig) :
-                            this(
-                                toolConfig.function.name,
-                                toolConfig.function.description.ifBlank { null },
-                                Parameters(toolConfig.function.parameters)
-                            )
-                }
-
-                constructor(toolConfig: ToolConfig) : this("function", Function(toolConfig))
-            }
-        }
-
+            val tools: List<CommonTool.OpenAI> = emptyList(),
+        ) : CommonChatRequest
     }
 }
-
 
 /*
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░      ░░░░      ░░░        ░░        ░░░      ░░░   ░░░  ░░░      ░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -149,15 +112,13 @@ class LocalAI : Provider<LocalAI>(), LocalAIActions, NetworkOwner {
 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓  ▓▓  ▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓▓  ▓▓▓▓  ▓▓  ▓  ▓  ▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 ██████████████████████████        ██  ████  █████  ████████  █████  ████  ██  ██    ████████  ██████████████████████████
 ██████████████████████████  ████  ███      ██████  █████        ███      ███  ███   ███      ███████████████████████████
- */
-private fun List<ToolConfig>.asLocalAITools() = map { LocalAI.API.ChatRequest.Tool(it) }
-
+*/
 private sealed interface LocalAIActions : NetworkOwner, Actions, Extension<LocalAI> {
     override suspend fun chat(tools: List<ToolConfig>): OpenAIAPI.ChatResponse = with(self()) {
         return post(
             "$url/v1/chat/completions", LocalAI.API.ChatRequest(
                 chatModel, messenger.messages(),
-                temperature, topP, topK, maxTokens, tools.asLocalAITools()
+                temperature, topP, topK, maxTokens, tools.asOpenAITools()
             )
         )
     }

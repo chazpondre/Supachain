@@ -4,7 +4,8 @@ package dev.supachain.robot.provider
 
 import dev.supachain.robot.messenger.MessageFilter
 import dev.supachain.robot.messenger.Messenger
-import dev.supachain.robot.provider.models.Message
+import dev.supachain.robot.messenger.messaging.ToolCall
+import dev.supachain.robot.provider.models.CommonMessage
 import dev.supachain.robot.tool.ToolConfig
 import dev.supachain.robot.tool.strategies.ToolUseStrategy
 
@@ -32,8 +33,8 @@ abstract class Provider<T : Provider<T>> {
     internal abstract val actions: Actions
 
     internal abstract val messenger: Messenger
-    internal abstract fun onToolResult(result: String)
-    internal abstract fun onReceiveMessage(message: Message)
+    internal abstract fun onToolResult(toolCall: ToolCall, result: String)
+    internal abstract fun onReceiveMessage(message: CommonMessage)
 
     /**
      * Executes a request to the AI provider for a specific feature.
@@ -51,7 +52,7 @@ abstract class Provider<T : Provider<T>> {
      * @since 0.1.0
      */
     internal suspend inline
-    fun request(feature: Feature, tools: List<ToolConfig>): Message =
+    fun request(feature: Feature, tools: List<ToolConfig>): CommonMessage =
         when (feature) {
             // Feature chat is chatting
             Feature.Chat -> actions.chat(tools.allowed)

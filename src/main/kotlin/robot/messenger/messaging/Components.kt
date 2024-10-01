@@ -43,6 +43,7 @@ data class AudioResponse(val model: String)
 @Serializable
 data class ImageResponse(val model: String)
 
+// TODO Move to common
 @Serializable
 data class ToolCall(val id: String, val type: String, val function: FunctionCall)
 
