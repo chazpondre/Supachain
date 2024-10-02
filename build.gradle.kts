@@ -12,10 +12,22 @@ plugins {
     val kotlinVersion = "2.0.20"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
+    id("maven-publish")
 }
 
 repositories {
     mavenCentral()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"]) // Publish the Java component
+            groupId = project.group.toString() // Group ID for Maven
+            artifactId = project.name // Artifact ID (name of the project)
+            version = project.version.toString() // Project version
+        }
+    }
 }
 
 dependencies {
