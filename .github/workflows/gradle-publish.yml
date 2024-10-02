@@ -1,4 +1,5 @@
-name: Gradle Package
+name: Publish package to GitHub Packages
+run-name: ${{ github.actor }} 🚀🚀🚀
 
 on:
   release:
