@@ -1,3 +1,5 @@
+import java.util.*
+
 group = "dev.supachain"
 version = "0.1.0"
 
@@ -21,10 +23,10 @@ repositories {
 
 publishing {
     publications {
-        create<MavenPublication>("gpr") {
+        create<MavenPublication>("default") {
             from(components["java"]) // Publish the Java component
             groupId = project.group.toString() // Group ID for Maven
-            artifactId = project.name // Artifact ID (name of the project)
+            artifactId = project.name.lowercase(Locale.UK) // Artifact ID (name of the project)
             version = project.version.toString() // Project version
         }
     }
@@ -71,7 +73,6 @@ tasks.test {
 kotlin {
     jvmToolchain(21)
 }
-
 
 subprojects {
     if (project.parent?.name == "examples") {
