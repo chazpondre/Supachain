@@ -1,5 +1,8 @@
 package dev.supachain.mixer
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlin.math.absoluteValue
 
 /*
@@ -8,9 +11,7 @@ import kotlin.math.absoluteValue
 ▓▓▓▓▓▓▓▓▓▓▓▓▓        ▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓        ▓▓      ▓▓▓▓  ▓▓▓▓  ▓▓       ▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 █████████████  █  █  █████  ██████  ██  ████████████  █████  ████  ██  ████████  ████  ██  ███  ██████  ████████████████
 █████████████  ████  ██        ██  ████  ███████████  █████  ████  ██        ███      ███  ████  █████  ████████████████
-
- */
-
+*/
 
 /**
  * Represents a single data pseudo container for a value of type [T].
@@ -22,7 +23,6 @@ import kotlin.math.absoluteValue
 value class Single<T>(val value: T) {
     val input: T get() = value
 }
-
 
 /**
  * Represents a pseudo container for multiple data values of type [T].
@@ -91,7 +91,7 @@ interface Mixable<T> {
      * @param generator Generates the mixed result.
      * @return The mixed result.
      */
-    fun mix(inputData: T, generator: Generator<T>): T
+    suspend fun mix(inputData: T, generator: Generator<T>): T
 
     /**
      * Combines this mixable with another mixable into an unmixed [Group].
@@ -116,7 +116,7 @@ interface Mixable<T> {
     /**
      * Uses the specified generator for mixing.
      */
-    infix fun using(generator: Generator<T>) = Mixer(Pair(this, generator))
+    infix fun with(generator: Generator<T>) = Mixer(Pair(this, generator))
 }
 
 
@@ -161,7 +161,7 @@ value class Effect<T>(val instruction: MixFunction<T>) : Mixable<T> {
     /**
      * Applies the mix function and generates the result.
      */
-    override fun mix(inputData: T, generator: Generator<T>): T {
+    override suspend fun mix(inputData: T, generator: Generator<T>): T {
         val sample = instruction(inputData.asSingle())
         return generator.generate(sample)
     }
@@ -183,7 +183,7 @@ value class Repeater<T>(val data: Pair<Mixable<T>, Int>) : Mixable<T> {
     /**
      * Repeats the mix operation that repeats with [repeatCount]
      */
-    override fun mix(inputData: T, generator: Generator<T>): T {
+    override suspend fun mix(inputData: T, generator: Generator<T>): T {
         var result: T = inputData
         repeat(repeatCount) { result = mixable.mix(result, generator) }
         return result
@@ -221,7 +221,7 @@ value class Track<T>(private val mixes: List<Mixable<T>>) : Mixable<T> {
     /**
      * Mixes the data by applying all mixable items in the track sequentially.
      */
-    override fun mix(inputData: T, generator: Generator<T>): T {
+    override suspend fun mix(inputData: T, generator: Generator<T>): T {
         var lastInput = inputData
         for (mix in mixes) {
             lastInput = mix.mix(lastInput, generator)
@@ -240,12 +240,20 @@ value class Track<T>(private val mixes: List<Mixable<T>>) : Mixable<T> {
  */
 @JvmInline
 value class MultiTrack<T>(private val multiMix: MultiMix<T>) : Mixable<T> {
+    private suspend fun makeMixes(inputData: T, generator: Generator<T>): Multi<T> =
+        if (generator.parallelExecutionAllowed)
+            coroutineScope {
+                listOf(inputData) + multiMix.mixers.map { mixer ->
+                    async { mixer.mix(inputData, generator) }
+                }.awaitAll()
+            }.asMulti()
+        else (listOf(inputData) + multiMix.mixers.map { it.mix(inputData, generator) }).asMulti()
+
     /**
      * Mixes the input data and applies the remix function.
      */
-    override fun mix(inputData: T, generator: Generator<T>): T {
-
-        val mixes = (listOf(inputData) + multiMix.mixers.map { it.mix(inputData, generator) }).asMulti()
+    override suspend fun mix(inputData: T, generator: Generator<T>): T {
+        val mixes = makeMixes(inputData, generator)
         val remix = multiMix.remix.mix(mixes)
         return generator.generate(remix)
     }
@@ -272,7 +280,7 @@ value class Mixer<T>(val data: Pair<Mixable<T>, Generator<T>>) {
      * @param input The input data.
      * @return The mixed result.
      */
-    operator fun invoke(input: T) = mixable.mix(input, generator)
+    suspend operator fun invoke(input: T) = mixable.mix(input, generator)
 }
 
 /**
