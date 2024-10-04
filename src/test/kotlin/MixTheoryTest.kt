@@ -5,7 +5,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class TestGenerator : Generator<String> {
-    override fun generator(input: String): String = input
+    override fun generate(input: String): String = input
+    override val parallelExecutionAllowed: Boolean = true
 }
 
 class MixTheoryTest {
