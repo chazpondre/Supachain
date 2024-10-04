@@ -1,12 +1,13 @@
 import dev.supachain.mixer.concept
 import dev.supachain.mixer.mix
+import dev.supachain.mixer.using
 import dev.supachain.robot.Defaults.Chat
 import dev.supachain.robot.Defaults.NoTools
 import dev.supachain.robot.Robot
 import dev.supachain.robot.provider.models.Ollama
 import dev.supachain.utilities.Debug
 
-fun main() {
+suspend fun main() {
     Debug show "Messenger"
     val robot = Robot<Ollama, Chat, NoTools>()
 
@@ -34,7 +35,7 @@ fun main() {
 
     val question = "What do you know about the Steel Drum?"
 
-    val generatedAnswer = (answer using { robot.chat(it).await() })(question)
+    val generatedAnswer = (answer using robot::chat)(question)
 
     println(generatedAnswer)
 }
