@@ -36,7 +36,7 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/chazpondre/supachain")
             credentials {
-                username = project.findProperty("GITHUB_ACTOR") as String? ?: System.getenv("USERNAME")
+                username = project.findProperty("GITHUB_ACTOR") as String? ?: System.getenv("GITHUB_ACTOR")
                 password = project.findProperty("GITHUB_TOKEN") as String? ?: System.getenv("GITHUB_TOKEN")
             }
         }
