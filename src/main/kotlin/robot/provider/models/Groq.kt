@@ -97,6 +97,7 @@ internal interface GroqAPI : Extension<Groq> {
         val frequencyPenalty: Double,
         @SerialName("logit_bias")
         val logitBias: Map<String, Int>?,
+        @SerialName("logprobs")
         val logProbabilities: Boolean?,
         val model: String,
         val messages: List<Message>,
@@ -105,6 +106,7 @@ internal interface GroqAPI : Extension<Groq> {
         val n: Int? = null,
         @SerialName("presence_penalty")
         val presencePenalty: Double,
+        @SerialName("response_format")
         val responseFormat: GroqResponseFormat?,
         val seed: Int? = null,
         val stream: Boolean? = null,
