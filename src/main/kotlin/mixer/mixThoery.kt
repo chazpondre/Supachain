@@ -1,4 +1,7 @@
 package dev.supachain.mixer
+
+import kotlin.math.absoluteValue
+
 /*
 ░░░░░░░░░░░░░  ░░░░  ░░        ░░  ░░░░  ░░░░░░░░        ░░  ░░░░  ░░        ░░░      ░░░       ░░░  ░░░░  ░░░░░░░░░░░░░
 ▒▒▒▒▒▒▒▒▒▒▒▒▒   ▒▒   ▒▒▒▒▒  ▒▒▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒  ▒▒▒▒  ▒▒▒  ▒▒  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒
@@ -59,6 +62,7 @@ typealias MultiMix<T> = Pair<List<Mixable<T>>, Remix<T>>
  * Extension property that returns the list of mixable items.
  */
 val <T> MultiMix<T>.mixers get() = first
+
 /** Extension property that returns the remix function.*/
 val <T> MultiMix<T>.remix get() = second
 
@@ -66,6 +70,7 @@ val <T> MultiMix<T>.remix get() = second
  * Converts this value to a [Single] instance.
  */
 fun <T> T.asSingle() = Single(this)
+
 /**
  * Converts this list of values to a [Multi] instance.
  */
@@ -92,22 +97,27 @@ interface Mixable<T> {
      * Combines this mixable with another mixable into an unmixed [Group].
      */
     operator fun plus(mixable: Mixable<T>) = Group(listOf(this, mixable))
+
     /**
      * Combines this mixable with another mixable into a track of sequential mixes.
      */
-    operator fun times(mixable: Mixable<T>) = Track(listOf(this, mixable))
+    operator fun times(mixable: Mixable<T>): Mixable<T> = Track(listOf(this, mixable))
+
     /**
      * Repeats this mixable a specified number of times.
      */
-    operator fun times(count: Int) = Repeater(Pair(this, count))
+    operator fun times(count: Int): Mixable<T> = Repeater(Pair(this, count))
+
     /**
      * Connects this mixable to a remix function.
      */
     infix fun to(remixFunction: Remix<T>): Mixable<T> = MultiTrack(MultiMix(listOf(this), remixFunction))
+
     /**
      * Uses the specified generate function for mixing.
      */
     infix fun using(generate: (T) -> T) = Mixer(Pair(this, generate))
+
     /**
      * Uses the specified generator for mixing.
      */
@@ -160,6 +170,8 @@ value class Effect<T>(val instruction: MixFunction<T>) : Mixable<T> {
         val sample = instruction(inputData.asSingle())
         return generate(sample)
     }
+
+    override fun toString(): String = "Effect${instruction.hashCode().absoluteValue % 10000}"
 }
 
 
@@ -181,6 +193,8 @@ value class Repeater<T>(val data: Pair<Mixable<T>, Int>) : Mixable<T> {
         repeat(repeatCount) { result = mixable.mix(result, generate) }
         return result
     }
+
+    override fun toString(): String = "$mixable -> |$repeatCount| $mixable"
 }
 
 /**
@@ -192,6 +206,7 @@ value class Group<T>(val data: List<Mixable<T>>) : List<Mixable<T>> by data {
      * Adds a mixable to the group.
      */
     operator fun plus(mixable: Mixable<T>) = Group(data + mixable)
+
     /**
      * Connects this group to a remix function.
      */
@@ -219,6 +234,10 @@ value class Track<T>(private val mixes: List<Mixable<T>>) : Mixable<T> {
 
         return lastInput
     }
+
+    override fun toString(): String {
+        return mixes.joinToString(" --> ")
+    }
 }
 
 /**
@@ -234,6 +253,9 @@ value class MultiTrack<T>(private val multiMix: MultiMix<T>) : Mixable<T> {
         val remix = multiMix.remix.mix(mixes)
         return generate(remix)
     }
+
+    override fun toString(): String =
+        "${multiMix.mixers.joinToString(" & ")} --> Remix${multiMix.remix.hashCode().absoluteValue % 10000}"
 }
 
 /**
