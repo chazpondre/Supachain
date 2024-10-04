@@ -1,6 +1,7 @@
 import dev.supachain.mixer.Generator
 import dev.supachain.mixer.concept
 import dev.supachain.mixer.mix
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -19,10 +20,10 @@ class MixTheoryTest {
         val summary = mix { "$input -> $outputs -> remix" }
 
         // Use the TestGenerator to mix
-        val mixer = (pros + cons to summary) using TestGenerator()
+        val mixer = (pros + cons to summary) with TestGenerator()
 
         // Perform the mixing operation
-        val result = mixer("hello")
+        val result = runBlocking { mixer("hello") }
 
         // Assert the expected result
         val expected = "hello -> [pros(hello), cons(hello)] -> remix"
@@ -38,10 +39,10 @@ class MixTheoryTest {
         val summary = mix { "$input -> $outputs -> remix" }
 
         // Use the TestGenerator to mix
-        val mixer = (repeater + cons to summary) using TestGenerator()
+        val mixer = (repeater + cons to summary) with  TestGenerator()
 
         // Perform the mixing operation
-        val result = mixer("world")
+        val result = runBlocking { mixer("world") }
 
         // Assert the expected result
         val expected = "world -> [pros(pros(world)), cons(world)] -> remix"
@@ -57,10 +58,10 @@ class MixTheoryTest {
         val summary = mix { "$input -> $outputs -> remix" }
 
         // Create a multi-track mixer
-        val mixer = ((pros * betterPros + cons) to summary) using TestGenerator()
+        val mixer = ((pros * betterPros + cons) to summary) with TestGenerator()
 
         // Perform the mixing operation
-        val result = mixer("data")
+        val result = runBlocking { mixer("data") }
 
         // Assert the expected result
         val expected = "data -> [better(pros(data)), cons(data)] -> remix"
@@ -73,10 +74,10 @@ class MixTheoryTest {
         val pros = concept { "pros($input)" }
         val cons = concept { "cons($input)" }
         val innerMixer = (pros + cons to mix { "$input -> inner" })
-        val outerMixer = (innerMixer to mix { "$input -> $outputs -> outer" }) using TestGenerator()
+        val outerMixer = (innerMixer to mix { "$input -> $outputs -> outer" }) with TestGenerator()
 
         // Perform the mixing operation
-        val result = outerMixer("test")
+        val result = runBlocking { outerMixer("test") }
 
         // Assert the expected result
         val expected = "test -> [test -> inner] -> outer"
