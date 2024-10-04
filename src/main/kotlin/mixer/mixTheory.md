@@ -72,12 +72,13 @@ It allows you to build complex processing pipelines with a focus on clarity and 
 * **Mixable:** The base interface for all mixable entities.
     * `Effect<T>`: Applies a single `MixFunction` to the input data.
     * `Repeater<T>`: Repeats a mixable a specified number of times.
-    * `Group<T>`: Combines multiple independent mixables.
     * `Track<T>`: Sequentially applies multiple mixables.
     * `MultiTrack<T>`: Combines multiple mixables with a remix function.
     * `Mixer<T>`: Combines a mixable with a generator function for creating output.
 * **Generators:**
     * `Generator<T>`: A function that takes an input and generates a value of type `T`.
+* **Special:**
+  * `Group<T>`: A list of mixables which cannot be mixed until remix function is added to form a `MultiTrack<T>`.
 
 **Building Pipelines:**
 
