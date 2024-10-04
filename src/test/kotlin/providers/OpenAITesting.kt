@@ -1,3 +1,5 @@
+package providers
+
 import dev.supachain.robot.Defaults
 import dev.supachain.robot.Robot
 import dev.supachain.robot.messenger.MessageFilter
