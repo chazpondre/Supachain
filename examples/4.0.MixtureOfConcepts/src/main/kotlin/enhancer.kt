@@ -1,4 +1,5 @@
-import dev.supachain.mixer.*
+import dev.supachain.mixer.concept
+import dev.supachain.mixer.mix
 import dev.supachain.robot.Defaults.Chat
 import dev.supachain.robot.Defaults.NoTools
 import dev.supachain.robot.Robot
@@ -9,7 +10,7 @@ fun main() {
     Debug show "Messenger"
     val robot = Robot<Ollama, Chat, NoTools>()
 
-    val firstAttempt = concept { "Give an answer to the following question: $inputted" }
+    val firstAttempt = concept { "Give an answer to the following question: $input" }
 
     val betterAnswer = mix {
         "```<Test Rubric>Ways to improve:\n" +
@@ -25,15 +26,15 @@ fun main() {
                 "10 Do not say what your doing, just do it.\n" +
                 "11. Acknowledge and address potential counterarguments or alternative viewpoints.</Test Rubric>\n" +
                 "The last_article_answer received a grade of B= based on the Test Rubric. " +
-                "Show the improved A+ article last_article_answer and improve the length. Question:$inputted\n" +
-                "last_article_answer=```$results```"
+                "Show the improved A+ article last_article_answer and improve the length. Question:$input\n" +
+                "last_article_answer=```$outputs```"
     }
 
-    val answer= firstAttempt to betterAnswer * 2
+    val answer= firstAttempt to (betterAnswer * 2)
 
     val question = "What do you know about the Steel Drum?"
 
-    val generatedAnswer = (answer using { robot.chat(it).await() }).produce(question)
+    val generatedAnswer = (answer using { robot.chat(it).await() })(question)
 
     println(generatedAnswer)
 }
