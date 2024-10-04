@@ -94,7 +94,7 @@ val cons = concept { "cons($input)" }
 val summary = mix { "summary{in=$input($outputs)}" }
 
 val mixer = (pros * 2 + cons) to summary using { it.toUpperCase() }
-val result = mixer("hello")
+val result: String = mixer("hello")
 
 println(result) // Output: pros(summary{in=hello([better(better(pros(hello))), cons(hello)])})
 ```
