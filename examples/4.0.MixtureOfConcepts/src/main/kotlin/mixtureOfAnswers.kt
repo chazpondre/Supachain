@@ -1,12 +1,13 @@
 import dev.supachain.mixer.concept
 import dev.supachain.mixer.mix
+import dev.supachain.mixer.using
 import dev.supachain.robot.Defaults.Chat
 import dev.supachain.robot.Defaults.NoTools
 import dev.supachain.robot.Robot
 import dev.supachain.robot.provider.models.Ollama
 import dev.supachain.utilities.Debug
 
-fun main() {
+suspend fun main() {
     // Show messages between user, system and assistant
     Debug show "Messenger"
 
@@ -37,7 +38,7 @@ fun main() {
     val question = "If nothing is still something, does nothing exist?"
 
     // Producing the final answer by using the robot to process the combined answer mix
-    val finalAnswer = (combinedAnswer using { robot.chat(it).await() })(question)
+    val finalAnswer = (combinedAnswer using robot::chat)(question)
 
     // Output the generated answer
     println(finalAnswer)

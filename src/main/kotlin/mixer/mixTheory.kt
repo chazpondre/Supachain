@@ -1,5 +1,8 @@
 package dev.supachain.mixer
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlin.math.absoluteValue
 
 /*
@@ -8,9 +11,7 @@ import kotlin.math.absoluteValue
 ▓▓▓▓▓▓▓▓▓▓▓▓▓        ▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓        ▓▓      ▓▓▓▓  ▓▓▓▓  ▓▓       ▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 █████████████  █  █  █████  ██████  ██  ████████████  █████  ████  ██  ████████  ████  ██  ███  ██████  ████████████████
 █████████████  ████  ██        ██  ████  ███████████  █████  ████  ██        ███      ███  ████  █████  ████████████████
-
- */
-
+*/
 
 /**
  * Represents a single data pseudo container for a value of type [T].
@@ -22,7 +23,6 @@ import kotlin.math.absoluteValue
 value class Single<T>(val value: T) {
     val input: T get() = value
 }
-
 
 /**
  * Represents a pseudo container for multiple data values of type [T].
@@ -88,10 +88,10 @@ interface Mixable<T> {
      * Mixes the input data using the provided generate function.
      *
      * @param inputData The input data to be mixed.
-     * @param generate A function to generate the mixed result.
+     * @param generator Generates the mixed result.
      * @return The mixed result.
      */
-    fun mix(inputData: T, generate: (T) -> T): T
+    suspend fun mix(inputData: T, generator: Generator<T>): T
 
     /**
      * Combines this mixable with another mixable into an unmixed [Group].
@@ -114,14 +114,9 @@ interface Mixable<T> {
     infix fun to(remixFunction: Remix<T>): Mixable<T> = MultiTrack(MultiMix(listOf(this), remixFunction))
 
     /**
-     * Uses the specified generate function for mixing.
-     */
-    infix fun using(generate: (T) -> T) = Mixer(Pair(this, generate))
-
-    /**
      * Uses the specified generator for mixing.
      */
-    infix fun using(generator: Generator<T>) = Mixer(Pair(this, generator::generator))
+    infix fun with(generator: Generator<T>) = Mixer(Pair(this, generator))
 }
 
 
@@ -166,9 +161,9 @@ value class Effect<T>(val instruction: MixFunction<T>) : Mixable<T> {
     /**
      * Applies the mix function and generates the result.
      */
-    override fun mix(inputData: T, generate: (T) -> T): T {
+    override suspend fun mix(inputData: T, generator: Generator<T>): T {
         val sample = instruction(inputData.asSingle())
-        return generate(sample)
+        return generator.generate(sample)
     }
 
     override fun toString(): String = "Effect${instruction.hashCode().absoluteValue % 10000}"
@@ -188,9 +183,9 @@ value class Repeater<T>(val data: Pair<Mixable<T>, Int>) : Mixable<T> {
     /**
      * Repeats the mix operation that repeats with [repeatCount]
      */
-    override fun mix(inputData: T, generate: (T) -> T): T {
+    override suspend fun mix(inputData: T, generator: Generator<T>): T {
         var result: T = inputData
-        repeat(repeatCount) { result = mixable.mix(result, generate) }
+        repeat(repeatCount) { result = mixable.mix(result, generator) }
         return result
     }
 
@@ -226,10 +221,10 @@ value class Track<T>(private val mixes: List<Mixable<T>>) : Mixable<T> {
     /**
      * Mixes the data by applying all mixable items in the track sequentially.
      */
-    override fun mix(inputData: T, generate: (T) -> T): T {
+    override suspend fun mix(inputData: T, generator: Generator<T>): T {
         var lastInput = inputData
         for (mix in mixes) {
-            lastInput = mix.mix(lastInput, generate)
+            lastInput = mix.mix(lastInput, generator)
         }
 
         return lastInput
@@ -245,13 +240,22 @@ value class Track<T>(private val mixes: List<Mixable<T>>) : Mixable<T> {
  */
 @JvmInline
 value class MultiTrack<T>(private val multiMix: MultiMix<T>) : Mixable<T> {
+    private suspend fun makeMixes(inputData: T, generator: Generator<T>): Multi<T> =
+        if (generator.parallelExecutionAllowed)
+            coroutineScope {
+                listOf(inputData) + multiMix.mixers.map { mixer ->
+                    async { mixer.mix(inputData, generator) }
+                }.awaitAll()
+            }.asMulti()
+        else (listOf(inputData) + multiMix.mixers.map { it.mix(inputData, generator) }).asMulti()
+
     /**
      * Mixes the input data and applies the remix function.
      */
-    override fun mix(inputData: T, generate: (T) -> T): T {
-        val mixes = (listOf(inputData) + multiMix.mixers.map { it.mix(inputData, generate) }).asMulti()
+    override suspend fun mix(inputData: T, generator: Generator<T>): T {
+        val mixes = makeMixes(inputData, generator)
         val remix = multiMix.remix.mix(mixes)
-        return generate(remix)
+        return generator.generate(remix)
     }
 
     override fun toString(): String =
@@ -264,8 +268,8 @@ value class MultiTrack<T>(private val multiMix: MultiMix<T>) : Mixable<T> {
  * @param data A pair of the mixable item and the generator function.
  */
 @JvmInline
-value class Mixer<T>(val data: Pair<Mixable<T>, (T) -> T>) {
-    constructor(track: Mixable<T>, sampler: (T) -> T) : this(Pair(track, sampler))
+value class Mixer<T>(val data: Pair<Mixable<T>, Generator<T>>) {
+    constructor(track: Mixable<T>, generator: Generator<T>) : this(Pair(track, generator))
 
     private val mixable get() = data.first
     private val generator get() = data.second
@@ -276,14 +280,15 @@ value class Mixer<T>(val data: Pair<Mixable<T>, (T) -> T>) {
      * @param input The input data.
      * @return The mixed result.
      */
-    operator fun invoke(input: T) = mixable.mix(input, generator)
+    suspend operator fun invoke(input: T) = mixable.mix(input, generator)
 }
 
 /**
  * Represents a generator that produces data of type [T].
  */
 interface Generator<T> {
-    fun generator(input: T): T
+    val parallelExecutionAllowed: Boolean
+    fun generate(input: T): T
 }
 
 /**
