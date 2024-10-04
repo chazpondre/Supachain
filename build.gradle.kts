@@ -1,7 +1,7 @@
 import java.util.*
 
 group = "dev.supachain"
-version = "0.1.0"
+version = "0.1.1"
 
 val ktorVersion: String = "2.3.11"
 val logbackVersion: String = "1.5.6"
