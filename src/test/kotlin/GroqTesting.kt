@@ -37,6 +37,9 @@ class GroqTesting {
           "model": "llama-3.1-70b-versatile",
           "presence_penalty": 0.0,
           "stop": null,
+          "logprobs": null,
+          "logit_bias": null,
+          "response_format": null,
           "stream": false,
           "temperature": 0.0,
           "tool_choice": "auto",
@@ -91,6 +94,9 @@ class GroqTesting {
           "model": "llama-3.1-70b-versatile",
           "presence_penalty": 0.0,
           "stop": null,
+          "logprobs": null,
+          "logit_bias": null,
+          "response_format": null,
           "stream": false,
           "temperature": 0.0,
           "tool_choice": "auto",
@@ -156,8 +162,10 @@ class GroqTesting {
                       }
                     }
                   ]
-              },
+              }, 
               "logprobs": null,
+              "logit_bias": null,
+              "response_format": null,
               "finish_reason": "tool_calls"
             }
           ],
@@ -201,6 +209,9 @@ class GroqTesting {
           "stream": false,
           "temperature": 0.0,
           "tool_choice": "auto",
+          "logprobs": null,
+          "logit_bias": null,
+          "response_format": null,
           "top_p": 0.0,
           "tools": [
             {
