@@ -1,3 +1,20 @@
+
+🚨 **Important Notice**
+It has come to my attention that fraudulent accounts — including some impersonating me on platforms like x.ai — are falsely claiming to represent me and are promoting cryptocurrency scams.
+
+**I want to make it explicitly clear:**
+
+* I do **not** have an account on x.ai or any affiliation with such platforms.
+* I am **not** involved in the promotion, launch, or creation of any cryptocurrency.
+* This repository is in no way connected to any crypto project.
+
+Please report any suspicious activity or impersonation attempts. Thank you for your vigilance.
+
+---
+
+Would you like a shorter or more casual version as well?
+
+
 # Supachain
 
 Welcome to **Supachain**, a comprehensive solution for building AI-powered applications. Our library provides a seamless way to integrate AI models, whether running locally or via remote providers, into your projects. As we approach our first official release, version 0.1.0, this README will guide you through the setup process and showcase how to utilize Supachain effectively.
