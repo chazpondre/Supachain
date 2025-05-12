@@ -1,4 +1,4 @@
-
+# Important Notice
 🚨 **Important Notice**
 It has come to my attention that fraudulent accounts — including some impersonating me on platforms like x.ai — are falsely claiming to represent me and are promoting cryptocurrency scams.
 
