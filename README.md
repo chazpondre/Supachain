@@ -1,10 +1,11 @@
 # IMPORTANT:
 🚨 **Important Notice**
-It has come to my attention that fraudulent accounts — including some impersonating me on platforms like x.ai — are falsely claiming to represent me and are promoting cryptocurrency scams.
+
+It has come to my attention that fraudulent accounts — including some impersonating me on platforms like x.ai/twitter — are falsely claiming to represent me and are promoting cryptocurrency scams.
 
 **I want to make it explicitly clear:**
 
-* I do **not** have an account on x.ai or any affiliation with such platforms.
+* I do **not** have an account on x.ai, twitter or any affiliation with such platforms.
 * I am **not** involved in the promotion, launch, or creation of any cryptocurrency.
 * This repository is in no way connected to any crypto project.
 
