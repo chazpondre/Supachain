@@ -9,10 +9,7 @@ It has come to my attention that fraudulent accounts — including some imperson
 * This repository is in no way connected to any crypto project.
 
 Please report any suspicious activity or impersonation attempts. Thank you for your vigilance.
-
----
-
-Would you like a shorter or more casual version as well?
+--
 
 
 # Supachain
