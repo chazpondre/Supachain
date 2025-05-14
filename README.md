@@ -1,6 +1,14 @@
 # IMPORTANT:
 🚨 **Important Notice**
+# I am so disgusted someone has used my username and has given me a fake profile and fake name on x and use my Repository, to pump a crappy shitty crypto coin. Digusting.
 
+
+It is really hard to get twitter to take down these fake profile, can some please help removing these two scammer profiles
+# THESE ARE NOT MY HANDLES
+https://x.com/chazpondre
+
+https://x.com/supachainai
+ 
 It has come to my attention that fraudulent accounts — including some impersonating me on platforms like x.ai/twitter — are falsely claiming to represent me and are promoting cryptocurrency scams.
 
 **I want to make it explicitly clear:**
@@ -8,10 +16,11 @@ It has come to my attention that fraudulent accounts — including some imperson
 * I do **not** have an account on x.ai, twitter or any affiliation with such platforms.
 * I am **not** involved in the promotion, launch, or creation of any cryptocurrency.
 * This repository is in no way connected to any crypto project.
+* This is a library to build AI applications, it is not crypto related!!!
 
 Please report any suspicious activity or impersonation attempts. Thank you for your vigilance.
+I will leave this repo up as evidence that in no point in its commit history do I ever link to a crappy cyrpto
 --
-
 
 # Supachain
 
