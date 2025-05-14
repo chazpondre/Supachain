@@ -1,17 +1,37 @@
 # IMPORTANT:
-🚨 **Important Notice**
-# Someone has used my username and has given me a fake profiles and fake name on x. This is not me! There is some crappy crypto scammer who is using github repos to legitimize there scams.
-Superchain is about chaining together ai agents like langchain, it has not to do with blockchain! 
-
 
 # THESE ARE NOT MY HANDLES
-https://x.com/chazpondre
+🚨"x.com/chazpondre" <- FAKE
 
-https://x.com/supachainai
+🚨"x.com/supachainai" <- FAKE
 
-It is really hard to get twitter to take down these fake profile, can some please help removing these two scammer profiles
- 
-It has come to my attention that fraudulent accounts — including some impersonating me on platforms like x.ai/twitter — are falsely claiming to represent me and are promoting cryptocurrency scams.
+
+### Fraud Warning.
+   There is someone pretending to be me on X, and it looks like they might be planning to pump a cryptocurrency under the name Supachain. This project is not related to cryptocurrencies in any way. It's a project for developers to build AI driven applications. Please help notify people of these fake x accounts. There urls are pointing to this project using x and maybe other socials. I do not have an x account at all (Never have).
+
+### I do not have an X.COM/Twitter
+   In hindsight this is probably why this person has preyed on my project, I did not want to build socials for this account but this may have been a mistake. So to be clear I do not have an X.com/Twitter account. Everything you see on Twitter is not related to me in any way. 
+
+### All communication will be here
+   It seems, the grifters are out in full force, please report them. This repo will be the only place I store information about on Supachain, a library for application development.
+
+### Beware of Crypto Scams
+   They seem to latch on to repos that are not maintain or do not have socials.
+   So to be clear, I am NOT involved in the promotion, launch, or creation of any cryptocurrency.
+   This project helps Kotlin developers chain together AI agents, like LangChain. 
+   Nothing to do with blockchain. Chain here means, chaining together agents to handle more complex inputs and outputs!
+
+### I need your help 
+  It is really hard to get twitter to take down these fake profiles, If you come across this can you please help remove them. Also if these guys are launching a fake cryptocurrency please warn the exchanges and point them to the actual GitHub project, so that they can 
+  see my warnings.
+
+### If any good comes out of this
+   Please try my library and or try Kotlin. It's a great programming language and show me what you build! Lastly, it's probably the last time I will name a repo with the word ‘chain’ in it.
+
+### Another attack on OpenSource
+  I think events like these make it hard to be open source and I really wish it wasn't this way. But I will be no longer updating Supachain.
+
+---
 
 **I want to make it explicitly clear:**
 
@@ -20,9 +40,9 @@ It has come to my attention that fraudulent accounts — including some imperson
 * This repository is in no way connected to any crypto project.
 * This is a library to build AI applications, it is not crypto related!!!
 
-Please report any suspicious activity or impersonation attempts. Thank you for your vigilance.
-I will leave this repo up as evidence that in no point in its commit history do I ever link to a crappy cyrpto
---
+Please lete me know of any other suspicious activity or impersonation attempts. Thank you for your help.
+
+---
 
 # Supachain
 
