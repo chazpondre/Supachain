@@ -1,7 +1,7 @@
 # IMPORTANT:
 🚨 **Important Notice**
-# I am so disgusted someone has used my username and has given me a fake profile and fake name on x and use my Repository, to pump a crappy shitty crypto coin. Digusting.
-
+# Someone has used my username and has given me a fake profiles and fake name on x this is not me, There is some crappy crypto scammer coin. Who uses github repos to legitimize there scams.
+Superchain is about chaining together ai agents like langchain, it has not to do with blockchain!
 
 It is really hard to get twitter to take down these fake profile, can some please help removing these two scammer profiles
 # THESE ARE NOT MY HANDLES
