@@ -3,11 +3,13 @@
 # Someone has used my username and has given me a fake profiles and fake name on x. This is not me! There is some crappy crypto scammer who is using github repos to legitimize there scams.
 Superchain is about chaining together ai agents like langchain, it has not to do with blockchain! 
 
-It is really hard to get twitter to take down these fake profile, can some please help removing these two scammer profiles
+
 # THESE ARE NOT MY HANDLES
 https://x.com/chazpondre
 
 https://x.com/supachainai
+
+It is really hard to get twitter to take down these fake profile, can some please help removing these two scammer profiles
  
 It has come to my attention that fraudulent accounts — including some impersonating me on platforms like x.ai/twitter — are falsely claiming to represent me and are promoting cryptocurrency scams.
 
